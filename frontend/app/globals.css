@@ -38,8 +38,24 @@ body {
   @apply mb-10 max-w-xl text-lg text-zinc-300;
 }
 
-.home-login-button {
+.home-navigation {
+  @apply flex flex-col items-center gap-4 sm:flex-row;
+}
+
+.home-primary-button {
   @apply rounded-lg bg-emerald-500 px-8 py-3 font-semibold text-zinc-950 transition hover:bg-emerald-400;
+}
+
+.home-secondary-button {
+  @apply rounded-lg border border-zinc-700 px-8 py-3 font-semibold text-zinc-100 transition hover:border-emerald-400 hover:text-emerald-400;
+}
+
+.home-primary-link {
+  @apply rounded-lg bg-emerald-500 px-8 py-3 font-semibold text-zinc-950 transition hover:bg-emerald-400;
+}
+
+.home-secondary-link {
+  @apply rounded-lg border border-zinc-700 px-8 py-3 font-semibold text-zinc-100 transition hover:border-emerald-400 hover:text-emerald-400;
 }
 
 .home-footer {
