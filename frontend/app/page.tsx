@@ -27,20 +27,20 @@ export default function HomePage() {
 
         {isLoggedIn ? (
           <nav className="home-navigation" aria-label="Logged-in navigation">
-            <a className="home-primary-link" href="/lobby">
+            <a className="primary-link" href="/lobby">
               Lobby
             </a>
 
-            <a className="home-secondary-link" href="/profile">
+            <a className="secondary-link" href="/profile">
               Profile
             </a>
 
-            <a className="home-secondary-link" href="/leaderboard">
+            <a className="secondary-link" href="/leaderboard">
               Leaderboard
             </a>
 
             <button
-              className="home-secondary-button"
+              className="secondary-button"
               type="button"
               onClick={handleLogout}
             >
@@ -50,14 +50,14 @@ export default function HomePage() {
         ) : (
           <nav className="home-navigation" aria-label="Logged-out navigation">
             <button
-              className="home-primary-button"
+              className="primary-button"
               type="button"
               onClick={handleLogin}
             >
               Login
             </button>
 
-            <a className="home-secondary-link" href="/register">
+            <a className="secondary-link" href="/register">
               Register
             </a>
           </nav>
