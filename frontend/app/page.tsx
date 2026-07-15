@@ -1,3 +1,5 @@
+import { Footer } from "./components/Footer";
+
 export default function HomePage() {
   return (
     <main className="home-page">
@@ -13,9 +15,7 @@ export default function HomePage() {
         <button className="home-login-button">Login</button>
       </section>
 
-      <footer className="home-footer">
-        Developed by the Shadow Seek team.
-      </footer>
+      <Footer />
     </main>
   );
 }
