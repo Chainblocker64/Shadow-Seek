@@ -62,10 +62,6 @@ body {
   @apply border-t border-zinc-800 px-6 py-5 text-center text-sm text-zinc-500;
 }
 
-.room-list-item {
-  @apply rounded-full border border-white/20 bg-zinc-900/60 px-6 py-3 text-left transition hover:border-emerald-400/40 hover:bg-zinc-900;
-}
-
 .header {
   @apply mb-8 text-center text-4xl font-semibold;
 }

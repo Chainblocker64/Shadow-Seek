@@ -18,8 +18,8 @@ export default function Lobby() {
     },
     {
       id: 1565,
-      players: ["player3", "player4", "player5"],
-      status: "waiting",
+      players: ["player6", "player7", "player8", "player9"],
+      status: "full",
       maxPlayers: 4,
       map: "Desert and Savannas",
     },
@@ -32,20 +32,18 @@ export default function Lobby() {
           <div className="px-4 sm:px-6 lg:px-8 py-8 outline outline-white/30 rounded-3xl flex flex-1 flex-col">
             <div className="mb-6 flex items-center justify-between lg:justify-center">
               <p className="text-lg font-semibold">Join room</p>
-              <button className="whitespace-nowrap rounded-lg border border-white/20 bg-transparent px-4 py-1.5 text-sm font-semibold text-white transition hover:bg-white/10 lg:hidden">
-                Create Game
-              </button>
+              <button className="primary-button lg:hidden">Create Game</button>
             </div>
             <div className="flex flex-col gap-3">
               {rooms.map((room) => (
                 <div
-                  className="room-list-item"
+                  className="secondary-link text-left"
                   key={room.id}
-                >{`Room ${room.id} | Players: ${room.players.length}/${room.maxPlayers} | Map: ${room.map}`}</div>
+                >{`Room ${room.id} | ${room.status} | Players: ${room.players.length}/${room.maxPlayers} | Map: ${room.map}`}</div>
               ))}
             </div>
           </div>
-          <button className="absolute left-full top-0 ml-4 hidden w-36 whitespace-nowrap rounded-lg border border-white/20 bg-transparent px-6 py-2 font-semibold text-white transition hover:bg-white/10 lg:block">
+          <button className="primary-button absolute left-full top-0 ml-4 hidden whitespace-nowrap lg:block">
             Create Game
           </button>
         </div>
