@@ -3,7 +3,7 @@ import { Footer } from "./components/Footer";
 export default function HomePage() {
   return (
     <main className="home-page">
-      <section className="home-hero">
+      <section className="hero">
         <p className="home-eyebrow">Multiplayer Stealth Arena</p>
 
         <h1 className="home-title">Shadow Seek</h1>

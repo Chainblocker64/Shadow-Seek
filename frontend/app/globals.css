@@ -22,7 +22,7 @@ body {
   @apply flex min-h-screen flex-col bg-zinc-950 text-zinc-100;
 }
 
-.home-hero {
+.hero {
   @apply mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center px-6 py-16 text-center;
 }
 
@@ -44,4 +44,8 @@ body {
 
 .home-footer {
   @apply border-t border-zinc-800 px-6 py-5 text-center text-sm text-zinc-500;
+}
+
+.page-content {
+  @apply mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 outline outline-white/30 rounded;
 }
