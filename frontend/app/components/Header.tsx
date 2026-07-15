@@ -1,3 +1,9 @@
+import Link from "next/link";
+
 export function Header() {
-  return <header className="header">ShadowSeek</header>;
+  return (
+    <header className="header">
+      <Link href="/">ShadowSeek</Link>
+    </header>
+  );
 }
