@@ -14,6 +14,11 @@ export default function RoomList({ initialRooms }: { initialRooms: Room[] }) {
     };
 
     socket.on("roomsUpdated", onRoomsUpdated);
+
+    return () => {
+      socket.off("roomsUpdated", onRoomsUpdated);
+      socket.disconnect();
+    };
   });
 
   return (
