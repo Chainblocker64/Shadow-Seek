@@ -1,4 +1,4 @@
-import { GameBoard } from "../../features/game/components/GameBoard";
+import { PixiGameBoard } from "../../features/game/components/PixiGameBoard";
 import { exampleMap } from "../../features/game/data/exampleMap";
 
 export default function GameBoardPage() {
@@ -20,7 +20,7 @@ export default function GameBoardPage() {
         </aside>
 
         <div className="game-board-area">
-          <GameBoard map={exampleMap} />
+          <PixiGameBoard map={exampleMap} />
         </div>
 
         <aside className="game-sidebar game-sidebar-right">

@@ -98,6 +98,10 @@ body {
   @apply flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-3xl border border-zinc-700 bg-zinc-950/80 p-4;
 }
 
+.pixi-board-container {
+  @apply h-full w-full;
+}
+
 .game-board {
   @apply grid aspect-square h-full max-h-full max-w-full gap-1;
 }
