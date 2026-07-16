@@ -3,6 +3,7 @@ import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { LoginUserDto } from '../user/dto/login-user.dto';
+import { User } from 'src/user/entities/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -20,7 +21,7 @@ export class AuthService {
   async login(loginDto: LoginUserDto) {
     const { email, password } = loginDto;
 
-    // check for existing user - throw exception if one exists
+    // check for existing email - throw exception if one exists
     const user = await this.userService.findOneByEmail(email);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
@@ -31,9 +32,35 @@ export class AuthService {
     }
 
     // return jwt token
-    const payload = { sub: user.id, email: user.email };
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      username: user.username,
+    };
     return {
       access_token: await this.jwtService.signAsync(payload),
     };
+  }
+
+  /**
+   * checks logged in user credentials
+   *
+   * @param email
+   * @param password
+   * @returns {}
+   */
+  async validateUser(
+    email: string,
+    password: string,
+  ): Promise<Omit<User, 'password'> | null> {
+    // find user
+    const user: User | null = await this.userService.findOneByEmail(email);
+
+    // compare hashed passwords and return the user without password
+    if (user && (await bcrypt.compare(password, user.password))) {
+      const { password: _, ...result } = user;
+      return result;
+    }
+    return null;
   }
 }
