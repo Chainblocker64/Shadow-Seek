@@ -1,20 +1,18 @@
 "use client";
 
-import { Application, Graphics } from "pixi.js";
+import { Application, Assets, Rectangle, Sprite, Texture } from "pixi.js";
 import { useEffect, useRef } from "react";
-import type { GameMap, TileType } from "../types/map";
+import type { GameMap } from "../types/map";
+import {
+  TILE_TEXTURE_SIZE,
+  tileTextureFrames,
+} from "../data/tileTextureFrames";
 
 type PixiGameBoardProps = {
   map: GameMap;
 };
 
-const tileColors: Record<TileType, number> = {
-  floor: 0x3f3f46,
-  wall: 0x09090b,
-  tree: 0x064e3b,
-  rock: 0x57534e,
-  spawn: 0xeab308,
-};
+const TILESET_PATH = "/assets/tiles/dungeon-crawl.png";
 
 export function PixiGameBoard({ map }: PixiGameBoardProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -47,6 +45,25 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
       container.innerHTML = "";
       container.appendChild(app.canvas);
 
+      const tilesetTexture = await Assets.load<Texture>(TILESET_PATH);
+
+      if (isDestroyed || !app) {
+        return;
+      }
+
+      function createTileTexture(frameX: number, frameY: number) {
+        return new Texture({
+          source: tilesetTexture.source,
+
+          frame: new Rectangle(
+            frameX,
+            frameY,
+            TILE_TEXTURE_SIZE,
+            TILE_TEXTURE_SIZE,
+          ),
+        });
+      }
+
       function renderMap() {
         if (!app || !container) {
           return;
@@ -54,9 +71,11 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
 
         const containerWidth = container.clientWidth;
         const containerHeight = container.clientHeight;
+
         const boardSize = Math.min(containerWidth, containerHeight);
 
         app.renderer.resize(boardSize, boardSize);
+
         app.stage.removeChildren();
 
         const tileSize = Math.floor(
@@ -65,24 +84,24 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
 
         const mapWidth = tileSize * map.width;
         const mapHeight = tileSize * map.height;
-
         const offsetX = Math.floor((boardSize - mapWidth) / 2);
         const offsetY = Math.floor((boardSize - mapHeight) / 2);
 
         map.tiles.forEach((row, y) => {
           row.forEach((tileType, x) => {
-            const tile = new Graphics();
+            const frame = tileTextureFrames[tileType];
 
-            tile
-              .rect(
-                offsetX + x * tileSize,
-                offsetY + y * tileSize,
-                tileSize,
-                tileSize,
-              )
-              .fill(tileColors[tileType]);
+            const tileTexture = createTileTexture(frame.x, frame.y);
 
-            app?.stage.addChild(tile);
+            const tileSprite = new Sprite(tileTexture);
+
+            tileSprite.x = offsetX + x * tileSize;
+            tileSprite.y = offsetY + y * tileSize;
+
+            tileSprite.width = tileSize;
+            tileSprite.height = tileSize;
+
+            app?.stage.addChild(tileSprite);
           });
         });
       }
