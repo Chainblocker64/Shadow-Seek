@@ -37,9 +37,24 @@ export default function Lobby() {
             <div className="flex flex-col gap-3">
               {rooms.map((room) => (
                 <div
-                  className="secondary-link text-left"
+                  className={`room-entry ${
+                    room.status === "waiting"
+                      ? "room-entry-waiting"
+                      : "room-entry-disabled"
+                  }`}
                   key={room.id}
-                >{`Room ${room.id} | ${room.status} | Players: ${room.players.length}/${room.maxPlayers} | Map: ${room.map}`}</div>
+                >
+                  <span>{`Room ${room.id} | Players: ${room.players.length}/${room.maxPlayers} | Map: ${room.map}`}</span>
+                  <span
+                    className={`room-status-badge ${
+                      room.status === "waiting"
+                        ? "room-status-badge-waiting"
+                        : "room-status-badge-full"
+                    }`}
+                  >
+                    {room.status}
+                  </span>
+                </div>
               ))}
             </div>
           </div>

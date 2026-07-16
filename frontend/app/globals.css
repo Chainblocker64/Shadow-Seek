@@ -43,11 +43,11 @@ body {
 }
 
 .primary-button {
-  @apply rounded-lg bg-emerald-500 px-8 py-3 font-semibold text-zinc-950 transition hover:bg-emerald-400;
+  @apply cursor-pointer rounded-lg bg-emerald-500 px-8 py-3 font-semibold text-zinc-950 transition hover:bg-emerald-400;
 }
 
 .secondary-button {
-  @apply rounded-lg border border-zinc-700 px-8 py-3 font-semibold text-zinc-100 transition hover:border-emerald-400 hover:text-emerald-400;
+  @apply cursor-pointer rounded-lg border border-zinc-700 px-8 py-3 font-semibold text-zinc-100 transition hover:border-emerald-400 hover:text-emerald-400;
 }
 
 .primary-link {
@@ -56,6 +56,30 @@ body {
 
 .secondary-link {
   @apply rounded-lg border border-zinc-700 px-8 py-3 font-semibold text-zinc-100 transition hover:border-emerald-400 hover:text-emerald-400;
+}
+
+.room-entry {
+  @apply flex items-center justify-between gap-4 rounded-lg border border-zinc-700 px-8 py-3 font-semibold text-zinc-100 transition text-left;
+}
+
+.room-entry-waiting {
+  @apply cursor-pointer hover:border-emerald-400 hover:text-emerald-400;
+}
+
+.room-entry-disabled {
+  @apply cursor-not-allowed border-zinc-600 text-zinc-500;
+}
+
+.room-status-badge {
+  @apply rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide;
+}
+
+.room-status-badge-waiting {
+  @apply bg-emerald-500/20 text-emerald-400;
+}
+
+.room-status-badge-full {
+  @apply bg-red-500/20 text-red-400;
 }
 
 .footer {
