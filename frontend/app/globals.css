@@ -87,5 +87,5 @@ body {
 }
 
 .header {
-  @apply mb-8 text-center text-4xl font-semibold;
+  @apply px-6 pt-10 mb-8 text-center text-4xl font-semibold;
 }
