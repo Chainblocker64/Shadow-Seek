@@ -63,19 +63,19 @@ body {
 }
 
 .game-page {
-  @apply min-h-screen bg-zinc-950 px-6 py-6 text-zinc-100;
+  @apply box-border flex h-screen flex-col overflow-hidden bg-zinc-950 px-6 py-4 text-zinc-100;
 }
 
 .game-page-title {
-  @apply mb-6 text-center text-3xl font-bold;
+  @apply mb-4 shrink-0 text-center text-3xl font-bold;
 }
 
 .game-layout {
-  @apply mx-auto grid min-h-[calc(100vh-8rem)] max-w-7xl grid-cols-1 gap-4 rounded-3xl border border-zinc-700 bg-zinc-900/70 p-4 lg:grid-cols-[10rem_1fr_10rem];
+  @apply mx-auto grid min-h-0 w-full max-w-7xl flex-1 grid-cols-1 gap-4 rounded-3xl border border-zinc-700 bg-zinc-900/70 p-4 lg:grid-cols-[10rem_minmax(0,1fr)_10rem];
 }
 
 .game-sidebar {
-  @apply flex flex-col justify-between rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4;
+  @apply flex min-h-0 flex-col justify-between rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4;
 }
 
 .game-sidebar-right {
@@ -95,11 +95,11 @@ body {
 }
 
 .game-board-area {
-  @apply overflow-hidden rounded-3xl border border-zinc-700 bg-zinc-950/80;
+  @apply flex min-h-0 min-w-0 items-center justify-center overflow-hidden rounded-3xl border border-zinc-700 bg-zinc-950/80 p-4;
 }
 
 .game-board {
-  @apply grid h-full w-full gap-1;
+  @apply grid aspect-square h-full max-h-full max-w-full gap-1;
 }
 
 .game-tile {
