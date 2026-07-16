@@ -62,20 +62,48 @@ body {
   @apply border-t border-zinc-800 px-6 py-5 text-center text-sm text-zinc-500;
 }
 
-.game-board-wrapper {
-  @apply mx-auto w-full max-w-xl rounded-xl border border-zinc-800 bg-zinc-900/70 p-6;
+.game-page {
+  @apply min-h-screen bg-zinc-950 px-6 py-6 text-zinc-100;
 }
 
-.game-board-title {
-  @apply mb-4 text-center text-xl font-bold text-zinc-100;
+.game-page-title {
+  @apply mb-6 text-center text-3xl font-bold;
+}
+
+.game-layout {
+  @apply mx-auto grid min-h-[calc(100vh-8rem)] max-w-7xl grid-cols-1 gap-4 rounded-3xl border border-zinc-700 bg-zinc-900/70 p-4 lg:grid-cols-[10rem_1fr_10rem];
+}
+
+.game-sidebar {
+  @apply flex flex-col justify-between rounded-2xl border border-zinc-800 bg-zinc-950/60 p-4;
+}
+
+.game-sidebar-right {
+  @apply items-end text-right;
+}
+
+.game-player-name {
+  @apply text-xl font-bold;
+}
+
+.game-player-health {
+  @apply mt-2 text-lg font-semibold text-emerald-400;
+}
+
+.game-controls {
+  @apply space-y-2 text-lg font-semibold;
+}
+
+.game-board-area {
+  @apply overflow-hidden rounded-3xl border border-zinc-700 bg-zinc-950/80;
 }
 
 .game-board {
-  @apply grid gap-1;
+  @apply grid h-full w-full gap-1;
 }
 
 .game-tile {
-  @apply flex aspect-square items-center justify-center rounded text-xs font-bold;
+  @apply flex min-h-0 min-w-0 items-center justify-center rounded text-xs font-bold;
 }
 
 .game-tile-floor {
@@ -98,6 +126,14 @@ body {
   @apply bg-yellow-500 text-zinc-950;
 }
 
-.game-board-page {
-  @apply flex min-h-screen items-center justify-center bg-zinc-950 px-6 py-10;
+.game-timer {
+  @apply text-2xl font-bold;
+}
+
+.game-players-remaining {
+  @apply mt-2 text-sm font-semibold text-zinc-300;
+}
+
+.game-leave-button {
+  @apply rounded-lg border border-zinc-600 px-4 py-2 font-semibold text-zinc-100 transition hover:border-red-400 hover:text-red-400;
 }
