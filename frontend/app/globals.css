@@ -61,3 +61,43 @@ body {
 .footer {
   @apply border-t border-zinc-800 px-6 py-5 text-center text-sm text-zinc-500;
 }
+
+.game-board-wrapper {
+  @apply mx-auto w-full max-w-xl rounded-xl border border-zinc-800 bg-zinc-900/70 p-6;
+}
+
+.game-board-title {
+  @apply mb-4 text-center text-xl font-bold text-zinc-100;
+}
+
+.game-board {
+  @apply grid gap-1;
+}
+
+.game-tile {
+  @apply flex aspect-square items-center justify-center rounded text-xs font-bold;
+}
+
+.game-tile-floor {
+  @apply bg-zinc-700 text-zinc-300;
+}
+
+.game-tile-wall {
+  @apply bg-zinc-950 text-zinc-100;
+}
+
+.game-tile-tree {
+  @apply bg-emerald-900 text-emerald-200;
+}
+
+.game-tile-rock {
+  @apply bg-stone-600 text-stone-100;
+}
+
+.game-tile-spawn {
+  @apply bg-yellow-500 text-zinc-950;
+}
+
+.game-board-page {
+  @apply flex min-h-screen items-center justify-center bg-zinc-950 px-6 py-10;
+}
