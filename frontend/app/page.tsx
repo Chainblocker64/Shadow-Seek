@@ -15,18 +15,25 @@ export default function HomePage() {
   }
 
   return (
-    <main className="home-page">
+    <main className="flex min-h-screen flex-col bg-zinc-950 text-zinc-100">
       <section className="hero">
-        <p className="home-eyebrow">Multiplayer Stealth Arena</p>
+        <p className="mb-4 text-sm font-semibold uppercase tracking-[0.5em] text-emerald-400">
+          Multiplayer Stealth Arena
+        </p>
 
-        <h1 className="home-title">Shadow Seek</h1>
+        <h1 className="mb-6 text-5xl font-bold tracking-tight text-white sm:text-7xl">
+          Shadow Seek
+        </h1>
 
-        <p className="home-description">
+        <p className="mb-10 max-w-xl text-lg text-zinc-300">
           A dark multiplayer hide-and-seek arena.
         </p>
 
         {isLoggedIn ? (
-          <nav className="home-navigation" aria-label="Logged-in navigation">
+          <nav
+            className="flex flex-col items-center gap-4 sm:flex-row"
+            aria-label="Logged-in navigation"
+          >
             <a className="primary-link" href="/lobby">
               Lobby
             </a>

@@ -30,10 +30,10 @@ export default function RoomList({ initialRooms }: { initialRooms: Room[] }) {
       <div className="flex flex-col gap-3">
         {rooms.map((room) => (
           <div
-            className={`room-entry ${
+            className={`room-list-item ${
               room.status === "waiting"
-                ? "room-entry-waiting"
-                : "room-entry-disabled"
+                ? "room-list-item-waiting"
+                : "room-list-item-disabled"
             }`}
             key={room.id}
           >
