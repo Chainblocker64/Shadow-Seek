@@ -1,8 +1,9 @@
 import { useState } from 'react';
 
-export default function LoginForm({ onBack }: { onBack: () => void }) {
-
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+export default function LoginForm({ onBack, onLoginSuccess }: {
+   onBack: () => void;
+   onLoginSuccess: () => void 
+  }) {
 
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState<string | null>(null);
@@ -15,7 +16,7 @@ export default function LoginForm({ onBack }: { onBack: () => void }) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch(`${backendUrl}/auth/login`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
@@ -24,10 +25,10 @@ export default function LoginForm({ onBack }: { onBack: () => void }) {
       const data = await response.json();
 
       if (response.ok) {
-        localStorage.setItem('shadowseek_authToken', data.token);
+        localStorage.setItem('shadowseek_authToken', data.access_token);
+        onLoginSuccess();
         onBack();
       } else {
-        console.warn("Login failed:", data.message);
         const message = Array.isArray(data.message) ? data.message[0] : data.message;
         setError(message || 'Invalid credentials');
         return;
@@ -36,8 +37,6 @@ export default function LoginForm({ onBack }: { onBack: () => void }) {
       console.error('Network error:', error);
     }
   };
-
-
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6 max-w-sm w-full">
