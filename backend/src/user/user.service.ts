@@ -45,6 +45,16 @@ export class UserService {
     return userWithoutPassword;
   }
 
+  /**
+   * finds a user by email
+   *
+   * @param email
+   * @returns User
+   */
+  async findOneByEmail(email: string): Promise<User | null> {
+    return this.userRepository.findOneBy({ email });
+  }
+
   findAll() {
     return `This action returns all user`;
   }
