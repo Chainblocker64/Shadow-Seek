@@ -5,8 +5,10 @@ export default function LoginForm({ onBack }: { onBack: () => void }) {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
 
   const [formData, setFormData] = useState({ email: '', password: '' });
+  const [error, setError] = useState<string | null>(null);
 
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (error) setError(null);
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
 
@@ -19,12 +21,16 @@ export default function LoginForm({ onBack }: { onBack: () => void }) {
         body: JSON.stringify(formData),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        console.log('Login successful!');
-        // todo: redirect
+        localStorage.setItem('shadowseek_authToken', data.token);
+        onBack();
       } else {
-        console.error('Login failed');
-        // todo: show error
+        console.warn("Login failed:", data.message);
+        const message = Array.isArray(data.message) ? data.message[0] : data.message;
+        setError(message || 'Invalid credentials');
+        return;
       }
     } catch (error) {
       console.error('Network error:', error);
@@ -58,6 +64,12 @@ export default function LoginForm({ onBack }: { onBack: () => void }) {
           required 
         />
       </div>
+
+      {error && (
+        <span className="text-sm text-red-500 bg-red-50 p-2 rounded border border-red-200">
+          {error}
+        </span>
+      )}
 
       <div className="flex gap-2 mt-2">
         <button 

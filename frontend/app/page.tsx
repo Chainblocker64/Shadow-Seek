@@ -1,19 +1,37 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from 'react';
 import { Footer } from "./components/Footer";
-import LoginForm from "./components/LoginForm/LoginForm";
-import RegisterForm from "./components/RegisterForm/RegisterForm";
+import LoginForm from "./components/LoginForm";
+import RegisterForm from "./components/RegisterForm";
 
 export default function HomePage() {
   const [view, setView] = useState<'home' | 'login' | 'register'>('home');
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  function handleLogin() {
-    setIsLoggedIn(true);
-  }
+  useEffect(() => {
+    const token = localStorage.getItem('shadowseek_authToken');
+    if (token) {
+      fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/me`, {
+        method: 'GET',
+        headers: { 
+          'Authorization': `Bearer ${token}` 
+        }
+      })
+      .then(res => {
+        if (res.ok) {
+          setIsLoggedIn(true);
+        } else {
+          localStorage.removeItem('shadowseek_authToken');
+          setIsLoggedIn(false);
+        }
+      })
+      .catch(() => setIsLoggedIn(false));
+    }
+  }, []);
 
   function handleLogout() {
+    localStorage.removeItem('shadowseek_authToken');
     setIsLoggedIn(false);
   }
 
