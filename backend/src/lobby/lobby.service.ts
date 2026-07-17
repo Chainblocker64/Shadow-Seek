@@ -7,6 +7,10 @@ export class LobbyService {
   private readonly rooms: RoomCollection = new Map<RoomId, Room>();
 
   createRoom(clientId: ClientId) {
+    if (this.playerHasRoom(clientId)) {
+      return;
+    }
+
     const roomId = randomUUID();
 
     const room: Room = {
@@ -33,6 +37,10 @@ export class LobbyService {
       return;
     }
 
+    if (this.playerHasRoom(clientId)) {
+      return;
+    }
+
     const updatedRoom = {
       ...room,
       players: [...room.players, clientId],
@@ -47,5 +55,17 @@ export class LobbyService {
 
   getRooms(): RoomCollection {
     return this.rooms;
+  }
+
+  getPlayerRoom(clientId: ClientId): RoomId | undefined {
+    for (const room of this.rooms.values()) {
+      if (room.players.includes(clientId)) {
+        return room.id;
+      }
+    }
+  }
+
+  playerHasRoom(clientId: ClientId): boolean {
+    return Boolean(this.getPlayerRoom(clientId));
   }
 }
