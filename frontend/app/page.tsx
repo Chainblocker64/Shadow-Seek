@@ -12,23 +12,61 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    getAuthenticatedUser().then((userData) => {
-      setUser(userData);
-      setLoading(false);
-    });
+    let isMounted = true;
+
+    const checkAuth = async () => {
+      const hasCookie = document.cookie.includes('is_logged_in=true');
+      
+      if (!hasCookie) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const userData = await getAuthenticatedUser();
+        if (isMounted) {
+          if (!userData) {
+            document.cookie = 'is_logged_in=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            setUser(null);
+          } else {
+            setUser(userData);
+          }
+          setLoading(false);
+        }
+      } catch (err) {
+        if (isMounted) {
+          document.cookie = 'is_logged_in=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+          setUser(null);
+          setLoading(false);
+        }
+      }
+    };
+
+    checkAuth();
+    return () => { isMounted = false; };
   }, []);
 
-  if (loading) return null;
+  if (loading) return null; 
 
   const handleLoginSuccess = async () => {
     const userData = await getAuthenticatedUser();
     setUser(userData);
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('shadowseek_authToken');
-    setUser(null);
-  };
+  const handleLogout = async () => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        window.location.href = '/'; 
+      }
+    } catch (error) {
+      console.error('Logout failed', error);
+    }
+};
 
   return (
     <main className="home-page">

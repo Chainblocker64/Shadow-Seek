@@ -4,22 +4,30 @@ export interface AuthenticatedUser {
     email: string;
 }
 
-export async function getAuthenticatedUser(): Promise<AuthenticatedUser | null> {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL;
+/**
+ * get data for current logged in user
+ * 
+ * @returns AuthenticatedUser | null
+ */
+export async function getAuthenticatedUser() {
+  const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/me`, {
+    credentials: 'include'
+  });
 
-    const token = localStorage.getItem('shadowseek_authToken');
-    if (!token) return null;
+  if (!res.ok) return null;
+  return await res.json();
+}
 
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/me`, {
-        headers: { Authorization: `Bearer ${token}` }
-    });
-
-    // jwt invalid:
-    if (!response.ok) {
-        localStorage.removeItem('shadowseek_auth_token');
-        return null;
-    }
-
-    // jwt valid:
-    return await response.json();
+/**
+ * redirect home if user is not authenticated
+ * 
+ * @returns AuthenticatedUser | null
+ */
+export async function protectPage(): Promise<AuthenticatedUser | null> {
+  const user = await getAuthenticatedUser();
+  if (!user) {
+    window.location.href = '/'; 
+    return null;
+  }
+  return user;
 }

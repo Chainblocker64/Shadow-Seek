@@ -14,29 +14,29 @@ export default function LoginForm({ onBack, onLoginSuccess }: {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
+  e.preventDefault();
+  try {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData),
+      credentials: 'include', 
+    });
 
-      const data = await response.json();
+    const data = await response.json();
 
-      if (response.ok) {
-        localStorage.setItem('shadowseek_authToken', data.access_token);
-        onLoginSuccess();
-        onBack();
-      } else {
-        const message = Array.isArray(data.message) ? data.message[0] : data.message;
-        setError(message || 'Invalid credentials');
-        return;
-      }
-    } catch (error) {
-      console.error('Network error:', error);
+    if (response.ok) {
+      onLoginSuccess();
+      onBack();
+    } else {
+      const message = Array.isArray(data.message) ? data.message[0] : data.message;
+      setError(message || 'Invalid credentials');
     }
-  };
+  } catch (error) {
+    console.error('Network error:', error);
+    setError('Failed to connect to the server');
+  }
+};
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6 max-w-sm w-full">
