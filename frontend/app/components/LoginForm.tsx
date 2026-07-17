@@ -39,7 +39,7 @@ export default function LoginForm({ onBack, onLoginSuccess }: {
 };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-4 p-6 max-w-sm w-full">
+    <form onSubmit={handleSubmit} className="flex flex-col items-stretch gap-4 p-6 w-full">
       <h2 className="text-2xl font-bold text-white">Login</h2>
       
       <div className="flex flex-col gap-1">

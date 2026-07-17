@@ -85,16 +85,16 @@ export default function HomePage() {
             </button>
           </nav>
         ) : (
-          <nav className="home-navigation" aria-label="Logged-out navigation">
+          <nav className="home-navigation w-full items-stretch" aria-label="Logged-out navigation">
             {view === "login" ? (
-              <div className="animate-fade-in-up w-full max-w-sm">
+              <div className="animate-fade-in-up w-full max-w-md">
                 <LoginForm 
                   onBack={() => setView("home")} 
                   onLoginSuccess={handleLoginSuccess} 
                 />
               </div>
             ) : view === "register" ? (
-              <div className="animate-fade-in-up w-full max-w-sm">
+              <div className="animate-fade-in-up w-full max-w-md">
                 <RegisterForm onBack={() => setView("home")} />
               </div>
             ) : (

@@ -3,7 +3,7 @@ export default function RegisterForm({ onBack }: { onBack: () => void }) {
   // todo: add registration logic
 
   return (
-    <form className="flex flex-col gap-4 p-6 max-w-sm w-full">
+    <form className="flex flex-col items-stretch gap-4 p-6 w-full">
       <h2 className="text-2xl font-bold text-white">Register</h2>
       
       <div className="flex flex-col gap-1">

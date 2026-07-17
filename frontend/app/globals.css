@@ -39,7 +39,7 @@ body {
 }
 
 .home-navigation {
-  @apply flex flex-col items-center gap-4 sm:flex-row;
+  @apply flex flex-col items-center w-full gap-4 sm:flex-row sm:justify-center;
 }
 
 .primary-button {
