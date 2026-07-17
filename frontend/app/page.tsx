@@ -9,6 +9,7 @@ import RegisterForm from "./components/RegisterForm";
 export default function HomePage() {
   const [view, setView] = useState<'home' | 'login' | 'register'>('home');
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
+  const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -88,6 +89,7 @@ export default function HomePage() {
           <nav className="home-navigation w-full items-stretch" aria-label="Logged-out navigation">
             {view === "login" ? (
               <div className="animate-fade-in-up w-full max-w-md">
+                {message && <div className="mb-4 text-emerald-500">{message}</div>}
                 <LoginForm 
                   onBack={() => setView("home")} 
                   onLoginSuccess={handleLoginSuccess} 
@@ -95,7 +97,13 @@ export default function HomePage() {
               </div>
             ) : view === "register" ? (
               <div className="animate-fade-in-up w-full max-w-md">
-                <RegisterForm onBack={() => setView("home")} />
+                <RegisterForm 
+                  onBack={() => setView("home")} 
+                  onRegisterSuccess={(msg: string) => {
+                    setView("login");
+                    setMessage(msg);
+                  }}
+                />
               </div>
             ) : (
               <>

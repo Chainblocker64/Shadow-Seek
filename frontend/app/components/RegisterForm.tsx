@@ -1,6 +1,12 @@
 import { useState } from 'react';
 
-export default function RegisterForm({ onBack }: { onBack: () => void }) {
+export default function RegisterForm({ 
+    onBack, 
+    onRegisterSuccess 
+  }: { 
+    onBack: () => void; 
+    onRegisterSuccess: (msg: string) => void 
+  }) {
   const [formData, setFormData] = useState({ username: '', email: '', password: '' });
   const [error, setError] = useState<string | null>(null);
 
@@ -23,8 +29,7 @@ export default function RegisterForm({ onBack }: { onBack: () => void }) {
       const data = await response.json();
 
       if (response.ok) {
-        // todo: navigate to login form if possible
-        onBack();
+        onRegisterSuccess("Registration successful! Please login.");
       } else {
         const message = Array.isArray(data.message) ? data.message[0] : data.message;
         setError(message || 'Registration failed');
