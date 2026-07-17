@@ -3,6 +3,7 @@
 :root {
   --background: #09090b;
   --foreground: #f4f4f5;
+  --font-body: Arial, Helvetica, sans-serif;
 }
 
 @theme inline {
@@ -12,26 +13,16 @@
   --font-mono: var(--font-geist-mono);
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-.home-page {
-  @apply flex min-h-screen flex-col bg-zinc-950 text-zinc-100;
-}
-
-.home-hero {
+@utility hero {
   @apply mx-auto flex w-full max-w-6xl flex-1 flex-col items-center justify-center px-6 py-16 text-center;
 }
 
-.home-eyebrow {
-  @apply mb-4 text-sm font-semibold uppercase tracking-[0.5em] text-emerald-400;
+@utility primary-button {
+  @apply cursor-pointer rounded-lg bg-emerald-500 px-8 py-3 font-semibold text-zinc-950 transition hover:bg-emerald-400;
 }
 
-.home-title {
-  @apply mb-6 text-5xl font-bold tracking-tight text-white sm:text-7xl;
+@utility secondary-button {
+  @apply cursor-pointer rounded-lg border border-zinc-700 px-8 py-3 font-semibold text-zinc-100 transition hover:border-emerald-400 hover:text-emerald-400;
 }
 
 .home-description {
@@ -46,19 +37,39 @@ body {
   @apply rounded-lg bg-emerald-500 px-8 py-3 font-semibold text-zinc-950 transition hover:bg-emerald-400;
 }
 
-.secondary-button {
-  @apply rounded-lg border border-zinc-700 px-8 py-3 font-semibold text-zinc-100 transition hover:border-emerald-400 hover:text-emerald-400;
-}
-
-.primary-link {
+@utility primary-link {
   @apply rounded-lg bg-emerald-500 px-8 py-3 font-semibold text-zinc-950 transition hover:bg-emerald-400;
 }
 
-.secondary-link {
+@utility secondary-link {
   @apply rounded-lg border border-zinc-700 px-8 py-3 font-semibold text-zinc-100 transition hover:border-emerald-400 hover:text-emerald-400;
 }
 
-.footer {
+@utility room-list-item {
+  @apply flex items-center justify-between gap-4 rounded-lg border border-zinc-700 px-8 py-3 font-semibold text-zinc-100 transition text-left;
+}
+
+@utility room-list-item-waiting {
+  @apply cursor-pointer hover:border-emerald-400 hover:text-emerald-400;
+}
+
+@utility room-list-item-disabled {
+  @apply cursor-not-allowed border-zinc-600 text-zinc-500;
+}
+
+@utility room-status-badge {
+  @apply rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide;
+}
+
+@utility room-status-badge-waiting {
+  @apply bg-emerald-500/20 text-emerald-400;
+}
+
+@utility room-status-badge-full {
+  @apply bg-red-500/20 text-red-400;
+}
+
+@utility footer {
   @apply border-t border-zinc-800 px-6 py-5 text-center text-sm text-zinc-500;
 }
 
@@ -75,4 +86,8 @@ body {
 
 main .animate-fade-in-up {
   animation: fade-in-up 0.3s ease-out forwards;
+}
+
+@utility header {
+  @apply px-6 pt-10 mb-8 text-center text-4xl font-semibold;
 }

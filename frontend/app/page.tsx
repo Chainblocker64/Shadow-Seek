@@ -69,51 +69,71 @@ export default function HomePage() {
     }
 };
 
-  return (
-    <main className="home-page">
-      <section className="home-hero">
-        <p className="home-eyebrow">Multiplayer Stealth Arena</p>
-        <h1 className="home-title">Shadow Seek</h1>
-        <p className="home-description">A dark multiplayer hide-and-seek arena.</p>
+return (
+    <main className="flex min-h-screen flex-col bg-zinc-950 text-zinc-100">
+      {/* Spacer container to center the hero */}
+      <div className="flex flex-grow flex-col items-center justify-center p-6">
+        <section className="home-hero w-full max-w-4xl text-center">
+          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.5em] text-emerald-400">
+            Multiplayer Stealth Arena
+          </p>
 
-        {user ? (
-          <nav className="home-navigation" aria-label="Logged-in navigation">
-            <a className="primary-link" href="/lobby">Lobby</a>
-            <a className="secondary-link" href="/profile">Profile</a>
-            <a className="secondary-link" href="/leaderboard">Leaderboard</a>
-            <button className="secondary-button" type="button" onClick={handleLogout}>
-              Logout
-            </button>
-          </nav>
-        ) : (
-          <nav className="home-navigation w-full items-stretch" aria-label="Logged-out navigation">
-            {view === "login" ? (
-              <div className="animate-fade-in-up w-full max-w-md">
-                {message && <div className="mb-4 text-emerald-500">{message}</div>}
-                <LoginForm 
-                  onBack={() => setView("home")} 
-                  onLoginSuccess={handleLoginSuccess} 
-                />
-              </div>
-            ) : view === "register" ? (
-              <div className="animate-fade-in-up w-full max-w-md">
-                <RegisterForm 
-                  onBack={() => setView("home")} 
-                  onRegisterSuccess={(msg: string) => {
-                    setView("login");
-                    setMessage(msg);
-                  }}
-                />
-              </div>
-            ) : (
-              <>
-                <button className="primary-button" onClick={() => setView("login")}>Login</button>
-                <button className="secondary-link" onClick={() => setView("register")}>Register</button>
-              </>
-            )}
-          </nav>
-        )}
-      </section>
+          <h1 className="mb-6 text-5xl font-bold tracking-tight text-white sm:text-7xl">
+            Shadow Seek
+          </h1>
+
+          <p className="home-description mx-auto">
+            A dark multiplayer hide-and-seek arena.
+          </p>
+
+          {user ? (
+            <nav
+              className="home-navigation mt-8"
+              aria-label="Logged-in navigation"
+            >
+              <a className="primary-link" href="/lobby">Lobby</a>
+              <a className="secondary-link" href="/profile">Profile</a>
+              <a className="secondary-link" href="/leaderboard">Leaderboard</a>
+              <button
+                className="secondary-button"
+                type="button"
+                onClick={handleLogout}
+              >
+                Logout
+              </button>
+            </nav>
+          ) : (
+            <nav className="home-navigation mt-8 w-full flex flex-col items-center gap-4" aria-label="Logged-out navigation">
+              {view === "login" ? (
+                <div className="animate-fade-in-up w-full max-w-md">
+                  {message && <div className="mb-4 text-emerald-500">{message}</div>}
+                  <LoginForm 
+                    onBack={() => setView("home")} 
+                    onLoginSuccess={handleLoginSuccess} 
+                  />
+                </div>
+              ) : view === "register" ? (
+                <div className="animate-fade-in-up w-full max-w-md">
+                  <RegisterForm 
+                    onBack={() => setView("home")} 
+                    onRegisterSuccess={(msg: string) => {
+                      setView("login");
+                      setMessage(msg);
+                    }}
+                  />
+                </div>
+              ) : (
+                <>
+                  <button className="primary-button" onClick={() => setView("login")}>Login</button>
+                  <button className="secondary-link" onClick={() => setView("register")}>Register</button>
+                </>
+              )}
+            </nav>
+          )}
+        </section>
+      </div>
+      
+      {/* Footer stays at the bottom */}
       <Footer />
     </main>
   );
