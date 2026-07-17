@@ -7,6 +7,8 @@ import { User } from './user/entities/user.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MapsModule } from './maps/maps.module';
 import { AuthModule } from './auth/auth.module';
+import { LobbyGateway } from './lobby/lobby.gateway';
+import { LobbyService } from './lobby/lobby.service';
 
 @Module({
   imports: [
@@ -28,6 +30,6 @@ import { AuthModule } from './auth/auth.module';
     AuthModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, LobbyGateway, LobbyService],
 })
 export class AppModule {}
