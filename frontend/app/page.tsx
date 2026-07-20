@@ -5,7 +5,7 @@ import { getAuthenticatedUser, AuthenticatedUser } from './auth';
 import { Footer } from "./components/Footer";
 import LoginForm from "./components/LoginForm";
 import RegisterForm from "./components/RegisterForm";
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 export default function HomePage() {
