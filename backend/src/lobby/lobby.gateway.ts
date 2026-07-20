@@ -6,7 +6,7 @@ import {
 import { Server, Socket } from 'socket.io';
 import { LobbyService } from './lobby.service';
 
-@WebSocketGateway({ cors: { origin: '*' } })
+@WebSocketGateway({ cors: { origin: process.env.FRONTEND_URL } })
 export class LobbyGateway {
   @WebSocketServer()
   server!: Server;
