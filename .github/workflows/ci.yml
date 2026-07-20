@@ -9,41 +9,91 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  frontend-ci:
-    name: Frontend Quality Check
+  detect-changes:
     runs-on: ubuntu-latest
-
-  lint:
-    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.file-changes.outputs.frontend }}
+      backend: ${{ steps.file-changes.outputs.backend }}
     steps:
       - name: Checkout
-        uses: actions/checkout@V7
+        uses: actions/checkout@v7
 
-      - name: Detect Modified Folders
+      - name: Check for modified folders
         id: file-changes
         uses: dorny/paths-filter@v4
         with:
           filters: |
-            frontend: 'frontend/**'
-            backend: 'backend/**'
+            frontend:
+              - 'frontend/**'
+            backend:
+              - 'backend/**'
+
+  frontend-checks:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+  backend-checks:
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.backend == 'true' }}
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
 
       - name: Setup Node
         uses: actions/setup-node@v7
         with:
           node-version: 24
 
-      - name: Run Frontend Checks
-        if: steps.file-changes.outputs.frontend == 'true'
-        run: |
-          cd frontend
-          npm ci
-          npm run lint
-          npm run build
+      - name: Install dependencies
+        run: npm ci
 
-      - name: Run Backend Checks
-        if: steps.file-changes.outputs.backend == 'true'
+      - name: Lint
+        run: npm run lint
+
+      - name: Build
+        run: npm run build
+
+  ci-gatekeeper:
+    needs: [detect-changes, frontend-checks, backend-checks]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify checks
         run: |
-          cd backend
-          npm ci
-          npm run lint
-          npm run build
+          frontend_status="${{ needs.frontend-checks.result }}"
+          backend_status="${{ needs.backend-checks.result }}"
+
+          echo "Frontend status: $frontend_status"
+          echo "Backend status: $backend_status"
+
+          if [ "$frontend_status" = "failure" ] || [ "$backend_status" = "failure" ]; then
+            echo "Error: One or more test suites failed."
+            exit 1
+          fi
+
+          echo "All checks were skipped or successful"
