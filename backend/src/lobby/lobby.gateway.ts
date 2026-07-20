@@ -11,8 +11,6 @@ import { LobbyService } from './lobby.service';
 import { JoinRoomDto } from './dto/join-room.dto';
 
 @WebSocketGateway({ cors: { origin: process.env.FRONTEND_URL } })
-/* Global pipe does not interact correctly with current socket.io version, leading to
-malformed fields being let through, separate definition here makes it work */
 @UsePipes(
   new ValidationPipe({
     whitelist: true,
