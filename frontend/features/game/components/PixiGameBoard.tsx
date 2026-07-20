@@ -1,5 +1,6 @@
 "use client";
 
+import styles from "./PixiGameBoard.module.css";
 import { Application, Assets, Rectangle, Sprite, Texture } from "pixi.js";
 import { useEffect, useRef } from "react";
 import type { GameMap } from "../types/map";
@@ -171,5 +172,5 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
     };
   }, [map]);
 
-  return <div className="pixi-board-container" ref={containerRef} />;
+  return <div className={styles.container} ref={containerRef} />;
 }
