@@ -5,12 +5,16 @@ import { getAuthenticatedUser, AuthenticatedUser } from './auth';
 import { Footer } from "./components/Footer";
 import LoginForm from "./components/LoginForm";
 import RegisterForm from "./components/RegisterForm";
+import { useRouter } from 'next/router';
+import Link from 'next/link';
 
 export default function HomePage() {
   const [view, setView] = useState<'home' | 'login' | 'register'>('home');
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
 
   useEffect(() => {
     let isMounted = true;
@@ -62,12 +66,12 @@ export default function HomePage() {
       });
 
       if (response.ok) {
-        window.location.href = '/'; 
+        router.replace('/');
       }
     } catch (error) {
       console.error('Logout failed', error);
     }
-};
+  };
 
 return (
   <main className="flex min-h-screen flex-col bg-zinc-950 text-zinc-100">
@@ -90,9 +94,9 @@ return (
             className="home-navigation mt-8"
             aria-label="Logged-in navigation"
           >
-            <a className="primary-link" href="/lobby">Lobby</a>
-            <a className="secondary-link" href="/profile">Profile</a>
-            <a className="secondary-link" href="/leaderboard">Leaderboard</a>
+            <Link className="primary-link" href="/lobby">Lobby</Link>
+            <Link className="secondary-link" href="/profile">Profile</Link>
+            <Link className="secondary-link" href="/leaderboard">Leaderboard</Link>
             <button
               className="secondary-button"
               type="button"

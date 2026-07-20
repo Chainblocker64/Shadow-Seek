@@ -7,6 +7,7 @@ export default function LoginForm({ onBack, onLoginSuccess }: {
 
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (error) setError(null);
@@ -14,29 +15,32 @@ export default function LoginForm({ onBack, onLoginSuccess }: {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-  try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(formData),
-      credentials: 'include', 
-    });
+    e.preventDefault();
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData),
+        credentials: 'include', 
+      });
 
-    const data = await response.json();
+      const data = await response.json();
 
-    if (response.ok) {
-      onLoginSuccess();
-      onBack();
-    } else {
-      const message = Array.isArray(data.message) ? data.message[0] : data.message;
-      setError(message || 'Invalid credentials');
+      if (response.ok) {
+        onLoginSuccess();
+        onBack();
+      } else {
+        const message = Array.isArray(data.message) ? data.message[0] : data.message;
+        setError(message || 'Invalid credentials');
+      }
+    } catch (error) {
+      console.error('Network error:', error);
+      setError('Failed to connect to the server');
+    } finally {
+      setIsLoading(false);
     }
-  } catch (error) {
-    console.error('Network error:', error);
-    setError('Failed to connect to the server');
-  }
-};
+  };
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col items-stretch gap-4 p-6 w-full">
@@ -72,10 +76,11 @@ export default function LoginForm({ onBack, onLoginSuccess }: {
 
       <div className="flex gap-2 mt-2">
         <button 
-          type="submit" 
-          className="flex-1 primary-button"
+          type="submit"
+          disabled={isLoading}
+          className="flex-1 primary-button disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Login
+          {isLoading ? 'Logging in...' : 'Login'}
         </button>
         <button 
           type="button" 

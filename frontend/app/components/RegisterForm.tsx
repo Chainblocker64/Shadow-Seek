@@ -9,6 +9,7 @@ export default function RegisterForm({
   }) {
   const [formData, setFormData] = useState({ username: '', email: '', password: '' });
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (error) setError(null);
@@ -17,6 +18,7 @@ export default function RegisterForm({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsLoading(true);
     setError(null);
 
     try {
@@ -37,6 +39,8 @@ export default function RegisterForm({
     } catch (err) {
       console.error('Network error:', err);
       setError('Failed to connect to the server');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -50,6 +54,7 @@ export default function RegisterForm({
           id="username"
           type="text"
           placeholder="Username"
+          value={formData.username}
           className="p-2 bg-zinc-950 border border-zinc-700 rounded text-white focus:ring-1 focus:ring-emerald-500 outline-none"
           required 
         />
@@ -61,6 +66,7 @@ export default function RegisterForm({
           id="email"
           type="email"
           placeholder="Email Address"
+          value={formData.email}
           className="p-2 bg-zinc-950 border border-zinc-700 rounded text-white focus:ring-1 focus:ring-emerald-500 outline-none"
           required 
         />
@@ -72,6 +78,7 @@ export default function RegisterForm({
           id="password"
           type="password"
           placeholder="Password"
+          value={formData.password}
           className="p-2 bg-zinc-950 border border-zinc-700 rounded text-white focus:ring-1 focus:ring-emerald-500 outline-none"
           required 
         />
@@ -84,8 +91,13 @@ export default function RegisterForm({
       )}
 
       <div className="flex gap-2 mt-2">
-        <button type="submit" className="flex-1 primary-button">Register</button>
-        <button type="button" onClick={onBack} className="flex-1 secondary-link">Back</button>
+        <button type="submit" disabled={isLoading} className="flex-1 primary-button disabled:opacity-50 disabled:cursor-not-allowed">
+          {isLoading ? 'Registering...' : 'Register'}
+        </button>
+        
+        <button type="button" onClick={onBack} className="flex-1 secondary-link">
+          Back
+        </button>
       </div>
     </form>
   );
