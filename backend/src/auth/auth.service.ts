@@ -3,7 +3,7 @@ import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { LoginUserDto } from '../user/dto/login-user.dto';
-import { User } from 'src/user/entities/user.entity';
+import { User } from '../user/entities/user.entity';
 
 @Injectable()
 export class AuthService {
@@ -12,13 +12,7 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  /**
-   * user login
-   *
-   * @param loginDto
-   * @returns {}
-   */
-  async login(loginDto: LoginUserDto) {
+  async login(loginDto: LoginUserDto): Promise<{ access_token: string }> {
     const { email, password } = loginDto;
 
     // check for existing email - throw exception if one exists
@@ -42,13 +36,6 @@ export class AuthService {
     };
   }
 
-  /**
-   * checks logged in user credentials
-   *
-   * @param email
-   * @param password
-   * @returns {}
-   */
   async validateUser(
     email: string,
     password: string,

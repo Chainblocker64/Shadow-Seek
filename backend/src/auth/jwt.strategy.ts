@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
 import { Request } from 'express';
@@ -12,6 +12,14 @@ interface RequestWithCookies extends Request {
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor() {
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      new Logger(JwtStrategy.name).error(
+        'FATAL ERROR: JWT_SECRET environment variable is not defined.',
+      );
+      process.exit(1);
+    }
+
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: Request) => {
@@ -19,7 +27,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
           return req.cookies?.access_token ?? null;
         },
       ]),
-      secretOrKey: process.env.JWT_SECRET ?? 'fallback_secret_value',
+      secretOrKey: secret,
     });
   }
 
