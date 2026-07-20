@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { User } from './user/entities/user.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { MapsModule } from './maps/maps.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { MapsModule } from './maps/maps.module';
       migrations: ['dist/migrations/*.js'],
       autoLoadEntities: true,
     }),
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
