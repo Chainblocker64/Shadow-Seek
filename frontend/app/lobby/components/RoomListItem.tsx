@@ -1,14 +1,20 @@
 import { Room } from "../types";
+import { socket } from "@/lib/socket";
 
 export default function RoomListItem({ room }: { room: Room }) {
+  const handleJoinRoom = () => {
+    socket.emit("joinRoom", { roomId: room.id });
+  };
+
   return (
-    <div
+    <button
       className={`room-list-item ${
         room.status === "waiting"
           ? "room-list-item-waiting"
           : "room-list-item-disabled"
       }`}
-      key={room.id}
+      disabled={room.status !== "waiting"}
+      onClick={handleJoinRoom}
     >
       <span>{`Room ${room.id} | Players: ${room.players.length}/${room.maxPlayers} | Map: ${room.map}`}</span>
       <span
@@ -20,6 +26,6 @@ export default function RoomListItem({ room }: { room: Room }) {
       >
         {room.status}
       </span>
-    </div>
+    </button>
   );
 }

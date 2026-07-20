@@ -1,12 +1,28 @@
 import {
+  ConnectedSocket,
+  MessageBody,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
+import { UsePipes, ValidationPipe } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { LobbyService } from './lobby.service';
+import { JoinRoomDto } from './dto/join-room.dto';
 
 @WebSocketGateway({ cors: { origin: process.env.FRONTEND_URL } })
+/* Global pipe does not interact correctly with current socket.io version, leading to
+malformed fields being let through, separate definition here makes it work */
+@UsePipes(
+  new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+    transformOptions: {
+      enableImplicitConversion: true,
+    },
+  }),
+)
 export class LobbyGateway {
   @WebSocketServer()
   server!: Server;
@@ -20,6 +36,15 @@ export class LobbyGateway {
   @SubscribeMessage('createRoom')
   handleCreateRoom({ id: clientId }: Socket) {
     this.lobbyService.createRoom(clientId);
+    this.broadcastRooms();
+  }
+
+  @SubscribeMessage('joinRoom')
+  handleJoinRoom(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: JoinRoomDto,
+  ) {
+    this.lobbyService.addPlayer(client.id, payload.roomId);
     this.broadcastRooms();
   }
 

@@ -33,7 +33,7 @@ export class LobbyService {
     }
 
     //TODO case handling / feedback in server response?
-    if (room.players.length === room.maxPlayers) {
+    if (this.roomIsFull(room)) {
       return;
     }
 
@@ -45,6 +45,10 @@ export class LobbyService {
       ...room,
       players: [...room.players, clientId],
     };
+
+    if (this.roomIsFull(updatedRoom)) {
+      updatedRoom.status = 'full';
+    }
 
     this.rooms.set(roomId, updatedRoom);
   }
@@ -67,5 +71,9 @@ export class LobbyService {
 
   playerHasRoom(clientId: ClientId): boolean {
     return Boolean(this.getPlayerRoom(clientId));
+  }
+
+  roomIsFull(room: Room): boolean {
+    return room.players.length === room.maxPlayers;
   }
 }
