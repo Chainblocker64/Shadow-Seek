@@ -1,5 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { ClientId, Room, RoomId, RoomCollection } from './types';
+import {
+  ClientId,
+  Room,
+  RoomId,
+  RoomCollection,
+  STATUS_WAITING,
+} from './types';
 import { randomUUID } from 'node:crypto';
 
 @Injectable()
@@ -17,7 +23,7 @@ export class LobbyService {
       id: roomId,
       players: [clientId],
       owner: clientId,
-      status: 'waiting',
+      status: STATUS_WAITING,
       maxPlayers: 4,
       map: 'Ancient Forest',
     };
@@ -33,7 +39,7 @@ export class LobbyService {
     }
 
     //TODO case handling / feedback in server response?
-    if (this.roomIsFull(room)) {
+    if (this.roomIsFull(room) || room.status !== STATUS_WAITING) {
       return;
     }
 
