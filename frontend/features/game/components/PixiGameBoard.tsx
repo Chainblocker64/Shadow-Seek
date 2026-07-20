@@ -4,8 +4,9 @@ import { Application, Assets, Rectangle, Sprite, Texture } from "pixi.js";
 import { useEffect, useRef } from "react";
 import type { GameMap } from "../types/map";
 import {
+  baseTileTextureFrames,
+  mapObjectTextureFrames,
   TILE_TEXTURE_SIZE,
-  tileTextureFrames,
 } from "../data/tileTextureFrames";
 
 type PixiGameBoardProps = {
@@ -25,6 +26,7 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
     }
 
     let isDestroyed = false;
+
     let app: Application | null = null;
 
     async function setupPixi() {
@@ -54,7 +56,6 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
       function createTileTexture(frameX: number, frameY: number) {
         return new Texture({
           source: tilesetTexture.source,
-
           frame: new Rectangle(
             frameX,
             frameY,
@@ -62,6 +63,26 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
             TILE_TEXTURE_SIZE,
           ),
         });
+      }
+
+      function createTileSprite(
+        frameX: number,
+        frameY: number,
+        x: number,
+        y: number,
+        tileSize: number,
+      ) {
+        const texture = createTileTexture(frameX, frameY);
+
+        const sprite = new Sprite(texture);
+
+        sprite.x = x;
+        sprite.y = y;
+
+        sprite.width = tileSize;
+        sprite.height = tileSize;
+
+        return sprite;
       }
 
       function renderMap() {
@@ -87,22 +108,40 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
         const offsetX = Math.floor((boardSize - mapWidth) / 2);
         const offsetY = Math.floor((boardSize - mapHeight) / 2);
 
-        map.tiles.forEach((row, y) => {
-          row.forEach((tileType, x) => {
-            const frame = tileTextureFrames[tileType];
+        const baseFrame = baseTileTextureFrames[map.baseTile];
 
-            const tileTexture = createTileTexture(frame.x, frame.y);
+        for (let y = 0; y < map.height; y++) {
+          for (let x = 0; x < map.width; x++) {
+            const tileX = offsetX + x * tileSize;
+            const tileY = offsetY + y * tileSize;
 
-            const tileSprite = new Sprite(tileTexture);
+            const baseSprite = createTileSprite(
+              baseFrame.x,
+              baseFrame.y,
+              tileX,
+              tileY,
+              tileSize,
+            );
 
-            tileSprite.x = offsetX + x * tileSize;
-            tileSprite.y = offsetY + y * tileSize;
+            app.stage.addChild(baseSprite);
+          }
+        }
 
-            tileSprite.width = tileSize;
-            tileSprite.height = tileSize;
+        map.objects.forEach((object) => {
+          const objectFrame = mapObjectTextureFrames[object.type];
 
-            app?.stage.addChild(tileSprite);
-          });
+          const objectX = offsetX + object.x * tileSize;
+          const objectY = offsetY + object.y * tileSize;
+
+          const objectSprite = createTileSprite(
+            objectFrame.x,
+            objectFrame.y,
+            objectX,
+            objectY,
+            tileSize,
+          );
+
+          app?.stage.addChild(objectSprite);
         });
       }
 

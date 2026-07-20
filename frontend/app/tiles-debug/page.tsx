@@ -4,9 +4,9 @@ const TILESET_PATH = "/assets/tiles/dungeon-crawl.png";
 
 const TILE_SIZE = 32;
 
-const COLUMNS = 40;
+const COLUMNS = 60;
 
-const ROWS = 20;
+const ROWS = 40;
 
 function createDebugTiles() {
   const tiles = [];

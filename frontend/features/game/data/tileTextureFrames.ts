@@ -1,26 +1,59 @@
-import type { TileType } from "../types/map";
+import type { BaseTileType, MapObjectType } from "../types/map";
 
 export const TILE_TEXTURE_SIZE = 32;
 
-export const tileTextureFrames: Record<TileType, { x: number; y: number }> = {
+export const baseTileTextureFrames: Record<
+  BaseTileType,
+  { x: number; y: number }
+> = {
   floor: {
-    x: 128,
+    x: 224,
     y: 480,
   },
-  wall: {
-    x: 544,
+  grass: {
+    x: 1760,
     y: 448,
   },
+  dirt: {
+    x: 928,
+    y: 416,
+  },
+  stoneFloor: {
+    x: 576,
+    y: 448,
+  },
+};
+
+export const mapObjectTextureFrames: Record<
+  MapObjectType,
+  { x: number; y: number }
+> = {
+  wall: {
+    x: 768,
+    y: 416,
+  },
   tree: {
-    x: 384,
+    x: 448,
     y: 576,
   },
   rock: {
-    x: 288,
-    y: 488,
+    x: 1312,
+    y: 384,
   },
   spawn: {
-    x: 256,
+    x: 960,
+    y: 480,
+  },
+  bush: {
+    x: 320,
+    y: 192,
+  },
+  chest: {
+    x: 192,
+    y: 32,
+  },
+  water: {
+    x: 896,
     y: 608,
   },
 };
