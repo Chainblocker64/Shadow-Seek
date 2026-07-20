@@ -27,7 +27,6 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
     }
 
     let isDestroyed = false;
-
     let app: Application | null = null;
 
     async function setupPixi() {
@@ -74,12 +73,10 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
         tileSize: number,
       ) {
         const texture = createTileTexture(frameX, frameY);
-
         const sprite = new Sprite(texture);
 
         sprite.x = x;
         sprite.y = y;
-
         sprite.width = tileSize;
         sprite.height = tileSize;
 
@@ -93,11 +90,9 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
 
         const containerWidth = container.clientWidth;
         const containerHeight = container.clientHeight;
-
         const boardSize = Math.min(containerWidth, containerHeight);
 
         app.renderer.resize(boardSize, boardSize);
-
         app.stage.removeChildren();
 
         const tileSize = Math.floor(
@@ -106,6 +101,7 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
 
         const mapWidth = tileSize * map.width;
         const mapHeight = tileSize * map.height;
+
         const offsetX = Math.floor((boardSize - mapWidth) / 2);
         const offsetY = Math.floor((boardSize - mapHeight) / 2);
 
@@ -128,6 +124,23 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
           }
         }
 
+        map.baseOverrides.forEach((baseOverride) => {
+          const overrideFrame = baseTileTextureFrames[baseOverride.type];
+
+          const overrideX = offsetX + baseOverride.x * tileSize;
+          const overrideY = offsetY + baseOverride.y * tileSize;
+
+          const overrideSprite = createTileSprite(
+            overrideFrame.x,
+            overrideFrame.y,
+            overrideX,
+            overrideY,
+            tileSize,
+          );
+
+          app.stage.addChild(overrideSprite);
+        });
+
         map.objects.forEach((object) => {
           const objectFrame = mapObjectTextureFrames[object.type];
 
@@ -142,7 +155,7 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
             tileSize,
           );
 
-          app?.stage.addChild(objectSprite);
+          app.stage.addChild(objectSprite);
         });
       }
 

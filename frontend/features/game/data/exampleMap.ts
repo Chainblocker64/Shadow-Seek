@@ -123,20 +123,25 @@ export const exampleMap: GameMap = {
   baseTile: "grass",
 
   baseOverrides: [
-    // Tempelboden Reihe für Reihe.
-    ...createHorizontalBaseLine("stoneFloor", 8, 8, 16),
-    ...createHorizontalBaseLine("stoneFloor", 9, 8, 16),
-    ...createHorizontalBaseLine("stoneFloor", 10, 8, 16),
-    ...createHorizontalBaseLine("stoneFloor", 11, 8, 16),
-    ...createHorizontalBaseLine("stoneFloor", 12, 8, 16),
-    ...createHorizontalBaseLine("stoneFloor", 13, 8, 16),
-    ...createHorizontalBaseLine("stoneFloor", 14, 8, 16),
-    ...createHorizontalBaseLine("stoneFloor", 15, 8, 16),
+    // Tempelboden Reihe für Tempel links.
+    ...createHorizontalBaseLine("stoneFloor", 5, 4, 7),
+    ...createHorizontalBaseLine("stoneFloor", 6, 4, 7),
+    ...createHorizontalBaseLine("stoneFloor", 7, 4, 7),
+    ...createHorizontalBaseLine("stoneFloor", 8, 4, 7),
+
+    // Tempelboden Reihe für Tempel rechts.
+    ...createHorizontalBaseLine("stoneFloor", 5, 17, 20),
+    ...createHorizontalBaseLine("stoneFloor", 6, 17, 20),
+    ...createHorizontalBaseLine("stoneFloor", 7, 17, 20),
+    ...createHorizontalBaseLine("stoneFloor", 8, 17, 20),
 
     // Dirt-Weg von unten zum Tempel.
-    ...createVerticalBaseLine("dirt", 11, 16, 22),
-    ...createVerticalBaseLine("dirt", 12, 16, 22),
-    ...createVerticalBaseLine("dirt", 13, 16, 22),
+    ...createVerticalBaseLine("dirt", 2, 15, 20),
+    ...createHorizontalBaseLine("dirt", 15, 2, 5),
+    ...createHorizontalBaseLine("dirt", 4, 3, 8),
+    ...createVerticalBaseLine("dirt", 5, 15, 16),
+    ...createHorizontalBaseLine("dirt", 16, 5, 7),
+    ...createVerticalBaseLine("dirt", 7, 9, 16),
 
     // Einzelne zerbrochene Steinplatten.
     ...createBaseTiles("stoneFloor", [
