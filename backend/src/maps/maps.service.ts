@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { GameMap } from './entities/map.entity';
@@ -30,6 +34,8 @@ export class MapsService {
       width,
       height,
       tiles,
+      // TODO: Implement creator when user authentication is implemented
+      creator: null,
     });
 
     const savedMap = await this.mapsRepository.save(map);
@@ -44,6 +50,44 @@ export class MapsService {
       creatorId: null,
       createdAt: savedMap.createdAt,
       updatedAt: savedMap.updatedAt,
+    };
+  }
+
+  async findAll(): Promise<MapResponseDto[]> {
+    const maps = await this.mapsRepository.find();
+
+    return maps.map((map) => ({
+      id: map.id,
+      name: map.name,
+      width: map.width,
+      height: map.height,
+      tiles: map.tiles,
+      // TODO: Implement creatorId when user authentication is implemented
+      creatorId: null,
+      createdAt: map.createdAt,
+      updatedAt: map.updatedAt,
+    }));
+  }
+
+  async findOne(id: number): Promise<MapResponseDto> {
+    const map = await this.mapsRepository.findOne({
+      where: { id },
+    });
+
+    if (!map) {
+      throw new NotFoundException(`Map with ID ${id} not found`);
+    }
+
+    return {
+      id: map.id,
+      name: map.name,
+      width: map.width,
+      height: map.height,
+      tiles: map.tiles,
+      // TODO: Implement creatorId when user authentication is implemented
+      creatorId: null,
+      createdAt: map.createdAt,
+      updatedAt: map.updatedAt,
     };
   }
 }
