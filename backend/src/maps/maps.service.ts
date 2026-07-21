@@ -9,6 +9,7 @@ import { GameMap } from './entities/map.entity';
 import { CreateMapDto } from './dto/create-map.dto';
 import { MapResponseDto } from './dto/map-response.dto';
 import { UpdateMapDto } from './dto/update-map.dto';
+import { MIN_SPAWN_TILES } from './types';
 
 @Injectable()
 export class MapsService {
@@ -19,16 +20,8 @@ export class MapsService {
 
   async create(createMapDto: CreateMapDto): Promise<MapResponseDto> {
     const { name, tiles, height, width } = createMapDto;
-    if (tiles.length === 0 || tiles[0].length === 0) {
-      throw new BadRequestException('Tiles array cannot be empty');
-    }
-    const tilesWidth = tiles[0].length;
-    const tilesHeight = tiles.length;
-    if (tilesWidth !== width || tilesHeight !== height) {
-      throw new BadRequestException(
-        `Tiles dimensions (${tilesWidth}x${tilesHeight}) do not match specified width and height (${createMapDto.width}x${createMapDto.height})`,
-      );
-    }
+    this.validateMapDimensions(tiles, width, height);
+    this.validateSpawnTiles(tiles);
 
     const map = this.mapsRepository.create({
       name,
@@ -109,16 +102,7 @@ export class MapsService {
     const height = updateMapDto.height ?? map.height;
     const tiles = updateMapDto.tiles ?? map.tiles;
 
-    if (tiles.length === 0 || tiles[0].length === 0) {
-      throw new BadRequestException('Tiles array cannot be empty');
-    }
-    const tilesWidth = tiles[0].length;
-    const tilesHeight = tiles.length;
-    if (tilesWidth !== width || tilesHeight !== height) {
-      throw new BadRequestException(
-        `Tiles dimensions (${tilesWidth}x${tilesHeight}) do not match specified width and height (${updateMapDto.width}x${updateMapDto.height})`,
-      );
-    }
+    this.validateMapDimensions(tiles, width, height);
 
     map.name = name;
     map.width = width;
@@ -143,6 +127,35 @@ export class MapsService {
     const result = await this.mapsRepository.delete(id);
     if (!result.affected) {
       throw new NotFoundException(`Map with ID ${id} not found`);
+    }
+  }
+
+  private validateMapDimensions(
+    tiles: string[][],
+    width: number,
+    height: number,
+  ) {
+    if (tiles.length === 0 || tiles[0].length === 0) {
+      throw new BadRequestException('Tiles array cannot be empty');
+    }
+    const tilesWidth = tiles[0].length;
+    const tilesHeight = tiles.length;
+    if (tilesWidth !== width || tilesHeight !== height) {
+      throw new BadRequestException(
+        `Tiles dimensions (${tilesWidth}x${tilesHeight}) do not match specified width and height (${width}x${height})`,
+      );
+    }
+  }
+
+  private validateSpawnTiles(tiles: string[][]) {
+    let spawnCount = 0;
+    for (const row of tiles) {
+      spawnCount += row.filter((tile) => tile === 'spawn').length;
+    }
+    if (spawnCount < MIN_SPAWN_TILES) {
+      throw new BadRequestException(
+        `Map must contain at least ${MIN_SPAWN_TILES} spawn points, but found ${spawnCount}`,
+      );
     }
   }
 }

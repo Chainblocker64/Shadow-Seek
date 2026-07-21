@@ -12,8 +12,8 @@ import {
 } from '@nestjs/common';
 import { CreateMapDto } from './dto/create-map.dto';
 import { MapResponseDto } from './dto/map-response.dto';
-import { UpdateMapDto } from './dto/update-map.dto';
 import { MapsService } from './maps.service';
+import { UpdateMapDto } from './dto/update-map.dto';
 
 @Controller('maps')
 export class MapsController {
