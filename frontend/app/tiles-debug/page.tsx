@@ -1,5 +1,7 @@
 "use client";
 
+import Image from "next/image";
+
 const TILESET_PATH = "/assets/tiles/dungeon-crawl.png";
 
 const TILE_SIZE = 32;
@@ -39,7 +41,7 @@ export default function TilesDebugPage() {
       <div className="mb-6 rounded-lg border border-zinc-800 bg-zinc-900 p-4">
         <p className="mb-3 text-sm text-zinc-400">Path test: {TILESET_PATH}</p>
 
-        <img
+        <Image
           src={TILESET_PATH}
           alt="Dungeon crawl tileset path test"
           className="max-h-40 max-w-full border border-zinc-700 object-contain"
