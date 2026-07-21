@@ -8,6 +8,7 @@ import { Repository } from 'typeorm';
 import { GameMap } from './entities/map.entity';
 import { CreateMapDto } from './dto/create-map.dto';
 import { MapResponseDto } from './dto/map-response.dto';
+import { UpdateMapDto } from './dto/update-map.dto';
 
 @Injectable()
 export class MapsService {
@@ -88,6 +89,53 @@ export class MapsService {
       creatorId: null,
       createdAt: map.createdAt,
       updatedAt: map.updatedAt,
+    };
+  }
+
+  async update(
+    id: number,
+    updateMapDto: UpdateMapDto,
+  ): Promise<MapResponseDto> {
+    const map = await this.mapsRepository.findOne({
+      where: { id },
+    });
+
+    if (!map) {
+      throw new NotFoundException(`Map with ID ${id} not found`);
+    }
+
+    const name = updateMapDto.name ?? map.name;
+    const width = updateMapDto.width ?? map.width;
+    const height = updateMapDto.height ?? map.height;
+    const tiles = updateMapDto.tiles ?? map.tiles;
+
+    if (tiles.length === 0 || tiles[0].length === 0) {
+      throw new BadRequestException('Tiles array cannot be empty');
+    }
+    const tilesWidth = tiles[0].length;
+    const tilesHeight = tiles.length;
+    if (tilesWidth !== width || tilesHeight !== height) {
+      throw new BadRequestException(
+        `Tiles dimensions (${tilesWidth}x${tilesHeight}) do not match specified width and height (${updateMapDto.width}x${updateMapDto.height})`,
+      );
+    }
+
+    map.name = name;
+    map.width = width;
+    map.height = height;
+    map.tiles = tiles;
+
+    const updatedMap = await this.mapsRepository.save(map);
+
+    return {
+      id: updatedMap.id,
+      name: updatedMap.name,
+      width: updatedMap.width,
+      height: updatedMap.height,
+      tiles: updatedMap.tiles,
+      creatorId: null,
+      createdAt: updatedMap.createdAt,
+      updatedAt: updatedMap.updatedAt,
     };
   }
 

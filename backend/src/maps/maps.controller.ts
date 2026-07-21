@@ -7,10 +7,12 @@ import {
   HttpStatus,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
 } from '@nestjs/common';
 import { CreateMapDto } from './dto/create-map.dto';
 import { MapResponseDto } from './dto/map-response.dto';
+import { UpdateMapDto } from './dto/update-map.dto';
 import { MapsService } from './maps.service';
 
 @Controller('maps')
@@ -32,6 +34,14 @@ export class MapsController {
     @Param('id', ParseIntPipe) id: number,
   ): Promise<MapResponseDto> {
     return await this.mapsService.findOne(id);
+  }
+
+  @Patch(':id')
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateMapDto: UpdateMapDto,
+  ): Promise<MapResponseDto> {
+    return await this.mapsService.update(id, updateMapDto);
   }
 
   @Delete(':id')
