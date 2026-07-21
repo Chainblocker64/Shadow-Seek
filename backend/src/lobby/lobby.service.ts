@@ -5,6 +5,7 @@ import {
   RoomId,
   RoomCollection,
   STATUS_WAITING,
+  STATUS_FULL,
 } from './types';
 import { randomUUID } from 'node:crypto';
 
@@ -52,9 +53,30 @@ export class LobbyService {
       players: [...room.players, clientId],
     };
 
-    if (this.roomIsFull(updatedRoom)) {
-      updatedRoom.status = 'full';
+    updatedRoom.status = this.newRoomStatus(updatedRoom);
+
+    this.rooms.set(roomId, updatedRoom);
+  }
+
+  removePlayer(clientId: ClientId) {
+    const room = this.getPlayerRoom(clientId);
+
+    if (!room) {
+      return;
     }
+
+    const roomId = room.id;
+
+    const updatedPlayers = room.players.filter((player) => player !== clientId);
+
+    if (updatedPlayers.length === 0) {
+      this.rooms.delete(roomId);
+      return;
+    }
+
+    const updatedRoom = { ...room, players: updatedPlayers };
+
+    updatedRoom.status = this.newRoomStatus(updatedRoom);
 
     this.rooms.set(roomId, updatedRoom);
   }
@@ -67,10 +89,10 @@ export class LobbyService {
     return this.rooms;
   }
 
-  getPlayerRoom(clientId: ClientId): RoomId | undefined {
+  getPlayerRoom(clientId: ClientId): Room | undefined {
     for (const room of this.rooms.values()) {
       if (room.players.includes(clientId)) {
-        return room.id;
+        return room;
       }
     }
   }
@@ -81,5 +103,9 @@ export class LobbyService {
 
   roomIsFull(room: Room): boolean {
     return room.players.length === room.maxPlayers;
+  }
+
+  newRoomStatus(room: Room) {
+    return this.roomIsFull(room) ? STATUS_FULL : STATUS_WAITING;
   }
 }
