@@ -1,0 +1,109 @@
+.page {
+  --sidebar-width: 14rem;
+  --board-size: min(78vh, calc(100vw - (var(--sidebar-width) * 2) - 8rem));
+
+  min-height: 100vh;
+  padding: 2rem;
+  color: rgb(244 244 245);
+  background: rgb(9 9 11);
+}
+
+.pageTitle {
+  margin-bottom: 1.5rem;
+  text-align: center;
+  font-size: 3rem;
+  font-weight: 800;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: var(--sidebar-width) var(--board-size) var(
+      --sidebar-width
+    );
+  grid-template-rows: var(--board-size);
+  justify-content: center;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.sidebar {
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  justify-content: space-between;
+  border-radius: 1rem;
+  border: 1px solid rgb(63 63 70);
+  background: rgb(24 24 27);
+  padding: 1rem;
+}
+
+.sidebarRight {
+  align-items: stretch;
+}
+
+.playerName {
+  font-weight: 700;
+}
+
+.playerHealth {
+  margin-top: 0.25rem;
+  color: rgb(74 222 128);
+}
+
+.controls {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: rgb(212 212 216);
+}
+
+.boardArea {
+  width: var(--board-size);
+  height: var(--board-size);
+  overflow: hidden;
+  border: 1px solid rgb(63 63 70);
+  background: rgb(24 24 27);
+}
+
+.timer {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: rgb(250 204 21);
+}
+
+.playersRemaining {
+  margin-top: 0.25rem;
+  color: rgb(161 161 170);
+}
+
+.leaveButton {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid rgb(127 29 29);
+  background: rgb(127 29 29);
+  padding: 0.75rem 1rem;
+  font-weight: 700;
+  color: rgb(254 202 202);
+}
+
+@media (max-width: 900px) {
+  .page {
+    --board-size: min(92vw, 70vh);
+    padding: 1rem;
+  }
+
+  .pageTitle {
+    font-size: 2rem;
+  }
+
+  .layout {
+    grid-template-columns: var(--board-size);
+    grid-template-rows: auto var(--board-size) auto;
+    gap: 1rem;
+  }
+
+  .sidebar {
+    height: auto;
+    min-height: 7rem;
+  }
+}
