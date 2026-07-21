@@ -31,6 +31,11 @@ export class LobbyGateway {
     this.broadcastRooms(clientId);
   }
 
+  handleDisconnect({ id: clientId }: Socket) {
+    this.lobbyService.removePlayer(clientId);
+    this.broadcastRooms();
+  }
+
   @SubscribeMessage('createRoom')
   handleCreateRoom({ id: clientId }: Socket) {
     this.lobbyService.createRoom(clientId);
