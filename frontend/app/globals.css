@@ -25,6 +25,18 @@
   @apply cursor-pointer rounded-lg border border-zinc-700 px-8 py-3 font-semibold text-zinc-100 transition hover:border-emerald-400 hover:text-emerald-400;
 }
 
+.home-description {
+  @apply mb-10 max-w-xl text-lg text-zinc-300;
+}
+
+.home-navigation {
+  @apply flex flex-col items-center w-full gap-4 sm:flex-row sm:justify-center;
+}
+
+.primary-button {
+  @apply rounded-lg bg-emerald-500 px-8 py-3 font-semibold text-zinc-950 transition hover:bg-emerald-400;
+}
+
 @utility primary-link {
   @apply rounded-lg bg-emerald-500 px-8 py-3 font-semibold text-zinc-950 transition hover:bg-emerald-400;
 }
@@ -59,6 +71,21 @@
 
 @utility footer {
   @apply border-t border-zinc-800 px-6 py-5 text-center text-sm text-zinc-500;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+main .animate-fade-in-up {
+  animation: fade-in-up 0.3s ease-out forwards;
 }
 
 @utility header {

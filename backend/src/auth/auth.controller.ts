@@ -1,14 +1,64 @@
-import { Controller, Post, Body, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  Get,
+  UseGuards,
+  Request,
+  Res,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { LoginUserDto } from '../user/dto/login-user.dto';
+import { JwtAuthGuard } from './jwt-auth.guard';
+import { JwtPayload } from './types/jwt-payload';
+import { AuthGuard } from '@nestjs/passport';
+import type { Response } from 'express';
+import * as express from 'express';
+import { User } from '../user/entities/user.entity';
 
 @Controller('auth')
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  @HttpCode(HttpStatus.OK)
+  @UseGuards(AuthGuard('local'))
   @Post('login')
-  async login(@Body() loginDto: LoginUserDto) {
-    return this.authService.login(loginDto);
+  @HttpCode(HttpStatus.OK)
+  async login(
+    @Request() req: { user: Omit<User, 'password'> },
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const token = await this.authService.login(req.user);
+
+    // the actual auth token
+    res.cookie('access_token', token.access_token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'lax',
+      maxAge: 3600000, // 1h
+    });
+
+    // simple is_logged_in cookie for the client
+    res.cookie('is_logged_in', 'true', {
+      httpOnly: false,
+      secure: true,
+      sameSite: 'lax',
+    });
+
+    return { message: 'Logged in successfully' };
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  logout(@Res({ passthrough: true }) res: express.Response) {
+    res.clearCookie('access_token');
+    res.clearCookie('is_logged_in');
+    return { message: 'Logged out successfully' };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me')
+  getProfile(@Request() req: { user: JwtPayload }) {
+    return req.user;
   }
 }
