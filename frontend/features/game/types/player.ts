@@ -3,7 +3,7 @@ export type PlayerPosition = {
   y: number;
 };
 
-export type PlayerDirection = "up" | "down" | "left" | "reight";
+export type PlayerDirection = "up" | "down" | "left" | "right";
 
 export type PlayerGameState = {
   id: string;
