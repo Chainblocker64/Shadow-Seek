@@ -10,11 +10,11 @@ import cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  const allowedOrigin = process.env.ALLOWED_ORIGIN;
+  const allowedOrigin = process.env.FRONTEND_URL;
 
   if (!allowedOrigin) {
     new Logger().error(
-      'FATAL ERROR: ALLOWED_ORIGIN environment variable is not defined.',
+      'FATAL ERROR: FRONTEND_URL environment variable is not defined.',
     );
     process.exit(1);
   }
