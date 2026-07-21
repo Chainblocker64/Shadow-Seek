@@ -1,11 +1,15 @@
-import { useState } from 'react';
+"use client";
 
-export default function LoginForm({ onBack, onLoginSuccess }: {
-   onBack: () => void;
-   onLoginSuccess: () => void 
-  }) {
+import { useState } from "react";
 
-  const [formData, setFormData] = useState({ email: '', password: '' });
+export default function LoginForm({
+  onBack,
+  onLoginSuccess,
+}: {
+  onBack: () => void;
+  onLoginSuccess: () => void;
+}) {
+  const [formData, setFormData] = useState({ email: "", password: "" });
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -18,12 +22,15 @@ export default function LoginForm({ onBack, onLoginSuccess }: {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-        credentials: 'include', 
-      });
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/login`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formData),
+          credentials: "include",
+        },
+      );
 
       const data = await response.json();
 
@@ -31,40 +38,45 @@ export default function LoginForm({ onBack, onLoginSuccess }: {
         onLoginSuccess();
         onBack();
       } else {
-        const message = Array.isArray(data.message) ? data.message[0] : data.message;
-        setError(message || 'Invalid credentials');
+        const message = Array.isArray(data.message)
+          ? data.message[0]
+          : data.message;
+        setError(message || "Invalid credentials");
       }
     } catch (error) {
-      console.error('Network error:', error);
-      setError('Failed to connect to the server');
+      console.error("Network error:", error);
+      setError("Failed to connect to the server");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col items-stretch gap-4 p-6 w-full">
+    <form
+      onSubmit={handleSubmit}
+      className="flex flex-col items-stretch gap-4 p-6 w-full"
+    >
       <h2 className="text-2xl font-bold text-white">Login</h2>
-      
+
       <div className="flex flex-col gap-1">
-        <input 
+        <input
           onChange={handleInput}
           id="email"
           type="email"
           placeholder="Email Address"
           className="p-2 bg-zinc-950 border border-zinc-700 rounded text-white focus:ring-1 focus:ring-emerald-500 outline-none"
-          required 
+          required
         />
       </div>
 
       <div className="flex flex-col gap-1">
-        <input 
+        <input
           onChange={handleInput}
           id="password"
           type="password"
           placeholder="Password"
           className="p-2 bg-zinc-950 border border-zinc-700 rounded text-white focus:ring-1 focus:ring-emerald-500 outline-none"
-          required 
+          required
         />
       </div>
 
@@ -75,15 +87,15 @@ export default function LoginForm({ onBack, onLoginSuccess }: {
       )}
 
       <div className="flex gap-2 mt-2">
-        <button 
+        <button
           type="submit"
           disabled={isLoading}
           className="flex-1 primary-button disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isLoading ? 'Logging in...' : 'Login'}
+          {isLoading ? "Logging in..." : "Login"}
         </button>
-        <button 
-          type="button" 
+        <button
+          type="button"
           onClick={onBack}
           className="flex-1 secondary-link"
         >
