@@ -12,12 +12,3 @@ export async function getAuthenticatedUser(): Promise<AuthenticatedUser | null> 
   if (!res.ok) return null;
   return (await res.json()) as Promise<AuthenticatedUser>;
 }
-
-export async function protectPage(): Promise<AuthenticatedUser | null> {
-  const user = await getAuthenticatedUser();
-  if (!user) {
-    window.location.href = "/";
-    return null;
-  }
-  return user;
-}

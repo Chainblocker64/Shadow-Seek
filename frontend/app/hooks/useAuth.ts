@@ -1,5 +1,10 @@
-import { useState, useEffect } from 'react';
-import { getAuthenticatedUser, AuthenticatedUser } from '../auth';
+import { useState, useEffect } from "react";
+import { getAuthenticatedUser, AuthenticatedUser } from "../auth";
+
+const clearLoginCookie = () => {
+  document.cookie =
+    "is_logged_in=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+};
 
 export function useAuth() {
   const [user, setUser] = useState<AuthenticatedUser | null>(null);
@@ -8,27 +13,26 @@ export function useAuth() {
   useEffect(() => {
     let isMounted = true;
 
-    const checkAuth = async () => {
-      const hasCookie = document.cookie.includes('is_logged_in=true');
-      
-      if (!hasCookie) {
-        setLoading(false);
+    const verifyAuth = async () => {
+      if (!document.cookie.includes("is_logged_in=true")) {
+        if (isMounted) setLoading(false);
         return;
       }
 
       try {
         const userData = await getAuthenticatedUser();
-        if (isMounted) {
-          if (!userData) {
-            document.cookie = 'is_logged_in=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-            setUser(null);
-          } else {
-            setUser(userData);
-          }
+
+        if (!isMounted) return;
+
+        if (!userData) {
+          clearLoginCookie();
+          setUser(null);
+        } else {
+          setUser(userData);
         }
-      } catch (err) {
+      } catch {
         if (isMounted) {
-          document.cookie = 'is_logged_in=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+          clearLoginCookie();
           setUser(null);
         }
       } finally {
@@ -38,8 +42,11 @@ export function useAuth() {
       }
     };
 
-    checkAuth();
-    return () => { isMounted = false; };
+    verifyAuth();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return { user, loading };
