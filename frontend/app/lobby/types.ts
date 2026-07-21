@@ -1,11 +1,14 @@
-export type ClientID = string;
-export type Status = "waiting" | "full";
+import type { UUID } from "node:crypto";
+
+export type ClientId = string;
+export type RoomId = UUID;
+export type RoomStatus = "waiting" | "full";
 
 export interface Room {
-  id: number;
-  players: ClientID[];
-  owner: ClientID;
-  status: Status;
+  id: RoomId;
+  players: ClientId[];
+  owner: ClientId;
+  status: RoomStatus;
   maxPlayers: number;
   map: string;
 }
