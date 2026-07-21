@@ -1,7 +1,10 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Post,
@@ -29,5 +32,11 @@ export class MapsController {
     @Param('id', ParseIntPipe) id: number,
   ): Promise<MapResponseDto> {
     return await this.mapsService.findOne(id);
+  }
+
+  @Delete(':id')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
+    await this.mapsService.delete(id);
   }
 }

@@ -90,4 +90,11 @@ export class MapsService {
       updatedAt: map.updatedAt,
     };
   }
+
+  async delete(id: number): Promise<void> {
+    const result = await this.mapsRepository.delete(id);
+    if (!result.affected) {
+      throw new NotFoundException(`Map with ID ${id} not found`);
+    }
+  }
 }
