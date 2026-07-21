@@ -138,7 +138,7 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
             tileSize,
           );
 
-          app.stage.addChild(overrideSprite);
+          app?.stage.addChild(overrideSprite);
         });
 
         map.objects.forEach((object) => {
@@ -155,7 +155,7 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
             tileSize,
           );
 
-          app.stage.addChild(objectSprite);
+          app?.stage.addChild(objectSprite);
         });
       }
 
