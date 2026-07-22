@@ -1,76 +1,54 @@
-"use client";
-
-import { useState } from "react";
+import { cookies } from "next/headers";
 import { Footer } from "./components/Footer";
+import HomeClientWrapper from "./components/HomeClientWrapper";
+import { AuthenticatedUser } from "./auth";
 
-export default function HomePage() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+export default async function HomePage() {
+  const cookieStore = await cookies();
+  const hasCookie = cookieStore.get("is_logged_in");
 
-  function handleLogin() {
-    setIsLoggedIn(true);
-  }
+  let user: AuthenticatedUser | null = null;
 
-  function handleLogout() {
-    setIsLoggedIn(false);
+  if (hasCookie) {
+    try {
+      const response = await fetch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/me`,
+        {
+          headers: {
+            Cookie: cookieStore.toString(),
+          },
+          cache: "no-store",
+          next: { revalidate: 0 },
+        },
+      );
+
+      if (response.ok) {
+        user = await response.json();
+      }
+    } catch (error) {
+      console.error("Failed to fetch user on server:", error);
+    }
   }
 
   return (
     <main className="flex min-h-screen flex-col bg-zinc-950 text-zinc-100">
-      <section className="hero">
-        <p className="mb-4 text-sm font-semibold uppercase tracking-[0.5em] text-emerald-400">
-          Multiplayer Stealth Arena
-        </p>
+      <div className="flex flex-grow flex-col items-center justify-center p-6">
+        <section className="home-hero w-full max-w-4xl text-center">
+          <p className="mb-4 text-sm font-semibold uppercase tracking-[0.5em] text-emerald-400">
+            Multiplayer Stealth Arena
+          </p>
 
-        <h1 className="mb-6 text-5xl font-bold tracking-tight text-white sm:text-7xl">
-          Shadow Seek
-        </h1>
+          <h1 className="mb-6 text-5xl font-bold tracking-tight text-white sm:text-7xl">
+            Shadow Seek
+          </h1>
 
-        <p className="mb-10 max-w-xl text-lg text-zinc-300">
-          A dark multiplayer hide-and-seek arena.
-        </p>
+          <p className="home-description mx-auto">
+            A dark multiplayer hide-and-seek arena.
+          </p>
 
-        {isLoggedIn ? (
-          <nav
-            className="flex flex-col items-center gap-4 sm:flex-row"
-            aria-label="Logged-in navigation"
-          >
-            <a className="primary-link" href="/lobby">
-              Lobby
-            </a>
-
-            <a className="secondary-link" href="/profile">
-              Profile
-            </a>
-
-            <a className="secondary-link" href="/leaderboard">
-              Leaderboard
-            </a>
-
-            <button
-              className="secondary-button"
-              type="button"
-              onClick={handleLogout}
-            >
-              Logout
-            </button>
-          </nav>
-        ) : (
-          <nav className="home-navigation" aria-label="Logged-out navigation">
-            <button
-              className="primary-button"
-              type="button"
-              onClick={handleLogin}
-            >
-              Login
-            </button>
-
-            <a className="secondary-link" href="/register">
-              Register
-            </a>
-          </nav>
-        )}
-      </section>
-
+          <HomeClientWrapper user={user} />
+        </section>
+      </div>
       <Footer />
     </main>
   );
