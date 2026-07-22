@@ -1,17 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { WAITING } from './consts';
-import type { GameState, Position, ValidationMap } from './types';
+import type { GameState, Position, GameMap } from './types';
 import type { ClientId, RoomId } from '../shared/types';
 
 @Injectable()
 export class GameService {
   private readonly games = new Map<RoomId, GameState>();
 
-  createGame(
-    roomId: RoomId,
-    playerIds: ClientId[],
-    map: ValidationMap,
-  ): GameState {
+  createGame(roomId: RoomId, playerIds: ClientId[], map: GameMap): GameState {
     const spawnPositions = this.getSpawnPositions(map);
 
     if (spawnPositions.length < playerIds.length) {
@@ -39,7 +35,7 @@ export class GameService {
     return this.games.get(roomId);
   }
 
-  private getSpawnPositions(map: ValidationMap): Position[] {
+  private getSpawnPositions(map: GameMap): Position[] {
     return map.objects
       .filter((object) => object.type === 'spawn')
       .map(({ x, y }) => ({ x, y }));

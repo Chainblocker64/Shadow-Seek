@@ -1,8 +1,8 @@
 import { canMoveToPosition } from './movement-validation';
-import type { ValidationMap } from '../types';
+import type { GameMap } from '../types';
 
 describe('canMoveToPosition', () => {
-  const testMap: ValidationMap = {
+  const testMap: GameMap = {
     width: 5,
     height: 5,
     baseTile: 'floor',

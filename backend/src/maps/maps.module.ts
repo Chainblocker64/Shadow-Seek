@@ -6,7 +6,7 @@ import { MapsService } from './maps.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([GameMap])],
-  exports: [TypeOrmModule],
+  exports: [TypeOrmModule, MapsService],
   providers: [MapsService],
   controllers: [MapsController],
 })

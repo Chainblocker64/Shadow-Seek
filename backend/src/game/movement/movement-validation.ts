@@ -1,8 +1,8 @@
-import { ValidationMap, Position } from '../types';
+import { GameMap, Position } from '../types';
 import { WALKABLE_OBJECT_TYPES, BLOCKING_OBJECT_TYPES } from '../consts';
 
 export function canMoveToPosition(
-  map: ValidationMap,
+  map: GameMap,
   targetPosition: Position,
 ): boolean {
   const isOutsideMap =

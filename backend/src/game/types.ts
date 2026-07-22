@@ -13,21 +13,26 @@ export type Player = {
   position: Position;
 };
 
-export type ValidationMap = {
+export type GameMap = {
   width: number;
   height: number;
   baseTile: BaseTileType;
+  baseOverrides: BaseTileOverride[];
   objects: MapObject[];
 };
 
 export type GameState = {
   roomId: RoomId;
   status: Status;
-  map: ValidationMap;
+  map: GameMap;
   players: Player[];
 };
 
 export type BaseTileType = 'floor' | 'grass' | 'dirt' | 'stoneFloor';
+
+export type BaseTileOverride = Position & {
+  type: BaseTileType;
+};
 
 export type ObjectType =
   'wall' | 'tree' | 'rock' | 'spawn' | 'bush' | 'chest' | 'water';

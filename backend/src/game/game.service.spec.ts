@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { randomUUID } from 'node:crypto';
 import { GameService } from './game.service';
 import { WAITING } from './consts';
-import type { ValidationMap } from './types';
+import type { GameMap } from './types';
 
 describe('GameService', () => {
   let service: GameService;
@@ -21,7 +21,7 @@ describe('GameService', () => {
 
   it('creates a waiting game and assigns each player a spawn position', () => {
     const roomId = randomUUID();
-    const map: ValidationMap = {
+    const map: GameMap = {
       width: 4,
       height: 4,
       baseTile: 'floor',
@@ -48,7 +48,7 @@ describe('GameService', () => {
 
   it('rejects a game when there are not enough spawn positions', () => {
     const roomId = randomUUID();
-    const map: ValidationMap = {
+    const map: GameMap = {
       width: 4,
       height: 4,
       baseTile: 'floor',
