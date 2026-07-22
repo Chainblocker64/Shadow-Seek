@@ -28,14 +28,30 @@ export type GameState = {
   players: Player[];
 };
 
-export type BaseTileType = 'floor' | 'grass' | 'dirt' | 'stoneFloor';
+export const BASE_TILE_TYPES = [
+  'floor',
+  'grass',
+  'dirt',
+  'stoneFloor',
+] as const;
+
+export type BaseTileType = (typeof BASE_TILE_TYPES)[number];
 
 export type BaseTileOverride = Position & {
   type: BaseTileType;
 };
 
-export type ObjectType =
-  'wall' | 'tree' | 'rock' | 'spawn' | 'bush' | 'chest' | 'water';
+export const OBJECT_TYPES = [
+  'wall',
+  'tree',
+  'rock',
+  'spawn',
+  'bush',
+  'chest',
+  'water',
+] as const;
+
+export type ObjectType = (typeof OBJECT_TYPES)[number];
 
 export type MapObject = Position & {
   type: ObjectType;
