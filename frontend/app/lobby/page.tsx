@@ -3,10 +3,12 @@
 import { useEffect, useState } from "react";
 import RoomList from "./components/RoomList";
 import { socket } from "@/lib/socket";
-import { Room } from "./types";
+import { Room, RoomId } from "./types";
+import GameRoom from "./components/GameRoom";
 
 export default function Lobby() {
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [joinedRoom, setJoinedRoom] = useState<RoomId | null>(null);
 
   useEffect(() => {
     socket.connect();
@@ -15,10 +17,21 @@ export default function Lobby() {
       setRooms(rooms);
     };
 
+    const onRoomsJoined = (roomId: RoomId) => {
+      setJoinedRoom(roomId);
+    };
+
+    const onRoomsLeft = () => {
+      setJoinedRoom(null);
+    };
+
     socket.on("rooms:sync", onRoomsSync);
+    socket.on("rooms:joined", onRoomsJoined);
+    socket.on("rooms:left", onRoomsLeft);
 
     return () => {
       socket.off("rooms:sync", onRoomsSync);
+      socket.off("rooms:joined", onRoomsJoined);
       socket.disconnect();
     };
   }, []);
@@ -27,11 +40,21 @@ export default function Lobby() {
     socket.emit("createRoom");
   };
 
+  const handleLeaveRoom = () => {
+    socket.emit("leaveRoom");
+  };
+
   return (
     <main className="flex w-full flex-1 flex-col items-center px-6 py-10">
       <div className="flex w-full max-w-6xl flex-1 flex-col px-6 py-8 sm:px-10">
         <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col">
-          <RoomList handleCreateRoom={handleCreateRoom} rooms={rooms} />
+          <div className="relative px-4 sm:px-6 lg:px-8 py-8 outline outline-white/30 rounded-3xl flex flex-1 flex-col">
+            {joinedRoom ? (
+              <GameRoom handleLeaveRoom={handleLeaveRoom} />
+            ) : (
+              <RoomList handleCreateRoom={handleCreateRoom} rooms={rooms} />
+            )}
+          </div>
         </div>
       </div>
     </main>

@@ -9,7 +9,7 @@ export default function RoomList({
   handleCreateRoom: () => void;
 }) {
   return (
-    <div className="relative px-4 sm:px-6 lg:px-8 py-8 outline outline-white/30 rounded-3xl flex flex-1 flex-col">
+    <>
       <div className="mb-6 flex items-center justify-between lg:justify-center">
         <p className="text-lg font-semibold">Join room</p>
         {/* "Create game" button for small screens, inside the room list window */}
@@ -25,6 +25,6 @@ export default function RoomList({
       >
         Create Game
       </button>
-    </div>
+    </>
   );
 }

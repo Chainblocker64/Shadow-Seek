@@ -13,7 +13,7 @@ import { randomUUID } from 'node:crypto';
 export class LobbyService {
   private readonly rooms: RoomCollection = new Map<RoomId, Room>();
 
-  createRoom(clientId: ClientId) {
+  createRoom(clientId: ClientId): RoomId | undefined {
     if (this.playerHasRoom(clientId)) {
       return;
     }
@@ -30,6 +30,7 @@ export class LobbyService {
     };
 
     this.rooms.set(roomId, room);
+    return roomId;
   }
 
   addPlayer(clientId: ClientId, roomId: RoomId) {

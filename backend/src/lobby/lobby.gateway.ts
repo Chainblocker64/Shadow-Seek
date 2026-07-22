@@ -38,8 +38,14 @@ export class LobbyGateway {
 
   @SubscribeMessage('createRoom')
   handleCreateRoom({ id: clientId }: Socket) {
-    this.lobbyService.createRoom(clientId);
+    const roomId = this.lobbyService.createRoom(clientId);
+
+    if (!roomId) {
+      return;
+    }
+
     this.broadcastRooms();
+    this.server.to(clientId).emit('rooms:joined', roomId);
   }
 
   @SubscribeMessage('joinRoom')
@@ -47,7 +53,18 @@ export class LobbyGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: JoinRoomDto,
   ) {
-    this.lobbyService.addPlayer(client.id, payload.roomId);
+    const clientId = client.id;
+    const roomId = payload.roomId;
+
+    this.lobbyService.addPlayer(clientId, roomId);
+    this.server.to(clientId).emit('rooms:joined', roomId);
+    this.broadcastRooms();
+  }
+
+  @SubscribeMessage('leaveRoom')
+  handleLeaveRoom({ id: clientId }: Socket) {
+    this.lobbyService.removePlayer(clientId);
+    this.server.to(clientId).emit('rooms:left');
     this.broadcastRooms();
   }
 
