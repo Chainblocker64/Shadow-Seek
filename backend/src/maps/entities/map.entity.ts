@@ -7,6 +7,11 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { User } from '../../user/entities/user.entity';
+import type {
+  BaseTileType,
+  BaseTileOverride,
+  MapObject,
+} from '../../game/types';
 
 @Entity('maps')
 export class GameMap {
@@ -22,8 +27,14 @@ export class GameMap {
   @Column()
   height!: number;
 
+  @Column()
+  baseTile!: BaseTileType;
+
   @Column({ type: 'jsonb' })
-  tiles!: string[][];
+  baseOverrides!: BaseTileOverride[];
+
+  @Column({ type: 'jsonb' })
+  objects!: MapObject[];
 
   @ManyToOne(() => User, { nullable: true })
   creator!: User | null;
