@@ -1,0 +1,161 @@
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { GameMap } from './entities/map.entity';
+import { CreateMapDto } from './dto/create-map.dto';
+import { MapResponseDto } from './dto/map-response.dto';
+import { UpdateMapDto } from './dto/update-map.dto';
+import { MIN_SPAWN_TILES } from './types';
+
+@Injectable()
+export class MapsService {
+  constructor(
+    @InjectRepository(GameMap)
+    private mapsRepository: Repository<GameMap>,
+  ) {}
+
+  async create(createMapDto: CreateMapDto): Promise<MapResponseDto> {
+    const { name, tiles, height, width } = createMapDto;
+    this.validateMapDimensions(tiles, width, height);
+    this.validateSpawnTiles(tiles);
+
+    const map = this.mapsRepository.create({
+      name,
+      width,
+      height,
+      tiles,
+      // TODO: Implement creator when user authentication is implemented
+      creator: null,
+    });
+
+    const savedMap = await this.mapsRepository.save(map);
+
+    return {
+      id: savedMap.id,
+      name: savedMap.name,
+      width: savedMap.width,
+      height: savedMap.height,
+      tiles: savedMap.tiles,
+      // TODO: Implement creatorId when user authentication is implemented
+      creatorId: null,
+      createdAt: savedMap.createdAt,
+      updatedAt: savedMap.updatedAt,
+    };
+  }
+
+  async findAll(): Promise<MapResponseDto[]> {
+    const maps = await this.mapsRepository.find();
+
+    return maps.map((map) => ({
+      id: map.id,
+      name: map.name,
+      width: map.width,
+      height: map.height,
+      tiles: map.tiles,
+      // TODO: Implement creatorId when user authentication is implemented
+      creatorId: null,
+      createdAt: map.createdAt,
+      updatedAt: map.updatedAt,
+    }));
+  }
+
+  async findOne(id: number): Promise<MapResponseDto> {
+    const map = await this.mapsRepository.findOne({
+      where: { id },
+    });
+
+    if (!map) {
+      throw new NotFoundException(`Map with ID ${id} not found`);
+    }
+
+    return {
+      id: map.id,
+      name: map.name,
+      width: map.width,
+      height: map.height,
+      tiles: map.tiles,
+      // TODO: Implement creatorId when user authentication is implemented
+      creatorId: null,
+      createdAt: map.createdAt,
+      updatedAt: map.updatedAt,
+    };
+  }
+
+  async update(
+    id: number,
+    updateMapDto: UpdateMapDto,
+  ): Promise<MapResponseDto> {
+    const map = await this.mapsRepository.findOne({
+      where: { id },
+    });
+
+    if (!map) {
+      throw new NotFoundException(`Map with ID ${id} not found`);
+    }
+
+    const name = updateMapDto.name ?? map.name;
+    const width = updateMapDto.width ?? map.width;
+    const height = updateMapDto.height ?? map.height;
+    const tiles = updateMapDto.tiles ?? map.tiles;
+
+    this.validateMapDimensions(tiles, width, height);
+
+    map.name = name;
+    map.width = width;
+    map.height = height;
+    map.tiles = tiles;
+
+    const updatedMap = await this.mapsRepository.save(map);
+
+    return {
+      id: updatedMap.id,
+      name: updatedMap.name,
+      width: updatedMap.width,
+      height: updatedMap.height,
+      tiles: updatedMap.tiles,
+      creatorId: null,
+      createdAt: updatedMap.createdAt,
+      updatedAt: updatedMap.updatedAt,
+    };
+  }
+
+  async delete(id: number): Promise<void> {
+    const result = await this.mapsRepository.delete(id);
+    if (!result.affected) {
+      throw new NotFoundException(`Map with ID ${id} not found`);
+    }
+  }
+
+  private validateMapDimensions(
+    tiles: string[][],
+    width: number,
+    height: number,
+  ) {
+    if (tiles.length === 0 || tiles[0].length === 0) {
+      throw new BadRequestException('Tiles array cannot be empty');
+    }
+    const tilesWidth = tiles[0].length;
+    const tilesHeight = tiles.length;
+    if (tilesWidth !== width || tilesHeight !== height) {
+      throw new BadRequestException(
+        `Tiles dimensions (${tilesWidth}x${tilesHeight}) do not match specified width and height (${width}x${height})`,
+      );
+    }
+  }
+
+  private validateSpawnTiles(tiles: string[][]) {
+    let spawnCount = 0;
+    for (const row of tiles) {
+      spawnCount += row.filter((tile) => tile === 'spawn').length;
+    }
+    if (spawnCount < MIN_SPAWN_TILES) {
+      throw new BadRequestException(
+        `Map must contain at least ${MIN_SPAWN_TILES} spawn points, but found ${spawnCount}`,
+      );
+    }
+  }
+}
