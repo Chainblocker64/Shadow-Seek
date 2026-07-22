@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import RoomList from "./components/RoomList";
 import { socket } from "@/lib/socket";
-import { Room, RoomId } from "./types";
+import { Room } from "./types";
 import GameRoom from "./components/GameRoom";
 
 export default function Lobby() {
   const [rooms, setRooms] = useState<Room[]>([]);
-  const [joinedRoom, setJoinedRoom] = useState<RoomId | null>(null);
+  const [joinedRoom, setJoinedRoom] = useState<Room | undefined>(undefined);
 
   useEffect(() => {
     socket.connect();
@@ -17,12 +17,12 @@ export default function Lobby() {
       setRooms(rooms);
     };
 
-    const onRoomsJoined = (roomId: RoomId) => {
-      setJoinedRoom(roomId);
+    const onRoomsJoined = (room: Room) => {
+      setJoinedRoom(room);
     };
 
     const onRoomsLeft = () => {
-      setJoinedRoom(null);
+      setJoinedRoom(undefined);
     };
 
     socket.on("rooms:sync", onRoomsSync);
@@ -50,7 +50,7 @@ export default function Lobby() {
         <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col">
           <div className="relative px-4 sm:px-6 lg:px-8 py-8 outline outline-white/30 rounded-3xl flex flex-1 flex-col">
             {joinedRoom ? (
-              <GameRoom handleLeaveRoom={handleLeaveRoom} />
+              <GameRoom room={joinedRoom} handleLeaveRoom={handleLeaveRoom} />
             ) : (
               <RoomList handleCreateRoom={handleCreateRoom} rooms={rooms} />
             )}

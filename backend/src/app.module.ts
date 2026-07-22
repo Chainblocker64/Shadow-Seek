@@ -9,6 +9,7 @@ import { MapsModule } from './maps/maps.module';
 import { AuthModule } from './auth/auth.module';
 import { LobbyGateway } from './lobby/lobby.gateway';
 import { LobbyService } from './lobby/lobby.service';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { LobbyService } from './lobby/lobby.service';
       autoLoadEntities: true,
     }),
     AuthModule,
+    EventEmitterModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [AppService, LobbyGateway, LobbyService],

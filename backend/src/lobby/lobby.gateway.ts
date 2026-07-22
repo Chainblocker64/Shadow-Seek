@@ -9,6 +9,7 @@ import { UsePipes, ValidationPipe } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { LobbyService } from './lobby.service';
 import { JoinRoomDto } from './dto/join-room.dto';
+import { OnEvent } from '@nestjs/event-emitter';
 
 @WebSocketGateway({ cors: { origin: process.env.FRONTEND_URL } })
 @UsePipes(
@@ -33,19 +34,17 @@ export class LobbyGateway {
 
   handleDisconnect({ id: clientId }: Socket) {
     this.lobbyService.removePlayer(clientId);
-    this.broadcastRooms();
   }
 
   @SubscribeMessage('createRoom')
   handleCreateRoom({ id: clientId }: Socket) {
-    const roomId = this.lobbyService.createRoom(clientId);
+    const room = this.lobbyService.createRoom(clientId);
 
-    if (!roomId) {
+    if (!room) {
       return;
     }
 
-    this.broadcastRooms();
-    this.server.to(clientId).emit('rooms:joined', roomId);
+    this.server.to(clientId).emit('rooms:joined', room);
   }
 
   @SubscribeMessage('joinRoom')
@@ -56,18 +55,27 @@ export class LobbyGateway {
     const clientId = client.id;
     const roomId = payload.roomId;
 
-    this.lobbyService.addPlayer(clientId, roomId);
-    this.server.to(clientId).emit('rooms:joined', roomId);
-    this.broadcastRooms();
+    const room = this.lobbyService.addPlayer(clientId, roomId);
+
+    if (!room) {
+      return;
+    }
+
+    this.server.to(clientId).emit('rooms:joined', room);
   }
 
   @SubscribeMessage('leaveRoom')
   handleLeaveRoom({ id: clientId }: Socket) {
-    this.lobbyService.removePlayer(clientId);
+    const roomModified = this.lobbyService.removePlayer(clientId);
+
+    if (!roomModified) {
+      return;
+    }
+
     this.server.to(clientId).emit('rooms:left');
-    this.broadcastRooms();
   }
 
+  @OnEvent('rooms.broadcast')
   broadcastRooms(target: string = '') {
     const rooms = this.lobbyService.getRooms();
 

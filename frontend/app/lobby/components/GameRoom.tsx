@@ -1,11 +1,15 @@
+import { Room } from "../types";
+
 const mockRoomName = "Room XYZ";
 const mockMaxPlayers = 4;
 const mockMap = "Forest";
 const mockPlayers = ["Sergey", "Marcel", "Keno", "Chris"];
 
 export default function GameRoom({
+  room,
   handleLeaveRoom,
 }: {
+  room: Room;
   handleLeaveRoom: () => void;
 }) {
   return (
