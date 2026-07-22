@@ -19,15 +19,18 @@ export class MapsService {
   ) {}
 
   async create(createMapDto: CreateMapDto): Promise<MapResponseDto> {
-    const { name, tiles, height, width } = createMapDto;
-    this.validateMapDimensions(tiles, width, height);
-    this.validateSpawnTiles(tiles);
+    const { name, baseTile, baseOverrides, objects, height, width } =
+      createMapDto;
+    this.validateCoordinates(width, height, baseOverrides, objects);
+    this.validateSpawnTiles(objects);
 
     const map = this.mapsRepository.create({
       name,
       width,
       height,
-      tiles,
+      baseTile,
+      baseOverrides,
+      objects,
       // TODO: Implement creator when user authentication is implemented
       creator: null,
     });
@@ -39,7 +42,9 @@ export class MapsService {
       name: savedMap.name,
       width: savedMap.width,
       height: savedMap.height,
-      tiles: savedMap.tiles,
+      baseTile: savedMap.baseTile,
+      baseOverrides: savedMap.baseOverrides,
+      objects: savedMap.objects,
       // TODO: Implement creatorId when user authentication is implemented
       creatorId: null,
       createdAt: savedMap.createdAt,
@@ -55,7 +60,9 @@ export class MapsService {
       name: map.name,
       width: map.width,
       height: map.height,
-      tiles: map.tiles,
+      baseTile: map.baseTile,
+      baseOverrides: map.baseOverrides,
+      objects: map.objects,
       // TODO: Implement creatorId when user authentication is implemented
       creatorId: null,
       createdAt: map.createdAt,
@@ -77,8 +84,33 @@ export class MapsService {
       name: map.name,
       width: map.width,
       height: map.height,
-      tiles: map.tiles,
+      baseTile: map.baseTile,
+      baseOverrides: map.baseOverrides,
+      objects: map.objects,
       // TODO: Implement creatorId when user authentication is implemented
+      creatorId: null,
+      createdAt: map.createdAt,
+      updatedAt: map.updatedAt,
+    };
+  }
+
+  async findOneByName(name: string): Promise<MapResponseDto> {
+    const map = await this.mapsRepository.findOne({
+      where: { name },
+    });
+
+    if (!map) {
+      throw new NotFoundException(`Map with name "${name}" not found`);
+    }
+
+    return {
+      id: map.id,
+      name: map.name,
+      width: map.width,
+      height: map.height,
+      baseTile: map.baseTile,
+      baseOverrides: map.baseOverrides,
+      objects: map.objects,
       creatorId: null,
       createdAt: map.createdAt,
       updatedAt: map.updatedAt,
@@ -100,14 +132,19 @@ export class MapsService {
     const name = updateMapDto.name ?? map.name;
     const width = updateMapDto.width ?? map.width;
     const height = updateMapDto.height ?? map.height;
-    const tiles = updateMapDto.tiles ?? map.tiles;
+    const baseTile = updateMapDto.baseTile ?? map.baseTile;
+    const baseOverrides = updateMapDto.baseOverrides ?? map.baseOverrides;
+    const objects = updateMapDto.objects ?? map.objects;
 
-    this.validateMapDimensions(tiles, width, height);
+    this.validateCoordinates(width, height, baseOverrides, objects);
+    this.validateSpawnTiles(objects);
 
     map.name = name;
     map.width = width;
     map.height = height;
-    map.tiles = tiles;
+    map.baseTile = baseTile;
+    map.baseOverrides = baseOverrides;
+    map.objects = objects;
 
     const updatedMap = await this.mapsRepository.save(map);
 
@@ -116,7 +153,9 @@ export class MapsService {
       name: updatedMap.name,
       width: updatedMap.width,
       height: updatedMap.height,
-      tiles: updatedMap.tiles,
+      baseTile: updatedMap.baseTile,
+      baseOverrides: updatedMap.baseOverrides,
+      objects: updatedMap.objects,
       creatorId: null,
       createdAt: updatedMap.createdAt,
       updatedAt: updatedMap.updatedAt,
@@ -130,28 +169,25 @@ export class MapsService {
     }
   }
 
-  private validateMapDimensions(
-    tiles: string[][],
+  private validateCoordinates(
     width: number,
     height: number,
+    baseOverrides: Array<{ x: number; y: number }>,
+    objects: Array<{ x: number; y: number }>,
   ) {
-    if (tiles.length === 0 || tiles[0].length === 0) {
-      throw new BadRequestException('Tiles array cannot be empty');
-    }
-    const tilesWidth = tiles[0].length;
-    const tilesHeight = tiles.length;
-    if (tilesWidth !== width || tilesHeight !== height) {
-      throw new BadRequestException(
-        `Tiles dimensions (${tilesWidth}x${tilesHeight}) do not match specified width and height (${width}x${height})`,
-      );
+    for (const tile of [...baseOverrides, ...objects]) {
+      if (tile.x < 0 || tile.y < 0 || tile.x >= width || tile.y >= height) {
+        throw new BadRequestException(
+          `Map coordinate (${tile.x},${tile.y}) is outside the map dimensions`,
+        );
+      }
     }
   }
 
-  private validateSpawnTiles(tiles: string[][]) {
-    let spawnCount = 0;
-    for (const row of tiles) {
-      spawnCount += row.filter((tile) => tile === 'spawn').length;
-    }
+  private validateSpawnTiles(objects: Array<{ type: string }>) {
+    const spawnCount = objects.filter(
+      (object) => object.type === 'spawn',
+    ).length;
     if (spawnCount < MIN_SPAWN_TILES) {
       throw new BadRequestException(
         `Map must contain at least ${MIN_SPAWN_TILES} spawn points, but found ${spawnCount}`,

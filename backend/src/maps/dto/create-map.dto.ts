@@ -2,11 +2,18 @@ import { Type } from 'class-transformer';
 import {
   IsArray,
   IsInt,
+  IsIn,
   IsNotEmpty,
   IsString,
   Min,
   ValidateNested,
 } from 'class-validator';
+import {
+  BASE_TILE_TYPES,
+  OBJECT_TYPES,
+  type BaseTileType,
+  type ObjectType,
+} from '../../game/types';
 
 export class BaseTileOverrideDto {
   @IsInt()
@@ -17,11 +24,22 @@ export class BaseTileOverrideDto {
   @Min(0)
   y!: number;
 
-  @IsString()
-  type!: string;
+  @IsIn(BASE_TILE_TYPES)
+  type!: BaseTileType;
 }
 
-export class MapObjectDto extends BaseTileOverrideDto {}
+export class MapObjectDto {
+  @IsInt()
+  @Min(0)
+  x!: number;
+
+  @IsInt()
+  @Min(0)
+  y!: number;
+
+  @IsIn(OBJECT_TYPES)
+  type!: ObjectType;
+}
 
 export class CreateMapDto {
   @IsNotEmpty({ message: 'Map name is required' })
@@ -36,8 +54,8 @@ export class CreateMapDto {
   @IsInt({ message: 'Map height must be an integer greater than 0' })
   height!: number;
 
-  @IsString()
-  baseTile!: string;
+  @IsIn(BASE_TILE_TYPES)
+  baseTile!: BaseTileType;
 
   @IsArray()
   @ValidateNested({ each: true })
