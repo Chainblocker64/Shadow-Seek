@@ -34,7 +34,7 @@ export class AuthController {
     res.cookie('access_token', token.access_token, {
       httpOnly: true,
       secure: true,
-      sameSite: 'lax',
+      sameSite: 'none',
       maxAge: 3600000, // 1h
     });
 
@@ -42,7 +42,7 @@ export class AuthController {
     res.cookie('is_logged_in', 'true', {
       httpOnly: false,
       secure: true,
-      sameSite: 'lax',
+      sameSite: 'none',
     });
 
     return { message: 'Logged in successfully' };
