@@ -1,10 +1,5 @@
 import { Room } from "../types";
 
-const mockRoomName = "Room XYZ";
-const mockMaxPlayers = 4;
-const mockMap = "Forest";
-const mockPlayers = ["Sergey", "Marcel", "Keno", "Chris"];
-
 export default function GameRoom({
   room,
   handleLeaveRoom,
@@ -18,18 +13,18 @@ export default function GameRoom({
         <button className="secondary-link" onClick={handleLeaveRoom}>
           &#8592;
         </button>
-        <p className="text-lg font-semibold">{mockRoomName}</p>
+        <p className="text-lg font-semibold">Room {room.id}</p>
       </div>
 
       <div className="mt-4 flex flex-col gap-1 text-zinc-300">
         <p>
-          Players: {mockPlayers.length}/{mockMaxPlayers}
+          Players: {room.players.length}/{room.maxPlayers}
         </p>
-        <p>Map: {mockMap}</p>
+        <p>Map: {room.map}</p>
       </div>
 
       <div className="flex flex-1 flex-col items-center justify-center gap-2">
-        {mockPlayers.map((player) => (
+        {room.players.map((player) => (
           <p key={player}>{player}</p>
         ))}
       </div>
