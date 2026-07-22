@@ -18,7 +18,7 @@ export default function HomePage() {
             A dark multiplayer hide-and-seek arena.
           </p>
 
-          <HomeClientWrapper user={null} />
+          <HomeClientWrapper />
         </section>
       </div>
       <Footer />

@@ -6,15 +6,9 @@ import LoginForm from "./LoginForm";
 import RegisterForm from "./RegisterForm";
 import Link from "next/link";
 
-interface HomeClientWrapperProps {
-  user: AuthenticatedUser | null;
-}
-
-export default function HomeClientWrapper({
-  user: initialUser,
-}: HomeClientWrapperProps) {
+export default function HomeClientWrapper() {
   const [view, setView] = useState<"home" | "login" | "register">("home");
-  const [user, setUser] = useState<AuthenticatedUser | null>(initialUser);
+  const [user, setUser] = useState<AuthenticatedUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
 
