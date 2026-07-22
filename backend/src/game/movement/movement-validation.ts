@@ -1,39 +1,9 @@
-export type MovementBaseTileType = 'floor' | 'grass' | 'dirt' | 'stoneFloor';
-
-export type MovementObjectType =
-  'wall' | 'tree' | 'rock' | 'spawn' | 'bush' | 'chest' | 'water';
-
-export type MovementPosition = {
-  x: number;
-  y: number;
-};
-
-export type MovementMapObject = {
-  x: number;
-  y: number;
-  type: MovementObjectType;
-};
-
-export type MovementValidationMap = {
-  width: number;
-  height: number;
-  baseTile: MovementBaseTileType;
-  objects: MovementMapObject[];
-};
-
-const WALKABLE_OBJECT_TYPES: MovementObjectType[] = ['spawn', 'bush'];
-
-const BLOCKING_OBJECT_TYPES: MovementObjectType[] = [
-  'wall',
-  'tree',
-  'rock',
-  'chest',
-  'water',
-];
+import { ValidationMap, Position } from '../types';
+import { WALKABLE_OBJECT_TYPES, BLOCKING_OBJECT_TYPES } from '../consts';
 
 export function canMoveToPosition(
-  map: MovementValidationMap,
-  targetPosition: MovementPosition,
+  map: ValidationMap,
+  targetPosition: Position,
 ): boolean {
   const isOutsideMap =
     targetPosition.x < 0 ||
