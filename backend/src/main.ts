@@ -7,9 +7,10 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
+import { NestExpressApplication } from '@nestjs/platform-express';
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
   const allowedOrigin = process.env.FRONTEND_URL;
 
   if (!allowedOrigin) {
@@ -29,6 +30,8 @@ async function bootstrap() {
       },
     }),
   );
+
+  app.set('trust proxy', 1);
 
   app.enableCors({
     origin: allowedOrigin,
