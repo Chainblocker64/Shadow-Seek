@@ -9,6 +9,8 @@ import { UsePipes, ValidationPipe } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { LobbyService } from './lobby.service';
 import { JoinRoomDto } from './dto/join-room.dto';
+import { GameService } from '../game/game.service';
+import { MapsService } from '../maps/maps.service';
 
 @WebSocketGateway({ cors: { origin: process.env.FRONTEND_URL } })
 @UsePipes(
@@ -25,7 +27,11 @@ export class LobbyGateway {
   @WebSocketServer()
   server!: Server;
 
-  constructor(private readonly lobbyService: LobbyService) {}
+  constructor(
+    private readonly lobbyService: LobbyService,
+    private readonly gameService: GameService,
+    private readonly mapsService: MapsService,
+  ) {}
 
   handleConnection({ id: clientId }: Socket) {
     this.broadcastRooms(clientId);
@@ -49,6 +55,20 @@ export class LobbyGateway {
   ) {
     this.lobbyService.addPlayer(client.id, payload.roomId);
     this.broadcastRooms();
+  }
+
+  @SubscribeMessage('startGame')
+  async handleStartGame(@ConnectedSocket() client: Socket) {
+    const room = this.lobbyService.getPlayerRoom(client.id);
+
+    if (!room || room.owner !== client.id) {
+      return;
+    }
+
+    const map = await this.mapsService.findOneByName(room.map);
+    const game = this.gameService.createGame(room.id, room.players, map);
+
+    this.server.to(room.players).emit('game:sync', game);
   }
 
   broadcastRooms(target: string = '') {
