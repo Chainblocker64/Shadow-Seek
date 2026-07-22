@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -15,12 +19,6 @@ export class UserService {
     private userRepository: Repository<User>,
   ) {}
 
-  /**
-   * Creates a new user
-   *
-   * @param createUserDto
-   * @returns UserResponse
-   */
   async create(createUserDto: CreateUserDto): Promise<UserResponse> {
     const { email, username, password } = createUserDto;
 
@@ -45,29 +43,31 @@ export class UserService {
     return userWithoutPassword;
   }
 
-  /**
-   * finds a user by email
-   *
-   * @param email
-   * @returns User
-   */
   async findOneByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOneBy({ email });
   }
 
-  findAll() {
-    return `This action returns all user`;
-  }
+  async update(
+    userId: string,
+    dto: UpdateUserDto,
+  ): Promise<Omit<User, 'password'>> {
+    const user = await this.userRepository.findOneBy({ id: userId });
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
-  }
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
-  update(id: number, _updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
+    if (dto.username) {
+      user.username = dto.username;
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+    if (dto.password) {
+      user.password = await bcrypt.hash(dto.password, 10);
+    }
+
+    await this.userRepository.save(user);
+
+    const { password: _, ...result } = user;
+    return result;
   }
 }
