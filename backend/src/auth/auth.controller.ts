@@ -30,19 +30,12 @@ export class AuthController {
   ) {
     const token = await this.authService.login(req.user);
 
-    // the actual auth token
+    // auth token cookie
     res.cookie('access_token', token.access_token, {
       httpOnly: true,
       secure: true,
       sameSite: 'none',
       maxAge: 3600000, // 1h
-    });
-
-    // simple is_logged_in cookie for the client
-    res.cookie('is_logged_in', 'true', {
-      httpOnly: false,
-      secure: true,
-      sameSite: 'none',
     });
 
     return { message: 'Logged in successfully' };
@@ -52,7 +45,6 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   logout(@Res({ passthrough: true }) res: express.Response) {
     res.clearCookie('access_token');
-    res.clearCookie('is_logged_in');
     return { message: 'Logged out successfully' };
   }
 
