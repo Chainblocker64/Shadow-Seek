@@ -9,6 +9,7 @@ import { MapsModule } from './maps/maps.module';
 import { AuthModule } from './auth/auth.module';
 import { LobbyGateway } from './lobby/lobby.gateway';
 import { LobbyService } from './lobby/lobby.service';
+import { GameService } from './game/game.service';
 
 @Module({
   imports: [
@@ -30,6 +31,6 @@ import { LobbyService } from './lobby/lobby.service';
     AuthModule,
   ],
   controllers: [AppController],
-  providers: [AppService, LobbyGateway, LobbyService],
+  providers: [AppService, LobbyGateway, LobbyService, GameService],
 })
 export class AppModule {}

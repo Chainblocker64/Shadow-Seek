@@ -1,24 +1,32 @@
-export const GAME_STATUS_WAITING = 'waiting';
-export const GAME_STATUS_RUNNING = 'running';
+import { WAITING, RUNNING } from './consts';
 
-export type GameStatus =
-  typeof GAME_STATUS_WAITING | typeof GAME_STATUS_RUNNING;
+// TODO use across the app (global types)
+export type ClientId = string;
+
+export type Status = typeof WAITING | typeof RUNNING;
 
 export type Position = {
   x: number;
   y: number;
 };
 
-export type PlayerGameState = {
+export type Player = {
   id: string;
   position: Position;
 };
 
+export type ValidationMap = {
+  width: number;
+  height: number;
+  baseTile: BaseTileType;
+  objects: MapObject[];
+};
+
 export type GameState = {
   id: string;
-  status: GameStatus;
+  status: Status;
   map: ValidationMap;
-  players: PlayerGameState[];
+  players: Player[];
 };
 
 export type BaseTileType = 'floor' | 'grass' | 'dirt' | 'stoneFloor';
@@ -30,22 +38,9 @@ export type MapObject = Position & {
   type: ObjectType;
 };
 
-export type ValidationMap = {
-  width: number;
-  height: number;
-  baseTile: BaseTileType;
-  objects: MapObject[];
-};
-
 export type MovementDirection = 'up' | 'down' | 'left' | 'right';
 
-export type ServerPlayerState = {
-  id: string;
-  position: Position;
-};
-
 export type MovementResult = {
-  playerId: string;
-  position: Position;
+  player: Player;
   moved: boolean;
 };

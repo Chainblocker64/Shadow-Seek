@@ -53,8 +53,7 @@ export function handlePlayerMovement(
 
   if (!canMove) {
     return {
-      playerId: player.id,
-      position: player.position,
+      player: player,
       moved: false,
     };
   }
@@ -62,8 +61,7 @@ export function handlePlayerMovement(
   player.position = nextPosition;
 
   return {
-    playerId: player.id,
-    position: player.position,
+    player: player,
     moved: true,
   };
 }
