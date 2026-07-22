@@ -1,7 +1,5 @@
 import { WAITING, RUNNING } from './consts';
-
-// TODO use across the app (global types)
-export type ClientId = string;
+import type { ClientId, RoomId } from '../shared/types';
 
 export type Status = typeof WAITING | typeof RUNNING;
 
@@ -11,7 +9,7 @@ export type Position = {
 };
 
 export type Player = {
-  id: string;
+  id: ClientId;
   position: Position;
 };
 
@@ -23,7 +21,7 @@ export type ValidationMap = {
 };
 
 export type GameState = {
-  id: string;
+  roomId: RoomId;
   status: Status;
   map: ValidationMap;
   players: Player[];
