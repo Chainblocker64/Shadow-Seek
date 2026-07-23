@@ -174,4 +174,28 @@ describe('handlePlayerMovement', () => {
       handlePlayerMovement(gameState, 'unknown-player', 'up');
     }).toThrow('Player not found');
   });
+  it('keeps the player position when movement leaves the map', () => {
+    const gameState = createTestGameState();
+
+    gameState.players[0].position = {
+      x: 0,
+      y: 2,
+    };
+
+    const result = handlePlayerMovement(gameState, 'player-1', 'left');
+
+    expect(result).toEqual({
+      playerId: 'player-1',
+      position: {
+        x: 0,
+        y: 2,
+      },
+      moved: false,
+    });
+
+    expect(gameState.players[0].position).toEqual({
+      x: 0,
+      y: 2,
+    });
+  });
 });

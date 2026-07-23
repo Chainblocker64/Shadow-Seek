@@ -28,6 +28,21 @@ describe('canMoveToPosition', () => {
         y: 2,
         type: 'rock',
       },
+      {
+        x: 2,
+        y: 2,
+        type: 'bush',
+      },
+      {
+        x: 3,
+        y: 2,
+        type: 'chest',
+      },
+      {
+        x: 4,
+        y: 2,
+        type: 'water',
+      },
     ],
   };
 
@@ -44,6 +59,15 @@ describe('canMoveToPosition', () => {
     const result = canMoveToPosition(testMap, {
       x: 1,
       y: 1,
+    });
+
+    expect(result).toBe(true);
+  });
+
+  it('allows movement to a bush tile', () => {
+    const result = canMoveToPosition(testMap, {
+      x: 2,
+      y: 2,
     });
 
     expect(result).toBe(true);
@@ -70,6 +94,24 @@ describe('canMoveToPosition', () => {
   it('rejects movement into a rock tile', () => {
     const result = canMoveToPosition(testMap, {
       x: 1,
+      y: 2,
+    });
+
+    expect(result).toBe(false);
+  });
+
+  it('rejects movement into a chest tile', () => {
+    const result = canMoveToPosition(testMap, {
+      x: 3,
+      y: 2,
+    });
+
+    expect(result).toBe(false);
+  });
+
+  it('rejects movement into a water tile', () => {
+    const result = canMoveToPosition(testMap, {
+      x: 4,
       y: 2,
     });
 

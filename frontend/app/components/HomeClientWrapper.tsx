@@ -1,23 +1,33 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AuthenticatedUser, getAuthenticatedUser } from "../auth";
 import LoginForm from "./LoginForm";
 import RegisterForm from "./RegisterForm";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-interface HomeClientWrapperProps {
-  user: AuthenticatedUser | null;
-}
-
-export default function HomeClientWrapper({
-  user: initialUser,
-}: HomeClientWrapperProps) {
+export default function HomeClientWrapper() {
   const [view, setView] = useState<"home" | "login" | "register">("home");
-  const [user, setUser] = useState<AuthenticatedUser | null>(initialUser);
+  const [user, setUser] = useState<AuthenticatedUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
-  const router = useRouter();
+
+  useEffect(() => {
+    async function checkAuth() {
+      try {
+        const userData = await getAuthenticatedUser();
+        if (userData) {
+          setUser(userData);
+        }
+      } catch (error) {
+        console.error("Failed to fetch user on mount:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    checkAuth();
+  }, []);
 
   const handleLoginSuccess = async () => {
     const userData = await getAuthenticatedUser();
@@ -25,27 +35,25 @@ export default function HomeClientWrapper({
       setUser(userData);
       setView("home");
     }
-    router.refresh();
   };
 
   const handleLogout = async () => {
     try {
-      const response = await fetch(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`,
-        {
-          method: "POST",
-          credentials: "include",
-        },
-      );
+      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
 
-      if (response.ok) {
-        setUser(null);
-        router.refresh();
-      }
+      setUser(null);
+      setView("home");
     } catch (error) {
       console.error("Logout failed", error);
     }
   };
+
+  if (isLoading) {
+    return <div className="mt-8 text-zinc-500">Loading...</div>;
+  }
 
   return (
     <nav
