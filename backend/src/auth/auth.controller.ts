@@ -24,11 +24,11 @@ export class AuthController {
   @UseGuards(AuthGuard('local'))
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(
+  login(
     @Request() req: { user: Omit<User, 'password'> },
     @Res({ passthrough: true }) res: Response,
   ) {
-    const token = await this.authService.login(req.user);
+    const token = this.authService.login(req.user);
 
     // auth token cookie
     res.cookie('access_token', token.access_token, {
@@ -56,7 +56,7 @@ export class AuthController {
   ) {
     // create clean cookie for rolling session
     const token = this.authService.generateToken({
-      id: req.user.id,
+      id: req.user.userId,
       username: req.user.username,
     });
 
