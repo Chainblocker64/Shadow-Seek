@@ -6,18 +6,23 @@ import RoomListItems from "./RoomListItems";
 
 export default function RoomList() {
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [clientId, setClientId] = useState<string>();
 
   useEffect(() => {
-    socket.connect();
-
     const onRoomsSync = (rooms: Room[]) => {
       setRooms(rooms);
     };
+    const onConnect = () => {
+      setClientId(socket.id);
+    };
 
     socket.on("rooms:sync", onRoomsSync);
+    socket.on("connect", onConnect);
+    socket.connect();
 
     return () => {
       socket.off("rooms:sync", onRoomsSync);
+      socket.off("connect", onConnect);
       socket.disconnect();
     };
   }, []);
@@ -35,7 +40,7 @@ export default function RoomList() {
           Create Game
         </button>
       </div>
-      <RoomListItems rooms={rooms} />
+      <RoomListItems rooms={rooms} clientId={clientId} />
       {/* "Create game" button for large screens, outside of the room list window */}
       <button
         className="primary-button absolute left-full top-0 ml-4 hidden whitespace-nowrap lg:block"

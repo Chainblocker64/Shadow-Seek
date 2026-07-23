@@ -1,7 +1,12 @@
 import { Room } from "../types";
 import { socket } from "@/lib/socket";
 
-export default function RoomListItem({ room }: { room: Room }) {
+type RoomListItemProps = {
+  room: Room;
+  isOwner: boolean;
+};
+
+export default function RoomListItem({ room, isOwner }: RoomListItemProps) {
   const handleJoinRoom = () => {
     socket.emit("joinRoom", { roomId: room.id });
   };
