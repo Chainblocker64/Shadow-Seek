@@ -50,7 +50,23 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  getProfile(@Request() req: { user: JwtPayload }) {
+  getProfile(
+    @Request() req: { user: JwtPayload },
+    @Res({ passthrough: true }) res: express.Response,
+  ) {
+    // create clean cookie for rolling session
+    const token = this.authService.generateToken({
+      id: req.user.id,
+      username: req.user.username,
+    });
+
+    res.cookie('access_token', token.access_token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 3600000, // 1h
+    });
+
     return req.user;
   }
 }

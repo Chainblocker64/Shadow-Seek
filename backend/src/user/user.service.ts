@@ -47,10 +47,7 @@ export class UserService {
     return this.userRepository.findOneBy({ email });
   }
 
-  async update(
-    userId: string,
-    dto: UpdateUserDto,
-  ): Promise<Omit<User, 'password'>> {
+  async update(userId: string, dto: UpdateUserDto): Promise<UserResponse> {
     const user = await this.userRepository.findOneBy({ id: userId });
 
     if (!user) {
@@ -65,7 +62,19 @@ export class UserService {
       user.password = await bcrypt.hash(dto.password, 10);
     }
 
-    await this.userRepository.save(user);
+    try {
+      await this.userRepository.save(user);
+    } catch (err: unknown) {
+      if (
+        typeof err === 'object' &&
+        err !== null &&
+        'code' in err &&
+        (err as { code: string }).code === '23505'
+      ) {
+        throw new ConflictException('Username is already taken');
+      }
+      throw err;
+    }
 
     const { password: _, ...result } = user;
     return result;
