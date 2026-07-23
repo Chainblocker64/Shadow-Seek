@@ -11,16 +11,12 @@ export default function RoomListItem({ room, isOwner }: RoomListItemProps) {
     socket.emit("joinRoom", { roomId: room.id });
   };
 
-  return (
-    <button
-      className={`room-list-item ${
-        room.status === "waiting"
-          ? "room-list-item-waiting"
-          : "room-list-item-disabled"
-      }`}
-      disabled={room.status !== "waiting"}
-      onClick={handleJoinRoom}
-    >
+  const handleInitializeGame = () => {
+    socket.emit("initializeGame", { roomId: room.id });
+  };
+
+  const roomDetails = (
+    <>
       <span>{`Room ${room.id} | Players: ${room.players.length}/${room.maxPlayers} | Map: ${room.map}`}</span>
       <span
         className={`room-status-badge ${
@@ -31,6 +27,31 @@ export default function RoomListItem({ room, isOwner }: RoomListItemProps) {
       >
         {room.status}
       </span>
+    </>
+  );
+
+  if (isOwner) {
+    return (
+      <div className="room-list-item">
+        {roomDetails}
+        <button className="primary-button" onClick={handleInitializeGame}>
+          Start
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      className={`room-list-item ${
+        room.status === "waiting"
+          ? "room-list-item-waiting"
+          : "room-list-item-disabled"
+      }`}
+      disabled={room.status !== "waiting"}
+      onClick={handleJoinRoom}
+    >
+      {roomDetails}
     </button>
   );
 }
