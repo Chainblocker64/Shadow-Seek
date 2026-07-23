@@ -17,7 +17,7 @@ export class MigrateMapsToGameMap1784130572698 implements MigrationInterface {
         "objects" jsonb NOT NULL DEFAULT '[]'::jsonb,
         "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
         "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
-        "creatorId" uuid,
+        "creator" character varying NOT NULL,
         CONSTRAINT "PK_dddaabaf432b881f9f6e13bf9bd" PRIMARY KEY ("id")
       )
     `);
@@ -35,7 +35,7 @@ export class MigrateMapsToGameMap1784130572698 implements MigrationInterface {
         "tiles" jsonb NOT NULL,
         "createdAt" TIMESTAMP NOT NULL DEFAULT now(),
         "updatedAt" TIMESTAMP NOT NULL DEFAULT now(),
-        "creatorId" uuid,
+        "creator" character varying NOT NULL,
         CONSTRAINT "PK_dddaabaf432b881f9f6e13bf9bd" PRIMARY KEY ("id")
       )
     `);

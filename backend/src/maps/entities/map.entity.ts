@@ -2,11 +2,9 @@ import {
   Column,
   CreateDateColumn,
   Entity,
-  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import { User } from '../../user/entities/user.entity';
 import type {
   BaseTileType,
   BaseTileOverride,
@@ -36,8 +34,8 @@ export class GameMap {
   @Column({ type: 'jsonb' })
   objects!: MapObject[];
 
-  @ManyToOne(() => User, { nullable: true })
-  creator!: User | null;
+  @Column()
+  creator!: string;
 
   @CreateDateColumn()
   createdAt!: Date;

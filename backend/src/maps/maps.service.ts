@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { plainToInstance } from 'class-transformer';
 import { Repository } from 'typeorm';
 import { GameMap } from './entities/map.entity';
 import { CreateMapDto } from './dto/create-map.dto';
@@ -18,7 +19,10 @@ export class MapsService {
     private mapsRepository: Repository<GameMap>,
   ) {}
 
-  async create(createMapDto: CreateMapDto): Promise<MapResponseDto> {
+  async create(
+    createMapDto: CreateMapDto,
+    creator: string,
+  ): Promise<MapResponseDto> {
     const { name, baseTile, baseOverrides, objects, height, width } =
       createMapDto;
     this.validateCoordinates(width, height, baseOverrides, objects);
@@ -31,43 +35,22 @@ export class MapsService {
       baseTile,
       baseOverrides,
       objects,
-      // TODO: Implement creator when user authentication is implemented
-      creator: null,
+      creator,
     });
 
     const savedMap = await this.mapsRepository.save(map);
 
-    return {
-      id: savedMap.id,
-      name: savedMap.name,
-      width: savedMap.width,
-      height: savedMap.height,
-      baseTile: savedMap.baseTile,
-      baseOverrides: savedMap.baseOverrides,
-      objects: savedMap.objects,
-      // TODO: Implement creatorId when user authentication is implemented
-      creatorId: null,
-      createdAt: savedMap.createdAt,
-      updatedAt: savedMap.updatedAt,
-    };
+    return plainToInstance(MapResponseDto, savedMap, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async findAll(): Promise<MapResponseDto[]> {
     const maps = await this.mapsRepository.find();
 
-    return maps.map((map) => ({
-      id: map.id,
-      name: map.name,
-      width: map.width,
-      height: map.height,
-      baseTile: map.baseTile,
-      baseOverrides: map.baseOverrides,
-      objects: map.objects,
-      // TODO: Implement creatorId when user authentication is implemented
-      creatorId: null,
-      createdAt: map.createdAt,
-      updatedAt: map.updatedAt,
-    }));
+    return plainToInstance(MapResponseDto, maps, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async findOne(id: number): Promise<MapResponseDto> {
@@ -79,19 +62,9 @@ export class MapsService {
       throw new NotFoundException(`Map with ID ${id} not found`);
     }
 
-    return {
-      id: map.id,
-      name: map.name,
-      width: map.width,
-      height: map.height,
-      baseTile: map.baseTile,
-      baseOverrides: map.baseOverrides,
-      objects: map.objects,
-      // TODO: Implement creatorId when user authentication is implemented
-      creatorId: null,
-      createdAt: map.createdAt,
-      updatedAt: map.updatedAt,
-    };
+    return plainToInstance(MapResponseDto, map, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async findOneByName(name: string): Promise<MapResponseDto> {
@@ -103,18 +76,9 @@ export class MapsService {
       throw new NotFoundException(`Map with name "${name}" not found`);
     }
 
-    return {
-      id: map.id,
-      name: map.name,
-      width: map.width,
-      height: map.height,
-      baseTile: map.baseTile,
-      baseOverrides: map.baseOverrides,
-      objects: map.objects,
-      creatorId: null,
-      createdAt: map.createdAt,
-      updatedAt: map.updatedAt,
-    };
+    return plainToInstance(MapResponseDto, map, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async update(
@@ -148,18 +112,9 @@ export class MapsService {
 
     const updatedMap = await this.mapsRepository.save(map);
 
-    return {
-      id: updatedMap.id,
-      name: updatedMap.name,
-      width: updatedMap.width,
-      height: updatedMap.height,
-      baseTile: updatedMap.baseTile,
-      baseOverrides: updatedMap.baseOverrides,
-      objects: updatedMap.objects,
-      creatorId: null,
-      createdAt: updatedMap.createdAt,
-      updatedAt: updatedMap.updatedAt,
-    };
+    return plainToInstance(MapResponseDto, updatedMap, {
+      excludeExtraneousValues: true,
+    });
   }
 
   async delete(id: number): Promise<void> {
