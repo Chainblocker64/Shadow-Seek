@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Room } from "../types";
 import { socket } from "@/lib/socket";
 import RoomListItems from "./RoomListItems";
@@ -7,6 +8,7 @@ import RoomListItems from "./RoomListItems";
 export default function RoomList() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [clientId, setClientId] = useState<string>();
+  const router = useRouter();
 
   useEffect(() => {
     const onRoomsSync = (rooms: Room[]) => {
@@ -15,17 +17,22 @@ export default function RoomList() {
     const onConnect = () => {
       setClientId(socket.id);
     };
+    const onOpenGame = () => {
+      router.push("/game-board");
+    };
 
     socket.on("rooms:sync", onRoomsSync);
     socket.on("connect", onConnect);
+    socket.on("openGame", onOpenGame);
     socket.connect();
 
     return () => {
       socket.off("rooms:sync", onRoomsSync);
       socket.off("connect", onConnect);
+      socket.off("openGame", onOpenGame);
       socket.disconnect();
     };
-  }, []);
+  }, [router]);
 
   const handleCreateRoom = () => {
     socket.emit("createRoom");
