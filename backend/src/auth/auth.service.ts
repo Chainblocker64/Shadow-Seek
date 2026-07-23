@@ -38,11 +38,15 @@ export class AuthService {
     return null;
   }
 
-  generateToken(user: { id: string; username: string }) {
+  generateToken(user: { id: string; username: string; email: string }) {
     if (!user.id) {
       throw new Error('AuthService.generateToken called without a user id!');
     }
-    const payload = { sub: user.id, username: user.username };
+    const payload = {
+      sub: user.id,
+      username: user.username,
+      email: user.email,
+    };
     return { access_token: this.jwtService.sign(payload) };
   }
 }

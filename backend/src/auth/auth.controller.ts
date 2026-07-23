@@ -58,6 +58,7 @@ export class AuthController {
     const token = this.authService.generateToken({
       id: req.user.userId,
       username: req.user.username,
+      email: req.user.email,
     });
 
     res.cookie('access_token', token.access_token, {
