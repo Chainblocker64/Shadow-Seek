@@ -17,19 +17,19 @@ export default function RoomList() {
     const onConnect = () => {
       setClientId(socket.id);
     };
-    const onOpenGame = () => {
+    const onGameOpened = () => {
       router.push("/game-board");
     };
 
     socket.on("rooms:sync", onRoomsSync);
     socket.on("connect", onConnect);
-    socket.on("openGame", onOpenGame);
+    socket.on("openGame", onGameOpened);
     socket.connect();
 
     return () => {
       socket.off("rooms:sync", onRoomsSync);
       socket.off("connect", onConnect);
-      socket.off("openGame", onOpenGame);
+      socket.off("game:opened", onGameOpened);
       socket.disconnect();
     };
   }, [router]);
