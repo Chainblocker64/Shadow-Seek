@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { WAITING } from './consts';
+import { RUNNING, WAITING } from './consts';
 import type { GameState, Position, GameMap } from './types';
 import type { ClientId, RoomId } from '../shared/types';
 
@@ -33,6 +33,19 @@ export class GameService {
 
   getGame(roomId: RoomId): GameState | undefined {
     return this.games.get(roomId);
+  }
+
+  startGame(roomId: RoomId): GameState | undefined {
+    const game = this.games.get(roomId);
+
+    if (!game || game.status === RUNNING) {
+      return game;
+    }
+
+    const runningGame: GameState = { ...game, status: RUNNING };
+    this.games.set(roomId, runningGame);
+
+    return runningGame;
   }
 
   private getSpawnPositions(map: GameMap): Position[] {

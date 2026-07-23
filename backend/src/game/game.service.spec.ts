@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { randomUUID } from 'node:crypto';
 import { GameService } from './game.service';
-import { WAITING } from './consts';
+import { RUNNING, WAITING } from './consts';
 import type { GameMap } from './types';
 
 describe('GameService', () => {
@@ -59,5 +59,22 @@ describe('GameService', () => {
       service.createGame(roomId, ['player-1', 'player-2'], map);
     }).toThrow('Map does not have enough spawn positions for all players');
     expect(service.getGame(roomId)).toBeUndefined();
+  });
+
+  it('starts a waiting game', () => {
+    const roomId = randomUUID();
+    const map: GameMap = {
+      width: 2,
+      height: 2,
+      baseTile: 'floor',
+      baseOverrides: [],
+      objects: [{ x: 0, y: 0, type: 'spawn' }],
+    };
+    service.createGame(roomId, ['player-1'], map);
+
+    const game = service.startGame(roomId);
+
+    expect(game).toMatchObject({ roomId, status: RUNNING });
+    expect(service.getGame(roomId)).toBe(game);
   });
 });
