@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { PixiGameBoard } from "../../features/game/components/PixiGameBoard";
-import type { GameState } from "../../../backend/src/game/types";
+import type { GameState } from "../../features/game/types/game";
 import { socket } from "@/lib/socket";
 import styles from "./GameBoardPage.module.css";
 
