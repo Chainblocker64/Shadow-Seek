@@ -5,11 +5,9 @@ import { UserModule } from './user/user.module';
 import { ConfigModule } from '@nestjs/config';
 import { User } from './user/entities/user.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { MapsModule } from './maps/maps.module';
 import { AuthModule } from './auth/auth.module';
-import { LobbyGateway } from './lobby/lobby.gateway';
-import { LobbyService } from './lobby/lobby.service';
-import { GameService } from './game/game.service';
+import { LobbyModule } from './lobby/lobby.module';
+import { GameModule } from './game/game.module';
 
 @Module({
   imports: [
@@ -18,7 +16,8 @@ import { GameService } from './game/game.service';
       envFilePath: '.env.local',
     }),
     UserModule,
-    MapsModule,
+    LobbyModule,
+    GameModule,
     TypeOrmModule.forRoot({
       type: 'postgres',
       url: process.env.DATABASE_URL,
@@ -31,6 +30,6 @@ import { GameService } from './game/game.service';
     AuthModule,
   ],
   controllers: [AppController],
-  providers: [AppService, LobbyGateway, LobbyService, GameService],
+  providers: [AppService],
 })
 export class AppModule {}
