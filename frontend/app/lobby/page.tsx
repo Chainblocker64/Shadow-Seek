@@ -31,7 +31,8 @@ export default function Lobby() {
 
     return () => {
       socket.off("room:sync", onRoomSync);
-      socket.off("room:joined", onRoomUpdated);
+      socket.off("room:updated", onRoomUpdated);
+      socket.off("room:left", onRoomLeft);
       socket.disconnect();
     };
   }, []);
