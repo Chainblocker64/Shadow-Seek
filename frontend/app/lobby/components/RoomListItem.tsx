@@ -7,6 +7,8 @@ type RoomListItemProps = {
 };
 
 export default function RoomListItem({ room, isOwner }: RoomListItemProps) {
+  const canInitializeGame = room.players.length >= 2;
+
   const handleJoinRoom = () => {
     socket.emit("joinRoom", { roomId: room.id });
   };
@@ -34,9 +36,27 @@ export default function RoomListItem({ room, isOwner }: RoomListItemProps) {
     return (
       <div className="room-list-item">
         {roomDetails}
-        <button className="primary-button" onClick={handleInitializeGame}>
-          Start
-        </button>
+        <span className="group relative inline-block">
+          <button
+            className={
+              canInitializeGame
+                ? "primary-button"
+                : "secondary-button cursor-not-allowed opacity-50"
+            }
+            disabled={!canInitializeGame}
+            onClick={handleInitializeGame}
+          >
+            Start
+          </button>
+          {!canInitializeGame && (
+            <span
+              className="absolute top-full hidden bg-zinc-800 p-2 text-sm group-hover:block"
+              role="tooltip"
+            >
+              At least 2 players are needed to start the game.
+            </span>
+          )}
+        </span>
       </div>
     );
   }
