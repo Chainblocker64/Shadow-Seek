@@ -13,25 +13,25 @@ export default function Lobby() {
   useEffect(() => {
     socket.connect();
 
-    const onRoomsSync = (rooms: Room[]) => {
+    const onRoomSync = (rooms: Room[]) => {
       setRooms(rooms);
     };
 
-    const onRoomsJoined = (room: Room) => {
+    const onRoomUpdated = (room: Room) => {
       setJoinedRoom(room);
     };
 
-    const onRoomsLeft = () => {
+    const onRoomLeft = () => {
       setJoinedRoom(undefined);
     };
 
-    socket.on("rooms:sync", onRoomsSync);
-    socket.on("rooms:joined", onRoomsJoined);
-    socket.on("rooms:left", onRoomsLeft);
+    socket.on("room:sync", onRoomSync);
+    socket.on("room:updated", onRoomUpdated);
+    socket.on("room:left", onRoomLeft);
 
     return () => {
-      socket.off("rooms:sync", onRoomsSync);
-      socket.off("rooms:joined", onRoomsJoined);
+      socket.off("room:sync", onRoomSync);
+      socket.off("room:joined", onRoomUpdated);
       socket.disconnect();
     };
   }, []);
