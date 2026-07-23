@@ -22,6 +22,7 @@ describe('GameService', () => {
   it('creates a waiting game and assigns each player a spawn position', () => {
     const roomId = randomUUID();
     const map: GameMap = {
+      name: 'Test map',
       width: 4,
       height: 4,
       baseTile: 'floor',
@@ -49,6 +50,7 @@ describe('GameService', () => {
   it('rejects a game when there are not enough spawn positions', () => {
     const roomId = randomUUID();
     const map: GameMap = {
+      name: 'Test map',
       width: 4,
       height: 4,
       baseTile: 'floor',
@@ -64,6 +66,7 @@ describe('GameService', () => {
   it('starts a waiting game', () => {
     const roomId = randomUUID();
     const map: GameMap = {
+      name: 'Test map',
       width: 2,
       height: 2,
       baseTile: 'floor',

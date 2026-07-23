@@ -14,6 +14,7 @@ export type Player = {
 };
 
 export type GameMap = {
+  name: string;
   width: number;
   height: number;
   baseTile: BaseTileType;

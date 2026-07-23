@@ -3,6 +3,7 @@ import type { GameMap } from '../types';
 
 describe('canMoveToPosition', () => {
   const testMap: GameMap = {
+    name: 'Test map',
     width: 5,
     height: 5,
     baseTile: 'floor',

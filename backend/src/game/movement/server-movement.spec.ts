@@ -72,6 +72,7 @@ describe('handlePlayerMovement', () => {
       roomId: randomUUID(),
       status: WAITING,
       map: {
+        name: 'Test map',
         width: 5,
         height: 5,
         baseTile: 'floor',
