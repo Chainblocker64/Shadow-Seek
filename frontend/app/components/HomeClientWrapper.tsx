@@ -1,40 +1,19 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { AuthenticatedUser, getAuthenticatedUser } from "../auth";
+import { useState } from "react";
+import { useAuthStore } from "../store/useAuthStore";
 import LoginForm from "./LoginForm";
 import RegisterForm from "./RegisterForm";
 import Link from "next/link";
 
 export default function HomeClientWrapper() {
   const [view, setView] = useState<"home" | "login" | "register">("home");
-  const [user, setUser] = useState<AuthenticatedUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState<string | null>(null);
-
-  useEffect(() => {
-    async function checkAuth() {
-      try {
-        const userData = await getAuthenticatedUser();
-        if (userData) {
-          setUser(userData);
-        }
-      } catch (error) {
-        console.error("Failed to fetch user on mount:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    checkAuth();
-  }, []);
+  const { user, loading, fetchUser, logout } = useAuthStore();
 
   const handleLoginSuccess = async () => {
-    const userData = await getAuthenticatedUser();
-    if (userData) {
-      setUser(userData);
-      setView("home");
-    }
+    await fetchUser();
+    setView("home");
   };
 
   const handleLogout = async () => {
@@ -43,15 +22,14 @@ export default function HomeClientWrapper() {
         method: "POST",
         credentials: "include",
       });
-
-      setUser(null);
+      logout();
       setView("home");
     } catch (error) {
       console.error("Logout failed", error);
     }
   };
 
-  if (isLoading) {
+  if (loading) {
     return <div className="mt-8 text-zinc-500">Loading...</div>;
   }
 
@@ -61,23 +39,29 @@ export default function HomeClientWrapper() {
       aria-label="Navigation"
     >
       {user ? (
-        <div className="flex gap-4 items-center">
-          <Link className="primary-link" href="/lobby">
-            Lobby
-          </Link>
-          <Link className="secondary-link" href="/profile">
-            Profile
-          </Link>
-          <Link className="secondary-link" href="/leaderboard">
-            Leaderboard
-          </Link>
-          <button
-            className="secondary-button"
-            type="button"
-            onClick={handleLogout}
-          >
-            Logout
-          </button>
+        <div className="flex flex-col items-center gap-4">
+          <p className="text-zinc-300 text-lg font-medium">
+            Hi <span className="text-white font-bold">{user.username}</span>,
+            nice to see you!
+          </p>
+          <div className="flex gap-4 items-center">
+            <Link className="primary-link" href="/lobby">
+              Lobby
+            </Link>
+            <Link className="secondary-link" href="/profile">
+              Profile
+            </Link>
+            <Link className="secondary-link" href="/leaderboard">
+              Leaderboard
+            </Link>
+            <button
+              className="secondary-button"
+              type="button"
+              onClick={handleLogout}
+            >
+              Logout
+            </button>
+          </div>
         </div>
       ) : (
         <>
