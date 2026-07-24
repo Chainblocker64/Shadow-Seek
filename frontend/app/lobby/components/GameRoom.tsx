@@ -25,11 +25,11 @@ export default function GameRoom({
         <p>Map: {room.map}</p>
       </div>
 
-      <div className="flex flex-1 flex-col items-center justify-center gap-2">
+      <ul className="flex flex-1 flex-col items-center justify-center gap-2">
         {room.players.map((player) => (
-          <p key={player}>{player}</p>
+          <li key={player}>{player}</li>
         ))}
-      </div>
+      </ul>
 
       <div className="flex justify-end">
         <button className="primary-button">Start Game</button>
