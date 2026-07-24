@@ -44,6 +44,8 @@ export default function TilesDebugPage() {
         <Image
           src={TILESET_PATH}
           alt="Dungeon crawl tileset path test"
+          width={2048}
+          height={1536}
           className="max-h-40 max-w-full border border-zinc-700 object-contain"
         />
       </div>

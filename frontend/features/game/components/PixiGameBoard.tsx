@@ -9,6 +9,7 @@ import {
   mapObjectTextureFrames,
   TILE_TEXTURE_SIZE,
 } from "../data/tileTextureFrames";
+import { useMovementControls } from "../hooks/useMovementControls";
 
 type PixiGameBoardProps = {
   map: GameMap;
@@ -18,6 +19,8 @@ const TILESET_PATH = "/assets/tiles/dungeon-crawl.png";
 
 export function PixiGameBoard({ map }: PixiGameBoardProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  useMovementControls();
 
   useEffect(() => {
     const container = containerRef.current;
