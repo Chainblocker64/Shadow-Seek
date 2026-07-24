@@ -46,6 +46,10 @@ export class LobbyService {
       return;
     }
 
+    if (room.players.includes(clientId)) {
+      return room;
+    }
+
     //TODO case handling / feedback in server response?
     if (
       this.roomIsFull(room) ||
@@ -126,22 +130,22 @@ export class LobbyService {
     return room.players.length === room.maxPlayers;
   }
 
-  newRoomStatus(room: Room) {
+  private newRoomStatus(room: Room) {
     return this.roomIsFull(room) ? STATUS_FULL : STATUS_WAITING;
   }
 
-  triggerRoomBroadcast() {
+  private triggerRoomBroadcast() {
     this.eventEmitter.emit('room.broadcast');
   }
 
-  triggerPlayerAdded(clientId: ClientId, room: Room) {
+  private triggerPlayerAdded(clientId: ClientId, room: Room) {
     this.eventEmitter.emit(
       'room.player.added',
       new RoomUpdatedEvent(clientId, room),
     );
   }
 
-  triggerPlayerRemoved(clientId: ClientId, room: Room) {
+  private triggerPlayerRemoved(clientId: ClientId, room: Room) {
     this.eventEmitter.emit(
       'room.player.removed',
       new RoomUpdatedEvent(clientId, room),

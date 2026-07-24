@@ -11,5 +11,5 @@ export default function Lobby() {
     socket.emit("createRoom");
   };
 
-  return <RoomList handleCreateRoom={handleCreateRoom} rooms={rooms} />;
+  return <RoomList handleCreateRoom={handleCreateRoom} rooms={rooms || []} />;
 }
