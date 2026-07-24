@@ -14,7 +14,7 @@ export default function RoomListItem({ room, isOwner }: RoomListItemProps) {
   };
 
   const handleInitializeGame = () => {
-    socket.emit("initializeGame", { roomId: room.id });
+    socket.emit("initializeGame");
   };
 
   const roomDetails = (

@@ -23,7 +23,7 @@ export default function RoomList() {
 
     socket.on("rooms:sync", onRoomsSync);
     socket.on("connect", onConnect);
-    socket.on("openGame", onGameOpened);
+    socket.on("game:opened", onGameOpened);
     socket.connect();
 
     return () => {
