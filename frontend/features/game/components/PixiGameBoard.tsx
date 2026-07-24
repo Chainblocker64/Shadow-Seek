@@ -181,7 +181,9 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
     return () => {
       isDestroyed = true;
       cleanupResizeObserver?.();
-      app?.destroy(true);
+      if (app && app.renderer) {
+        app.destroy(true);
+      }
     };
   }, [map]);
 
