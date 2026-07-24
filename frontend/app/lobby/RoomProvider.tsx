@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 
 const RoomsContext = createContext<Room[] | undefined>(undefined);
 const JoinedRoomContext = createContext<Room | undefined>(undefined);
+const LeaveRoomContext = createContext<() => void>(() => {});
 
 export function RoomProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -40,15 +41,24 @@ export function RoomProvider({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   useEffect(() => {
+    //Redirect to room page when the id of joinedRoom changes (e.g. by having successfully created a room)
     if (roomId) {
       router.push(`/lobby/${roomId}`);
     }
   }, [roomId, router]);
 
+  const leaveRoom = () => {
+    socket.emit("leaveRoom");
+    setJoinedRoom(undefined);
+    router.push("/lobby");
+  };
+
   return (
     <RoomsContext.Provider value={rooms}>
       <JoinedRoomContext.Provider value={joinedRoom}>
-        {children}
+        <LeaveRoomContext.Provider value={leaveRoom}>
+          {children}
+        </LeaveRoomContext.Provider>
       </JoinedRoomContext.Provider>
     </RoomsContext.Provider>
   );
@@ -61,5 +71,10 @@ export function useRooms() {
 
 export function useJoinedRoom() {
   const context = useContext(JoinedRoomContext);
+  return context;
+}
+
+export function useLeaveRoom() {
+  const context = useContext(LeaveRoomContext);
   return context;
 }

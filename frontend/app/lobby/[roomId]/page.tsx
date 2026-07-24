@@ -4,13 +4,11 @@ import { useEffect } from "react";
 import Link from "next/link";
 import { socket } from "@/lib/socket";
 import GameRoom from "../components/GameRoom";
-import { useJoinedRoom } from "../RoomProvider";
+import { useJoinedRoom, useLeaveRoom } from "../RoomProvider";
 import { useParams } from "next/navigation";
 
 export default function LobbyRoom() {
-  const handleLeaveRoom = () => {
-    socket.emit("leaveRoom");
-  };
+  const handleLeaveRoom = useLeaveRoom();
 
   const joinedRoom = useJoinedRoom();
   const { roomId } = useParams<{ roomId: string }>();
