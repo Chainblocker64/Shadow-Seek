@@ -30,7 +30,6 @@ export default function RoomList() {
       socket.off("rooms:sync", onRoomsSync);
       socket.off("connect", onConnect);
       socket.off("game:opened", onGameOpened);
-      socket.disconnect();
     };
   }, [router]);
 

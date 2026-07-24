@@ -29,6 +29,14 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
     let isDestroyed = false;
     let app: Application | null = null;
 
+    // Application.destroy() throws before app.init() resolves (its plugins,
+    // e.g. resize handling, aren't set up yet), so only ever destroy an app
+    // whose init() has already completed.
+    function destroyApp() {
+      app?.destroy(true);
+      app = null;
+    }
+
     async function setupPixi() {
       app = new Application();
 
@@ -39,8 +47,8 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
         resolution: window.devicePixelRatio || 1,
       });
 
-      if (isDestroyed || !container || !app) {
-        app?.destroy(true);
+      if (isDestroyed || !container) {
+        destroyApp();
         return;
       }
 
@@ -50,6 +58,7 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
       const tilesetTexture = await Assets.load<Texture>(TILESET_PATH);
 
       if (isDestroyed || !app) {
+        destroyApp();
         return;
       }
 
@@ -174,14 +183,18 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
 
     let cleanupResizeObserver: (() => void) | undefined;
 
-    setupPixi().then((cleanup) => {
+    const setupDone = setupPixi().then((cleanup) => {
       cleanupResizeObserver = cleanup;
     });
 
     return () => {
       isDestroyed = true;
-      cleanupResizeObserver?.();
-      app?.destroy(true);
+      // Wait for setupPixi's in-flight init/asset loading to settle before
+      // destroying, since app.init() must resolve before destroy() is safe.
+      setupDone.then(() => {
+        cleanupResizeObserver?.();
+        destroyApp();
+      });
     };
   }, [map]);
 
