@@ -71,7 +71,10 @@ export default function HomeClientWrapper() {
                 <div className="mb-4 text-emerald-500">{message}</div>
               )}
               <LoginForm
-                onBack={() => setView("home")}
+                onBack={() => {
+                  setMessage(null);
+                  setView("home");
+                }}
                 onLoginSuccess={handleLoginSuccess}
               />
             </div>
