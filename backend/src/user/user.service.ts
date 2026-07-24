@@ -21,26 +21,29 @@ export class UserService {
 
   async create(createUserDto: CreateUserDto): Promise<UserResponse> {
     const { email, username, password } = createUserDto;
-
-    // check for existing user - throw exception if one exists
-    const existingUser = await this.userRepository.findOneBy({ email });
-    if (existingUser) {
-      throw new ConflictException('Email already registered');
-    }
-
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // create User object and save it
-    const user = this.userRepository.create({
-      email,
-      username,
-      password: hashedPassword,
-    });
-    const savedUser = await this.userRepository.save(user);
+    try {
+      const user = this.userRepository.create({
+        email,
+        username,
+        password: hashedPassword,
+      });
+      const savedUser = await this.userRepository.save(user);
 
-    // remove password from savedUser and return it
-    const { password: _, ...userWithoutPassword } = savedUser;
-    return userWithoutPassword;
+      const { password: _, ...userWithoutPassword } = savedUser;
+      return userWithoutPassword;
+    } catch (error: unknown) {
+      const dbError = error as { code?: string; detail?: string };
+
+      if (dbError.code === '23505') {
+        if (dbError.detail?.includes('email')) {
+          throw new ConflictException('Email already registered');
+        }
+        throw new ConflictException('Username already taken');
+      }
+      throw error;
+    }
   }
 
   async findOneByEmail(email: string): Promise<User | null> {
