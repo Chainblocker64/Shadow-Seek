@@ -4,20 +4,29 @@ import styles from "./PixiGameBoard.module.css";
 import { Application, Assets, Rectangle, Sprite, Texture } from "pixi.js";
 import { useEffect, useRef } from "react";
 import type { GameMap } from "../types/map";
+import type { PlayerPosition } from "../types/player";
 import {
   baseTileTextureFrames,
   mapObjectTextureFrames,
+  playerTextureFrames,
   TILE_TEXTURE_SIZE,
 } from "../data/tileTextureFrames";
 import { useMovementControls } from "../hooks/useMovementControls";
 
+type GamePlayer = {
+  id: string;
+  position: PlayerPosition;
+  label: string;
+};
+
 type PixiGameBoardProps = {
   map: GameMap;
+  players: GamePlayer[];
 };
 
 const TILESET_PATH = "/assets/tiles/dungeon-crawl.png";
 
-export function PixiGameBoard({ map }: PixiGameBoardProps) {
+export function PixiGameBoard({ map, players }: PixiGameBoardProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   useMovementControls();
@@ -32,6 +41,14 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
     let isDestroyed = false;
     let app: Application | null = null;
 
+    // Application.destroy() throws before app.init() resolves (its plugins,
+    // e.g. resize handling, aren't set up yet), so only ever destroy an app
+    // whose init() has already completed.
+    function destroyApp() {
+      app?.destroy(true);
+      app = null;
+    }
+
     async function setupPixi() {
       app = new Application();
 
@@ -42,8 +59,8 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
         resolution: window.devicePixelRatio || 1,
       });
 
-      if (isDestroyed || !container || !app) {
-        app?.destroy(true);
+      if (isDestroyed || !container) {
+        destroyApp();
         return;
       }
 
@@ -53,6 +70,7 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
       const tilesetTexture = await Assets.load<Texture>(TILESET_PATH);
 
       if (isDestroyed || !app) {
+        destroyApp();
         return;
       }
 
@@ -160,6 +178,23 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
 
           app?.stage.addChild(objectSprite);
         });
+
+        players.forEach((player, index) => {
+          const frame = playerTextureFrames[index % playerTextureFrames.length];
+
+          const playerX = offsetX + player.position.x * tileSize;
+          const playerY = offsetY + player.position.y * tileSize;
+
+          const playerSprite = createTileSprite(
+            frame.x,
+            frame.y,
+            playerX,
+            playerY,
+            tileSize,
+          );
+
+          app?.stage.addChild(playerSprite);
+        });
       }
 
       renderMap();
@@ -177,16 +212,36 @@ export function PixiGameBoard({ map }: PixiGameBoardProps) {
 
     let cleanupResizeObserver: (() => void) | undefined;
 
-    setupPixi().then((cleanup) => {
+    const setupDone = setupPixi().then((cleanup) => {
       cleanupResizeObserver = cleanup;
     });
 
     return () => {
       isDestroyed = true;
-      cleanupResizeObserver?.();
-      app?.destroy(true);
+      // Wait for setupPixi's in-flight init/asset loading to settle before
+      // destroying, since app.init() must resolve before destroy() is safe.
+      setupDone.then(() => {
+        cleanupResizeObserver?.();
+        destroyApp();
+      });
     };
-  }, [map]);
+  }, [map, players]);
 
-  return <div className={styles.container} ref={containerRef} />;
+  return (
+    <div className={styles.container}>
+      <div className={styles.canvasHost} ref={containerRef} />
+      {players.map((player) => (
+        <span
+          key={player.id}
+          className="pointer-events-none absolute -translate-x-1/2 -translate-y-full text-xs font-bold whitespace-nowrap text-white opacity-50 drop-shadow-[0_1px_1px_black]"
+          style={{
+            left: `${((player.position.x + 0.5) / map.width) * 100}%`,
+            top: `${(player.position.y / map.height) * 100}%`,
+          }}
+        >
+          {player.label}
+        </span>
+      ))}
+    </div>
+  );
 }

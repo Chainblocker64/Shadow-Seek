@@ -4,10 +4,28 @@ import { useEffect, useState } from "react";
 import { PixiGameBoard } from "../../features/game/components/PixiGameBoard";
 import type { GameState } from "../../features/game/types/game";
 import { socket } from "@/lib/socket";
+import { getLatestGame } from "../../features/game/gameSync";
+import { playerFallbackLabels } from "../../features/game/data/tileTextureFrames";
+import { useAuth } from "../hooks/useAuth";
 import styles from "./GameBoardPage.module.css";
 
+// Mirrors the backend's GAME_START_DELAY_MS (backend/src/game/consts.ts).
+const GAME_START_COUNTDOWN_SECONDS = 3;
+
 export default function GameBoard() {
-  const [game, setGame] = useState<GameState | null>(null);
+  const { user } = useAuth();
+  const [game, setGame] = useState<GameState | null>(() => getLatestGame());
+  const [countdown, setCountdown] = useState(GAME_START_COUNTDOWN_SECONDS);
+
+  const isWaiting = !game || game.status === "waiting";
+
+  const labeledPlayers = (game?.players ?? []).map((player, index) => ({
+    ...player,
+    label:
+      player.id === socket.id
+        ? (user?.username ?? "You")
+        : playerFallbackLabels[index % playerFallbackLabels.length],
+  }));
 
   useEffect(() => {
     socket.connect();
@@ -25,11 +43,27 @@ export default function GameBoard() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!isWaiting) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setCountdown((current) => Math.max(1, current - 1));
+    }, 1_000);
+
+    return () => clearInterval(interval);
+  }, [isWaiting]);
+
   if (!game) {
     return (
       <main className={styles.page}>
         <h1 className={styles.pageTitle}>Game</h1>
-        <p>Waiting for game data…</p>
+        <div className="flex min-h-[40vh] flex-col items-center justify-center">
+          <p className="font-semibold text-zinc-200">
+            Waiting for game to start…
+          </p>
+        </div>
       </main>
     );
   }
@@ -41,8 +75,7 @@ export default function GameBoard() {
       <section className={styles.layout}>
         <aside className={styles.sidebar}>
           <div>
-            {/* TODO: Use authenticated user name for the player name */}
-            <p className={styles.playerName}>{game.players[0]?.id}</p>
+            <p className={styles.playerName}>{user?.username}</p>
             <p className={styles.playerHealth}>HP: 80/100</p>
           </div>
 
@@ -52,8 +85,17 @@ export default function GameBoard() {
           </div>
         </aside>
 
-        <div className={styles.boardArea}>
-          <PixiGameBoard map={game.map} />
+        <div className={`${styles.boardArea} relative`}>
+          <PixiGameBoard map={game.map} players={labeledPlayers} />
+
+          {isWaiting && (
+            <div className="absolute top-1/2 left-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1 rounded-xl bg-black/60 px-6 py-3">
+              <p className="font-semibold text-zinc-200">Game starts in…</p>
+              <p className="text-5xl leading-none font-extrabold text-yellow-400">
+                {countdown}
+              </p>
+            </div>
+          )}
         </div>
 
         <aside className={`${styles.sidebar} ${styles.sidebarRight}`}>

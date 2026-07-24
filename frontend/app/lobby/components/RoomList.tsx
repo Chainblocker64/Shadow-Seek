@@ -1,26 +1,41 @@
 "use client";
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Room } from "../types";
 import { socket } from "@/lib/socket";
+import "@/features/game/gameSync";
 import RoomListItems from "./RoomListItems";
 
 export default function RoomList() {
   const [rooms, setRooms] = useState<Room[]>([]);
+  const [clientId, setClientId] = useState<string>();
+  const router = useRouter();
 
   useEffect(() => {
-    socket.connect();
-
     const onRoomsSync = (rooms: Room[]) => {
       setRooms(rooms);
     };
+    const onConnect = () => {
+      setClientId(socket.id);
+    };
+    const onGameOpened = () => {
+      router.push("/game-board");
+    };
 
     socket.on("rooms:sync", onRoomsSync);
+    socket.on("connect", onConnect);
+    socket.on("game:opened", onGameOpened);
+    if (socket.connected) {
+      onConnect();
+    }
+    socket.connect();
 
     return () => {
       socket.off("rooms:sync", onRoomsSync);
-      socket.disconnect();
+      socket.off("connect", onConnect);
+      socket.off("game:opened", onGameOpened);
     };
-  }, []);
+  }, [router]);
 
   const handleCreateRoom = () => {
     socket.emit("createRoom");
@@ -35,7 +50,7 @@ export default function RoomList() {
           Create Game
         </button>
       </div>
-      <RoomListItems rooms={rooms} />
+      <RoomListItems rooms={rooms} clientId={clientId} />
       {/* "Create game" button for large screens, outside of the room list window */}
       <button
         className="primary-button absolute left-full top-0 ml-4 hidden whitespace-nowrap lg:block"

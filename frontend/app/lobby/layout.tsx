@@ -1,4 +1,5 @@
 import { Header } from "../components/Header";
+import AuthGuard from "../components/AuthGuard";
 
 export default function LobbyLayout({
   children,
@@ -6,9 +7,9 @@ export default function LobbyLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <>
+    <AuthGuard>
       <Header />
       {children}
-    </>
+    </AuthGuard>
   );
 }

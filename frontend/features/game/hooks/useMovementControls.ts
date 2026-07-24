@@ -37,8 +37,6 @@ export function useMovementControls() {
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      // Hier trennen wir die Socket-Verbindung beim Verlassen des Game Boards
-      socket.disconnect();
     };
   }, []);
 }

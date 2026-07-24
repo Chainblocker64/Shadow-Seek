@@ -1,7 +1,12 @@
 import { Room } from "../types";
 import RoomListItem from "./RoomListItem";
 
-export default function RoomListItems({ rooms }: { rooms: Room[] }) {
+type RoomListItemsProps = {
+  rooms: Room[];
+  clientId?: string;
+};
+
+export default function RoomListItems({ rooms, clientId }: RoomListItemsProps) {
   return (
     <div className="flex flex-col gap-3">
       {rooms.length === 0 ? (
@@ -9,7 +14,13 @@ export default function RoomListItems({ rooms }: { rooms: Room[] }) {
           No rooms waiting, create a game to start playing
         </p>
       ) : (
-        rooms.map((room) => <RoomListItem key={room.id} room={room} />)
+        rooms.map((room) => (
+          <RoomListItem
+            key={room.id}
+            room={room}
+            isOwner={room.owner === clientId}
+          />
+        ))
       )}
     </div>
   );
