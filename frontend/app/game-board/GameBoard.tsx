@@ -5,6 +5,7 @@ import { PixiGameBoard } from "../../features/game/components/PixiGameBoard";
 import type { GameState } from "../../features/game/types/game";
 import { socket } from "@/lib/socket";
 import { getLatestGame } from "../../features/game/gameSync";
+import { playerFallbackLabels } from "../../features/game/data/tileTextureFrames";
 import { useAuth } from "../hooks/useAuth";
 import styles from "./GameBoardPage.module.css";
 
@@ -17,6 +18,14 @@ export default function GameBoard() {
   const [countdown, setCountdown] = useState(GAME_START_COUNTDOWN_SECONDS);
 
   const isWaiting = !game || game.status === "waiting";
+
+  const labeledPlayers = (game?.players ?? []).map((player, index) => ({
+    ...player,
+    label:
+      player.id === socket.id
+        ? (user?.username ?? "You")
+        : playerFallbackLabels[index % playerFallbackLabels.length],
+  }));
 
   useEffect(() => {
     socket.connect();
@@ -77,7 +86,7 @@ export default function GameBoard() {
         </aside>
 
         <div className={`${styles.boardArea} relative`}>
-          <PixiGameBoard map={game.map} />
+          <PixiGameBoard map={game.map} players={labeledPlayers} />
 
           {isWaiting && (
             <div className="absolute top-1/2 left-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1 rounded-xl bg-black/60 px-6 py-3">
