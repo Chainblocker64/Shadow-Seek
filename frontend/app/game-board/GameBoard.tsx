@@ -5,12 +5,14 @@ import { PixiGameBoard } from "../../features/game/components/PixiGameBoard";
 import type { GameState } from "../../features/game/types/game";
 import { socket } from "@/lib/socket";
 import { getLatestGame } from "../../features/game/gameSync";
+import { useAuth } from "../hooks/useAuth";
 import styles from "./GameBoardPage.module.css";
 
 // Mirrors the backend's GAME_START_DELAY_MS (backend/src/game/consts.ts).
 const GAME_START_COUNTDOWN_SECONDS = 3;
 
 export default function GameBoard() {
+  const { user } = useAuth();
   const [game, setGame] = useState<GameState | null>(() => getLatestGame());
   const [countdown, setCountdown] = useState(GAME_START_COUNTDOWN_SECONDS);
 
@@ -64,8 +66,7 @@ export default function GameBoard() {
       <section className={styles.layout}>
         <aside className={styles.sidebar}>
           <div>
-            {/* TODO: Use authenticated user name for the player name */}
-            <p className={styles.playerName}>{game.players[0]?.id}</p>
+            <p className={styles.playerName}>{user?.username}</p>
             <p className={styles.playerHealth}>HP: 80/100</p>
           </div>
 
