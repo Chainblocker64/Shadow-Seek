@@ -3,9 +3,11 @@ import { Room } from "../types";
 export default function GameRoom({
   room,
   handleLeaveRoom,
+  isOwner,
 }: {
   room: Room;
   handleLeaveRoom: () => void;
+  isOwner: boolean;
 }) {
   return (
     <div className="flex w-full flex-1 flex-col">

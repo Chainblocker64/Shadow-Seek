@@ -59,6 +59,7 @@ export class LobbyGateway {
     const room = this.lobbyService.addPlayer(clientId, roomId);
 
     if (!room) {
+      this.server.to(clientId).emit('room:join:failed');
       return;
     }
 
