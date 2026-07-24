@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Room } from "../types";
 import { socket } from "@/lib/socket";
+import "@/features/game/gameSync";
 import RoomListItems from "./RoomListItems";
 
 export default function RoomList() {
@@ -24,6 +25,9 @@ export default function RoomList() {
     socket.on("rooms:sync", onRoomsSync);
     socket.on("connect", onConnect);
     socket.on("game:opened", onGameOpened);
+    if (socket.connected) {
+      onConnect();
+    }
     socket.connect();
 
     return () => {
