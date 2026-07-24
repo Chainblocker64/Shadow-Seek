@@ -1,31 +1,15 @@
 import {
-  canMoveToPosition,
-  MovementPosition,
-  MovementValidationMap,
-} from './movement-validation';
-
-export type ServerMovementDirection = 'up' | 'down' | 'left' | 'right';
-
-export type ServerPlayerState = {
-  id: string;
-  position: MovementPosition;
-};
-
-export type ServerGameState = {
-  map: MovementValidationMap;
-  players: ServerPlayerState[];
-};
-
-export type ServerMovementResult = {
-  playerId: string;
-  position: MovementPosition;
-  moved: boolean;
-};
+  GameState,
+  MovementDirection,
+  MovementResult,
+  Position,
+} from '../types';
+import { canMoveToPosition } from './movement-validation';
 
 export function calculateNextPosition(
-  currentPosition: MovementPosition,
-  direction: ServerMovementDirection,
-): MovementPosition {
+  currentPosition: Position,
+  direction: MovementDirection,
+): Position {
   switch (direction) {
     case 'up':
       return {
@@ -51,10 +35,10 @@ export function calculateNextPosition(
 }
 
 export function handlePlayerMovement(
-  gameState: ServerGameState,
+  gameState: GameState,
   playerId: string,
-  direction: ServerMovementDirection,
-): ServerMovementResult {
+  direction: MovementDirection,
+): MovementResult {
   const player = gameState.players.find((currentPlayer) => {
     return currentPlayer.id === playerId;
   });
@@ -69,8 +53,7 @@ export function handlePlayerMovement(
 
   if (!canMove) {
     return {
-      playerId: player.id,
-      position: player.position,
+      player: player,
       moved: false,
     };
   }
@@ -78,8 +61,7 @@ export function handlePlayerMovement(
   player.position = nextPosition;
 
   return {
-    playerId: player.id,
-    position: player.position,
+    player: player,
     moved: true,
   };
 }
