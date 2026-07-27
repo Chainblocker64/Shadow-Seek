@@ -11,6 +11,7 @@ import { LobbyService } from './lobby.service';
 import { JoinRoomDto } from './dto/join-room.dto';
 import { OnEvent } from '@nestjs/event-emitter';
 import { RoomUpdatedEvent } from './events/room-updated.event';
+import type { ClientId } from './types';
 
 @WebSocketGateway({ cors: { origin: process.env.FRONTEND_URL } })
 @UsePipes(
@@ -65,7 +66,6 @@ export class LobbyGateway {
   @SubscribeMessage('leaveRoom')
   handleLeaveRoom({ id: clientId }: Socket) {
     this.lobbyService.removePlayer(clientId);
-    this.server.to(clientId).emit('room:left');
   }
 
   //NestJS event listeners
@@ -97,5 +97,10 @@ export class LobbyGateway {
     this.server.in(clientId).socketsLeave(roomId);
     this.server.to(clientId).emit('room:left');
     this.server.to(roomId).emit('room:updated', room);
+  }
+
+  @OnEvent(['room.deleted', 'room.player.removeSkipped'])
+  emitPlayerLeft(clientId: ClientId) {
+    this.server.to(clientId).emit('room:left');
   }
 }

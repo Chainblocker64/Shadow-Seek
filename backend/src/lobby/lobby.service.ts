@@ -78,6 +78,7 @@ export class LobbyService {
     const room = this.getPlayerRoom(clientId);
 
     if (!room) {
+      this.triggerPlayerRemoveSkipped(clientId);
       return;
     }
 
@@ -86,6 +87,7 @@ export class LobbyService {
 
     if (updatedPlayers.length === 0) {
       this.rooms.delete(roomId);
+      this.triggerRoomDeleted(clientId);
       this.triggerRoomBroadcast();
       return;
     }
@@ -150,5 +152,13 @@ export class LobbyService {
       'room.player.removed',
       new RoomUpdatedEvent(clientId, room),
     );
+  }
+
+  private triggerRoomDeleted(clientId: ClientId) {
+    this.eventEmitter.emit('room.deleted', clientId);
+  }
+
+  private triggerPlayerRemoveSkipped(clientId: ClientId) {
+    this.eventEmitter.emit('room.player.removeSkipped', clientId);
   }
 }
