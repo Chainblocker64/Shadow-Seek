@@ -1,15 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import {
-  ClientId,
-  Room,
-  RoomId,
-  RoomCollection,
-  STATUS_WAITING,
-  STATUS_FULL,
-} from './types';
+import { Room, RoomCollection, STATUS_WAITING, STATUS_FULL } from './types';
 import { randomUUID } from 'node:crypto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { RoomUpdatedEvent } from './events/room-updated.event';
+import type { ClientId, RoomId } from '../shared/types';
 
 @Injectable()
 export class LobbyService {
