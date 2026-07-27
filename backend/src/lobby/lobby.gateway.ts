@@ -9,6 +9,9 @@ import { UsePipes, ValidationPipe } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { LobbyService } from './lobby.service';
 import { JoinRoomDto } from './dto/join-room.dto';
+import { OnEvent } from '@nestjs/event-emitter';
+import { RoomUpdatedEvent } from './events/room-updated.event';
+import type { ClientId } from '../shared/types';
 
 @WebSocketGateway({ cors: { origin: process.env.FRONTEND_URL } })
 @UsePipes(
@@ -33,13 +36,15 @@ export class LobbyGateway {
 
   handleDisconnect({ id: clientId }: Socket) {
     this.lobbyService.removePlayer(clientId);
-    this.broadcastRooms();
   }
 
   @SubscribeMessage('createRoom')
   handleCreateRoom({ id: clientId }: Socket) {
-    this.lobbyService.createRoom(clientId);
-    this.broadcastRooms();
+    const room = this.lobbyService.createRoom(clientId);
+
+    if (!room) {
+      return;
+    }
   }
 
   @SubscribeMessage('joinRoom')
@@ -47,10 +52,25 @@ export class LobbyGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: JoinRoomDto,
   ) {
-    this.lobbyService.addPlayer(client.id, payload.roomId);
-    this.broadcastRooms();
+    const clientId = client.id;
+    const roomId = payload.roomId;
+
+    const room = this.lobbyService.addPlayer(clientId, roomId);
+
+    if (!room) {
+      this.server.to(clientId).emit('room:join:failed');
+      return;
+    }
   }
 
+  @SubscribeMessage('leaveRoom')
+  handleLeaveRoom({ id: clientId }: Socket) {
+    this.lobbyService.removePlayer(clientId);
+  }
+
+  //NestJS event listeners
+
+  @OnEvent('room.broadcast')
   broadcastRooms(target: string = '') {
     const rooms = this.lobbyService.getRooms();
 
@@ -58,9 +78,29 @@ export class LobbyGateway {
     const roomsArray = Array.from(rooms.values());
 
     if (target) {
-      this.server.to(target).emit('rooms:sync', roomsArray);
+      this.server.to(target).emit('room:sync', roomsArray);
     } else {
-      this.server.emit('rooms:sync', roomsArray);
+      this.server.emit('room:sync', roomsArray);
     }
+  }
+
+  @OnEvent('room.player.added')
+  joinWebsocketRoom({ clientId, room }: RoomUpdatedEvent) {
+    const roomId = room.id;
+    this.server.in(clientId).socketsJoin(roomId);
+    this.server.to(roomId).emit('room:updated', room);
+  }
+
+  @OnEvent('room.player.removed')
+  leaveWebsocketRoom({ clientId, room }: RoomUpdatedEvent) {
+    const roomId = room.id;
+    this.server.in(clientId).socketsLeave(roomId);
+    this.server.to(clientId).emit('room:left');
+    this.server.to(roomId).emit('room:updated', room);
+  }
+
+  @OnEvent(['room.deleted', 'room.player.removeSkipped'])
+  emitPlayerLeft(clientId: ClientId) {
+    this.server.to(clientId).emit('room:left');
   }
 }

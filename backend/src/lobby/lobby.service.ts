@@ -1,13 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import { Room, RoomCollection, STATUS_WAITING, STATUS_FULL } from './types';
 import { randomUUID } from 'node:crypto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { RoomUpdatedEvent } from './events/room-updated.event';
 import type { ClientId, RoomId } from '../shared/types';
 
 @Injectable()
 export class LobbyService {
+  constructor(private readonly eventEmitter: EventEmitter2) {}
+
   private readonly rooms: RoomCollection = new Map<RoomId, Room>();
 
-  createRoom(clientId: ClientId) {
+  createRoom(clientId: ClientId): Room | undefined {
     if (this.playerHasRoom(clientId)) {
       return;
     }
@@ -24,21 +28,28 @@ export class LobbyService {
     };
 
     this.rooms.set(roomId, room);
+    this.triggerPlayerAdded(clientId, room);
+    this.triggerRoomBroadcast();
+    return room;
   }
 
-  addPlayer(clientId: ClientId, roomId: RoomId) {
+  addPlayer(clientId: ClientId, roomId: RoomId): Room | undefined {
     const room = this.rooms.get(roomId);
 
     if (!room) {
       return;
     }
 
-    //TODO case handling / feedback in server response?
-    if (this.roomIsFull(room) || room.status !== STATUS_WAITING) {
-      return;
+    if (room.players.includes(clientId)) {
+      return room;
     }
 
-    if (this.playerHasRoom(clientId)) {
+    //TODO case handling / feedback in server response?
+    if (
+      this.roomIsFull(room) ||
+      room.status !== STATUS_WAITING ||
+      this.playerHasRoom(clientId)
+    ) {
       return;
     }
 
@@ -50,29 +61,45 @@ export class LobbyService {
     updatedRoom.status = this.newRoomStatus(updatedRoom);
 
     this.rooms.set(roomId, updatedRoom);
+
+    this.triggerPlayerAdded(clientId, updatedRoom);
+    this.triggerRoomBroadcast();
+
+    return updatedRoom;
   }
 
   removePlayer(clientId: ClientId) {
     const room = this.getPlayerRoom(clientId);
 
     if (!room) {
+      this.triggerPlayerRemoveSkipped(clientId);
       return;
     }
 
     const roomId = room.id;
-
     const updatedPlayers = room.players.filter((player) => player !== clientId);
 
     if (updatedPlayers.length === 0) {
       this.rooms.delete(roomId);
+      this.triggerRoomDeleted(clientId);
+      this.triggerRoomBroadcast();
       return;
     }
 
-    const updatedRoom = { ...room, players: updatedPlayers };
+    const clientWasOwner = room.owner === clientId;
+
+    const updatedRoom = {
+      ...room,
+      players: updatedPlayers,
+      owner: clientWasOwner ? updatedPlayers[0] : room.owner,
+    };
 
     updatedRoom.status = this.newRoomStatus(updatedRoom);
 
     this.rooms.set(roomId, updatedRoom);
+
+    this.triggerPlayerRemoved(clientId, updatedRoom);
+    this.triggerRoomBroadcast();
   }
 
   getRoom(roomId: RoomId): Room | undefined {
@@ -99,7 +126,33 @@ export class LobbyService {
     return room.players.length === room.maxPlayers;
   }
 
-  newRoomStatus(room: Room) {
+  private newRoomStatus(room: Room) {
     return this.roomIsFull(room) ? STATUS_FULL : STATUS_WAITING;
+  }
+
+  private triggerRoomBroadcast() {
+    this.eventEmitter.emit('room.broadcast');
+  }
+
+  private triggerPlayerAdded(clientId: ClientId, room: Room) {
+    this.eventEmitter.emit(
+      'room.player.added',
+      new RoomUpdatedEvent(clientId, room),
+    );
+  }
+
+  private triggerPlayerRemoved(clientId: ClientId, room: Room) {
+    this.eventEmitter.emit(
+      'room.player.removed',
+      new RoomUpdatedEvent(clientId, room),
+    );
+  }
+
+  private triggerRoomDeleted(clientId: ClientId) {
+    this.eventEmitter.emit('room.deleted', clientId);
+  }
+
+  private triggerPlayerRemoveSkipped(clientId: ClientId) {
+    this.eventEmitter.emit('room.player.removeSkipped', clientId);
   }
 }

@@ -6,6 +6,7 @@ import { ConfigModule } from '@nestjs/config';
 import { User } from './user/entities/user.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AuthModule } from './auth/auth.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 import { LobbyModule } from './lobby/lobby.module';
 import { GameModule } from './game/game.module';
 
@@ -28,6 +29,7 @@ import { GameModule } from './game/game.module';
       autoLoadEntities: true,
     }),
     AuthModule,
+    EventEmitterModule.forRoot(),
   ],
   controllers: [AppController],
   providers: [AppService],
