@@ -11,7 +11,7 @@ import { LobbyService } from './lobby.service';
 import { JoinRoomDto } from './dto/join-room.dto';
 import { OnEvent } from '@nestjs/event-emitter';
 import { RoomUpdatedEvent } from './events/room-updated.event';
-import type { ClientId } from './types';
+import type { ClientId } from '../shared/types';
 
 @WebSocketGateway({ cors: { origin: process.env.FRONTEND_URL } })
 @UsePipes(
