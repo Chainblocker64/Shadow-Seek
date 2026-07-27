@@ -1,23 +1,22 @@
 "use client";
 
 import { useState, FormEvent } from "react";
-import { AuthenticatedUser } from "../auth";
+import { useAuthStore } from "../../store/useAuthStore";
 import { useRouter } from "next/navigation";
 
-interface ProfileFormProps {
-  user: AuthenticatedUser;
-  setUser: (user: AuthenticatedUser | null) => void;
-}
-
-export default function ProfileForm({ user, setUser }: ProfileFormProps) {
+export default function ProfileForm() {
   const router = useRouter();
-  const [username, setUsername] = useState(user.username);
+  const { user, setUser } = useAuthStore();
+
+  const [username, setUsername] = useState(user?.username || "");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
+
+  if (!user) return null;
 
   const handleUpdate = async (e: FormEvent) => {
     e.preventDefault();
@@ -53,7 +52,7 @@ export default function ProfileForm({ user, setUser }: ProfileFormProps) {
         throw new Error(errorMsg);
       }
 
-      const updatedUser: AuthenticatedUser = await res.json();
+      const updatedUser = await res.json();
       setUser(updatedUser);
 
       setPassword("");
