@@ -12,9 +12,5 @@ export default function Lobby() {
     socket.emit("createRoom");
   };
 
-  return (
-    <AuthGuard>
-      <RoomList handleCreateRoom={handleCreateRoom} rooms={rooms || []} />
-    </AuthGuard>
-  );
+  return <RoomList handleCreateRoom={handleCreateRoom} rooms={rooms || []} />;
 }
