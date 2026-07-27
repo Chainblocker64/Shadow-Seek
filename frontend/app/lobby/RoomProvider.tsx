@@ -36,7 +36,6 @@ export function RoomProvider({ children }: { children: React.ReactNode }) {
       socket.off("room:updated", onRoomUpdated);
       socket.off("room:join:failed", onRoomJoinFailed);
       socket.off("room:left", onRoomLeft);
-      socket.disconnect();
     };
   }, [router]);
 

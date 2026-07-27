@@ -9,8 +9,12 @@ const KEY_TO_DIRECTION: Record<string, MovementDirection> = {
   d: "right",
 };
 
-export function useMovementControls() {
+export function useMovementControls(enabled: boolean) {
   useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     // Game Board geladen, dann websocket hat verbindung
     socket.connect();
 
@@ -37,8 +41,6 @@ export function useMovementControls() {
 
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
-      // Hier trennen wir die Socket-Verbindung beim Verlassen des Game Boards
-      socket.disconnect();
     };
-  }, []);
+  }, [enabled]);
 }

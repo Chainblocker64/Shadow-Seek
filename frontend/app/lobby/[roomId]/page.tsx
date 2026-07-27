@@ -5,16 +5,22 @@ import Link from "next/link";
 import { socket } from "@/lib/socket";
 import GameRoom from "../components/GameRoom";
 import { useJoinedRoom, useLeaveRoom } from "../RoomProvider";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import "@/features/game/gameSync";
 import { RoomId } from "../types";
 
 export default function LobbyRoom() {
   const leaveRoom = useLeaveRoom();
+  const router = useRouter();
   const [isLeaving, setIsLeaving] = useState(false);
 
   const handleLeaveRoom = () => {
     setIsLeaving(true);
     leaveRoom();
+  };
+
+  const handleInitializeGame = () => {
+    socket.emit("initializeGame");
   };
 
   const joinRoom = (roomId: RoomId) => {
@@ -25,6 +31,18 @@ export default function LobbyRoom() {
   const [failedRoomId, setFailedRoomId] = useState<RoomId | null>(null);
   const { roomId } = useParams<{ roomId: RoomId }>();
   const joinFailed = failedRoomId === roomId;
+
+  useEffect(() => {
+    const onGameOpened = () => {
+      router.push("/game-board");
+    };
+
+    socket.on("game:opened", onGameOpened);
+
+    return () => {
+      socket.off("game:opened", onGameOpened);
+    };
+  }, [router]);
 
   useEffect(() => {
     const onJoinFailed = () => setFailedRoomId(roomId);
@@ -55,6 +73,7 @@ export default function LobbyRoom() {
           room={joinedRoom}
           handleLeaveRoom={handleLeaveRoom}
           isOwner={socket.id === joinedRoom.owner}
+          handleInitializeGame={handleInitializeGame}
         />
       ) : isLeaving || !joinFailed ? null : (
         <div className="flex flex-1 flex-col items-center gap-4 text-center">

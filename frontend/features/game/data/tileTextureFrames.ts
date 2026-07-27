@@ -24,6 +24,20 @@ export const baseTileTextureFrames: Record<
   },
 };
 
+export const playerTextureFrames: { x: number; y: number }[] = [
+  { x: 0, y: 64 }, // red armored warrior
+  { x: 768, y: 32 }, // green-robed mage
+  { x: 832, y: 32 }, // purple-robed wizard
+  { x: 896, y: 32 }, // blue-robed mage
+];
+
+export const playerFallbackLabels: string[] = [
+  "Warrior",
+  "Emerald Mage",
+  "Violet Wizard",
+  "Azure Mage",
+];
+
 export const mapObjectTextureFrames: Record<
   MapObjectType,
   { x: number; y: number }
