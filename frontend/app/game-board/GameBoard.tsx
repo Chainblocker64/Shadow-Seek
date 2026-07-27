@@ -5,9 +5,11 @@ import { PixiGameBoard } from "../../features/game/components/PixiGameBoard";
 import type { GameState } from "../../features/game/types/game";
 import { socket } from "@/lib/socket";
 import styles from "./GameBoardPage.module.css";
+import { useAuthStore } from "../store/useAuthStore";
 
 export default function GameBoard() {
   const [game, setGame] = useState<GameState | null>(null);
+  const { user } = useAuthStore();
 
   useEffect(() => {
     socket.connect();
@@ -41,8 +43,7 @@ export default function GameBoard() {
       <section className={styles.layout}>
         <aside className={styles.sidebar}>
           <div>
-            {/* TODO: Use authenticated user name for the player name */}
-            <p className={styles.playerName}>{game.players[0]?.id}</p>
+            <p className={styles.playerName}>{user?.username ?? "Player"}</p>
             <p className={styles.playerHealth}>HP: 80/100</p>
           </div>
 
