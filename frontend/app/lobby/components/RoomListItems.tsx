@@ -1,7 +1,12 @@
 import { Room } from "../types";
 import RoomListItem from "./RoomListItem";
 
-export default function RoomListItems({ rooms }: { rooms: Room[] }) {
+type RoomListItemsProps = {
+  rooms: Room[];
+  clientId?: string;
+};
+
+export default function RoomListItems({ rooms }: RoomListItemsProps) {
   return (
     <div className="flex flex-col gap-3">
       {rooms.length === 0 ? (

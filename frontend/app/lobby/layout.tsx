@@ -1,5 +1,6 @@
 import { Header } from "../components/Header";
 import { RoomProvider } from "./RoomProvider";
+import AuthGuard from "../components/AuthGuard";
 
 export default function LobbyLayout({
   children,
@@ -7,7 +8,7 @@ export default function LobbyLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <>
+    <AuthGuard>
       <Header />
       <RoomProvider>
         <main className="flex w-full flex-1 flex-col items-center px-6 py-10">
@@ -20,6 +21,6 @@ export default function LobbyLayout({
           </div>
         </main>
       </RoomProvider>
-    </>
+    </AuthGuard>
   );
 }
