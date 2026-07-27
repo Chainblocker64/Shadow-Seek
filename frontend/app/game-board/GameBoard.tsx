@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PixiGameBoard } from "../../features/game/components/PixiGameBoard";
 import type { GameState } from "../../features/game/types/game";
 import { socket } from "@/lib/socket";
@@ -19,13 +19,17 @@ export default function GameBoard() {
 
   const isWaiting = !game || game.status === "waiting";
 
-  const labeledPlayers = (game?.players ?? []).map((player, index) => ({
-    ...player,
-    label:
-      player.id === socket.id
-        ? (user?.username ?? "You")
-        : playerFallbackLabels[index % playerFallbackLabels.length],
-  }));
+  const labeledPlayers = useMemo(
+    () =>
+      (game?.players ?? []).map((player, index) => ({
+        ...player,
+        label:
+          player.id === socket.id
+            ? (user?.username ?? "You")
+            : playerFallbackLabels[index % playerFallbackLabels.length],
+      })),
+    [game?.players, user?.username],
+  );
 
   useEffect(() => {
     socket.connect();

@@ -1,7 +1,14 @@
 "use client";
 
 import styles from "./PixiGameBoard.module.css";
-import { Application, Assets, Rectangle, Sprite, Texture } from "pixi.js";
+import {
+  Application,
+  Assets,
+  Container,
+  Rectangle,
+  Sprite,
+  Texture,
+} from "pixi.js";
 import { useEffect, useRef } from "react";
 import type { GameMap } from "../types/map";
 import type { GameState } from "../types/game";
@@ -26,10 +33,18 @@ type PixiGameBoardProps = {
   status: GameState["status"];
 };
 
+type BoardLayout = {
+  offsetX: number;
+  offsetY: number;
+  tileSize: number;
+};
+
 const TILESET_PATH = "/assets/tiles/dungeon-crawl.png";
 
 export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const playersRef = useRef(players);
+  const renderPlayersRef = useRef<(() => void) | null>(null);
 
   useMovementControls(status === "running");
 
@@ -49,6 +64,7 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
     function destroyApp() {
       app?.destroy(true);
       app = null;
+      renderPlayersRef.current = null;
     }
 
     async function setupPixi() {
@@ -105,6 +121,35 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
 
         return sprite;
       }
+
+      const playerLayer = new Container();
+      let layout: BoardLayout | null = null;
+
+      function renderPlayers() {
+        if (!layout) {
+          return;
+        }
+
+        const { offsetX, offsetY, tileSize } = layout;
+
+        playerLayer.removeChildren();
+
+        playersRef.current.forEach((player, index) => {
+          const frame = playerTextureFrames[index % playerTextureFrames.length];
+
+          playerLayer.addChild(
+            createTileSprite(
+              frame.x,
+              frame.y,
+              offsetX + player.position.x * tileSize,
+              offsetY + player.position.y * tileSize,
+              tileSize,
+            ),
+          );
+        });
+      }
+
+      renderPlayersRef.current = renderPlayers;
 
       function renderMap() {
         if (!app || !container) {
@@ -181,22 +226,9 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
           app?.stage.addChild(objectSprite);
         });
 
-        players.forEach((player, index) => {
-          const frame = playerTextureFrames[index % playerTextureFrames.length];
-
-          const playerX = offsetX + player.position.x * tileSize;
-          const playerY = offsetY + player.position.y * tileSize;
-
-          const playerSprite = createTileSprite(
-            frame.x,
-            frame.y,
-            playerX,
-            playerY,
-            tileSize,
-          );
-
-          app?.stage.addChild(playerSprite);
-        });
+        app.stage.addChild(playerLayer);
+        layout = { offsetX, offsetY, tileSize };
+        renderPlayers();
       }
 
       renderMap();
@@ -227,7 +259,12 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
         destroyApp();
       });
     };
-  }, [map, players]);
+  }, [map]);
+
+  useEffect(() => {
+    playersRef.current = players;
+    renderPlayersRef.current?.();
+  }, [players]);
 
   return (
     <div className={styles.container}>
