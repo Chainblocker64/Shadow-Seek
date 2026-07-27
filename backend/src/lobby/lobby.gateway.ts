@@ -44,8 +44,6 @@ export class LobbyGateway {
     if (!room) {
       return;
     }
-
-    this.server.to(clientId).emit('room:joined', room);
   }
 
   @SubscribeMessage('joinRoom')
@@ -62,8 +60,6 @@ export class LobbyGateway {
       this.server.to(clientId).emit('room:join:failed');
       return;
     }
-
-    this.server.to(clientId).emit('room:joined', room);
   }
 
   @SubscribeMessage('leaveRoom')
