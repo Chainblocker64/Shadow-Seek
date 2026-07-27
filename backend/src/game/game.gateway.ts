@@ -8,7 +8,7 @@ import { Server, Socket } from 'socket.io';
 import type { ClientId, RoomId } from '../shared/types';
 import { LobbyService } from '../lobby/lobby.service';
 import { MapsService } from '../maps/maps.service';
-import { GAME_START_DELAY_MS } from './consts';
+import { GAME_START_DELAY_MS, MIN_PLAYERS_TO_START } from './consts';
 import { GameService } from './game.service';
 
 @WebSocketGateway({ cors: { origin: process.env.FRONTEND_URL } })
@@ -32,6 +32,10 @@ export class GameGateway {
     const room = this.lobbyService.getPlayerRoom(client.id);
 
     if (!room || room.owner !== client.id) {
+      return;
+    }
+
+    if (room.players.length < MIN_PLAYERS_TO_START) {
       return;
     }
 
