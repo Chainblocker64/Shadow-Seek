@@ -1,9 +1,8 @@
-import {
-  calculateNextPosition,
-  handlePlayerMovement,
-  ServerGameState,
-} from './server-movement';
+import { calculateNextPosition, handlePlayerMovement } from './server-movement';
 import { describe, expect, it } from '@jest/globals';
+import { randomUUID } from 'node:crypto';
+import type { GameState } from '../types';
+import { WAITING } from '../consts';
 
 describe('calculateNextPosition', () => {
   it('calculates the next position for up', () => {
@@ -68,9 +67,12 @@ describe('calculateNextPosition', () => {
 });
 
 describe('handlePlayerMovement', () => {
-  function createTestGameState(): ServerGameState {
+  function createTestGameState(): GameState {
     return {
+      roomId: randomUUID(),
+      status: WAITING,
       map: {
+        name: 'Test map',
         width: 5,
         height: 5,
         baseTile: 'floor',
@@ -105,10 +107,12 @@ describe('handlePlayerMovement', () => {
     const result = handlePlayerMovement(gameState, 'player-1', 'up');
 
     expect(result).toEqual({
-      playerId: 'player-1',
-      position: {
-        x: 2,
-        y: 1,
+      player: {
+        id: 'player-1',
+        position: {
+          x: 2,
+          y: 1,
+        },
       },
       moved: true,
     });
@@ -125,10 +129,12 @@ describe('handlePlayerMovement', () => {
     const result = handlePlayerMovement(gameState, 'player-1', 'right');
 
     expect(result).toEqual({
-      playerId: 'player-1',
-      position: {
-        x: 2,
-        y: 2,
+      player: {
+        id: 'player-1',
+        position: {
+          x: 2,
+          y: 2,
+        },
       },
       moved: false,
     });
@@ -145,10 +151,12 @@ describe('handlePlayerMovement', () => {
     const result = handlePlayerMovement(gameState, 'player-1', 'left');
 
     expect(result).toEqual({
-      playerId: 'player-1',
-      position: {
-        x: 1,
-        y: 2,
+      player: {
+        id: 'player-1',
+        position: {
+          x: 1,
+          y: 2,
+        },
       },
       moved: true,
     });

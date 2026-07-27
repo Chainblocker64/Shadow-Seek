@@ -1,13 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import {
-  ClientId,
-  Room,
-  RoomId,
-  RoomCollection,
-  STATUS_WAITING,
-  STATUS_FULL,
-} from './types';
+import { Room, RoomCollection, STATUS_WAITING, STATUS_FULL } from './types';
 import { randomUUID } from 'node:crypto';
+import type { ClientId, RoomId } from '../shared/types';
 
 @Injectable()
 export class LobbyService {
