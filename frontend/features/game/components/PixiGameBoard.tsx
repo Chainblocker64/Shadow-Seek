@@ -4,6 +4,7 @@ import styles from "./PixiGameBoard.module.css";
 import { Application, Assets, Rectangle, Sprite, Texture } from "pixi.js";
 import { useEffect, useRef } from "react";
 import type { GameMap } from "../types/map";
+import type { GameState } from "../types/game";
 import type { PlayerPosition } from "../types/player";
 import {
   baseTileTextureFrames,
@@ -22,14 +23,15 @@ type GamePlayer = {
 type PixiGameBoardProps = {
   map: GameMap;
   players: GamePlayer[];
+  status: GameState["status"];
 };
 
 const TILESET_PATH = "/assets/tiles/dungeon-crawl.png";
 
-export function PixiGameBoard({ map, players }: PixiGameBoardProps) {
+export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
-  useMovementControls();
+  useMovementControls(status === "running");
 
   useEffect(() => {
     const container = containerRef.current;

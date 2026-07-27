@@ -86,7 +86,11 @@ export default function GameBoard() {
         </aside>
 
         <div className={`${styles.boardArea} relative`}>
-          <PixiGameBoard map={game.map} players={labeledPlayers} />
+          <PixiGameBoard
+            map={game.map}
+            players={labeledPlayers}
+            status={game.status}
+          />
 
           {isWaiting && (
             <div className="absolute top-1/2 left-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1 rounded-xl bg-black/60 px-6 py-3">
