@@ -9,7 +9,11 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { JwtPayload } from '../auth/types/jwt-payload';
 import { CreateMapDto } from './dto/create-map.dto';
 import { MapResponseDto } from './dto/map-response.dto';
 import { MapsService } from './maps.service';
@@ -20,8 +24,12 @@ export class MapsController {
   constructor(private readonly mapsService: MapsService) {}
 
   @Post('create')
-  async create(@Body() createMapDto: CreateMapDto): Promise<MapResponseDto> {
-    return await this.mapsService.create(createMapDto);
+  @UseGuards(JwtAuthGuard)
+  async create(
+    @Body() createMapDto: CreateMapDto,
+    @Request() req: { user: JwtPayload },
+  ): Promise<MapResponseDto> {
+    return await this.mapsService.create(createMapDto, req.user.username);
   }
 
   @Get()
@@ -37,6 +45,7 @@ export class MapsController {
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard)
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateMapDto: UpdateMapDto,
@@ -45,6 +54,7 @@ export class MapsController {
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async delete(@Param('id', ParseIntPipe) id: number): Promise<void> {
     await this.mapsService.delete(id);
