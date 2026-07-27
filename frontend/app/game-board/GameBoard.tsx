@@ -53,7 +53,7 @@ export default function GameBoard() {
     }
 
     const interval = setInterval(() => {
-      setCountdown((current) => Math.max(1, current - 1));
+      setCountdown((current) => Math.max(0, current - 1));
     }, 1_000);
 
     return () => clearInterval(interval);

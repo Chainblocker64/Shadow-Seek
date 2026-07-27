@@ -6,7 +6,7 @@ type RoomListItemsProps = {
   clientId?: string;
 };
 
-export default function RoomListItems({ rooms, clientId }: RoomListItemsProps) {
+export default function RoomListItems({ rooms }: RoomListItemsProps) {
   return (
     <div className="flex flex-col gap-3">
       {rooms.length === 0 ? (
@@ -14,13 +14,7 @@ export default function RoomListItems({ rooms, clientId }: RoomListItemsProps) {
           No rooms waiting, create a game to start playing
         </p>
       ) : (
-        rooms.map((room) => (
-          <RoomListItem
-            key={room.id}
-            room={room}
-            isOwner={room.owner === clientId}
-          />
-        ))
+        rooms.map((room) => <RoomListItem key={room.id} room={room} />)
       )}
     </div>
   );
