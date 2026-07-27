@@ -1,5 +1,5 @@
-import { Room } from '../types';
 import { ClientId } from '../../shared/types';
+import { Room } from '../types';
 
 export class RoomUpdatedEvent {
   constructor(

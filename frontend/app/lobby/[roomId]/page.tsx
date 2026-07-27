@@ -7,6 +7,7 @@ import GameRoom from "../components/GameRoom";
 import { useJoinedRoom, useLeaveRoom } from "../RoomProvider";
 import { useParams, useRouter } from "next/navigation";
 import "@/features/game/gameSync";
+import { RoomId } from "../types";
 
 export default function LobbyRoom() {
   const leaveRoom = useLeaveRoom();
@@ -22,9 +23,13 @@ export default function LobbyRoom() {
     socket.emit("initializeGame");
   };
 
+  const joinRoom = (roomId: RoomId) => {
+    socket.emit("joinRoom", { roomId: roomId });
+  };
+
   const joinedRoom = useJoinedRoom();
-  const [failedRoomId, setFailedRoomId] = useState<string | null>(null);
-  const { roomId } = useParams<{ roomId: string }>();
+  const [failedRoomId, setFailedRoomId] = useState<RoomId | null>(null);
+  const { roomId } = useParams<{ roomId: RoomId }>();
   const joinFailed = failedRoomId === roomId;
 
   useEffect(() => {
@@ -44,7 +49,12 @@ export default function LobbyRoom() {
     socket.on("room:join:failed", onJoinFailed);
 
     if (!joinedRoom) {
-      socket.emit("joinRoom", { roomId: roomId });
+      joinRoom(roomId);
+    }
+
+    if (roomId !== joinedRoom?.id) {
+      socket.emit("leaveRoom");
+      joinRoom(roomId);
     }
 
     return () => {
