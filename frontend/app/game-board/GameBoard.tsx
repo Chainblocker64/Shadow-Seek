@@ -7,6 +7,7 @@ import { socket } from "@/lib/socket";
 import { getLatestGame } from "../../features/game/gameSync";
 import { playerFallbackLabels } from "../../features/game/data/tileTextureFrames";
 import { useAuth } from "../hooks/useAuth";
+import PlayerList from "./PlayerList";
 import styles from "./GameBoardPage.module.css";
 
 // Mirrors the backend's GAME_START_DELAY_MS (backend/src/game/consts.ts).
@@ -27,6 +28,7 @@ export default function GameBoard() {
           player.id === socket.id
             ? (user?.username ?? "You")
             : playerFallbackLabels[index % playerFallbackLabels.length],
+        isSelf: player.id === socket.id,
       })),
     [game?.players, user?.username],
   );
@@ -80,8 +82,11 @@ export default function GameBoard() {
         <aside className={styles.sidebar}>
           <div>
             <p className={styles.playerName}>{user?.username}</p>
+            {/* TODO: Fill in the actual health once the game state carries it */}
             <p className={styles.playerHealth}>HP: 80/100</p>
           </div>
+
+          <PlayerList players={labeledPlayers} />
 
           <div className={styles.controls}>
             <p>Move: WASD</p>
