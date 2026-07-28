@@ -39,6 +39,11 @@ export class LobbyGateway {
     this.lobbyService.removePlayer(clientId);
   }
 
+  @SubscribeMessage('requestRooms')
+  handleRequestRooms({ id: clientId }: Socket) {
+    this.broadcastRooms(clientId);
+  }
+
   @SubscribeMessage('createRoom')
   handleCreateRoom(
     @ConnectedSocket() client: Socket,
@@ -59,7 +64,11 @@ export class LobbyGateway {
     const clientId = client.id;
     const roomId = payload.roomId;
 
-    const room = this.lobbyService.addPlayer(clientId, roomId, payload.username);
+    const room = this.lobbyService.addPlayer(
+      clientId,
+      roomId,
+      payload.username,
+    );
 
     if (!room) {
       this.server.to(clientId).emit('room:join:failed');

@@ -49,6 +49,36 @@ export class GameService {
     }
   }
 
+  addPlayer(
+    roomId: RoomId,
+    player: { id: ClientId; name: string },
+  ): GameState | undefined {
+    const game = this.games.get(roomId);
+
+    if (!game || game.status === ENDED) {
+      return;
+    }
+
+    if (game.players.some(({ id }) => id === player.id)) {
+      return game;
+    }
+
+    const position = this.getFreeSpawnPosition(game);
+
+    if (!position) {
+      return;
+    }
+
+    const updatedGame: GameState = {
+      ...game,
+      players: [...game.players, { ...player, position }],
+    };
+
+    this.games.set(roomId, updatedGame);
+
+    return updatedGame;
+  }
+
   removePlayer(clientId: ClientId): GameState | undefined {
     const game = this.getPlayerGame(clientId);
 
@@ -98,6 +128,15 @@ export class GameService {
     this.games.set(roomId, endedGame);
 
     return endedGame;
+  }
+
+  private getFreeSpawnPosition(game: GameState): Position | undefined {
+    return this.getSpawnPositions(game.map).find(
+      (spawn) =>
+        !game.players.some(
+          ({ position }) => position.x === spawn.x && position.y === spawn.y,
+        ),
+    );
   }
 
   private getSpawnPositions(map: GameMap): Position[] {

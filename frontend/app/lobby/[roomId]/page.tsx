@@ -57,9 +57,8 @@ export default function LobbyRoom() {
 
     if (!joinedRoom) {
       joinRoom(roomId, username);
-    }
-
-    if (roomId !== joinedRoom?.id) {
+    } else if (roomId !== joinedRoom.id) {
+      // Only when switching rooms directly, the previous one has to be left first
       socket.emit("leaveRoom");
       joinRoom(roomId, username);
     }

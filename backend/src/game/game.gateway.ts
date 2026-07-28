@@ -14,6 +14,8 @@ import {
   MIN_PLAYERS_TO_START,
 } from './consts';
 import { GameService } from './game.service';
+import { OnEvent } from '@nestjs/event-emitter';
+import { RoomUpdatedEvent } from '../lobby/events/room-updated.event';
 
 @WebSocketGateway({ cors: { origin: process.env.FRONTEND_URL } })
 export class GameGateway {
@@ -59,6 +61,27 @@ export class GameGateway {
     this.server.to(clientIds).emit('game:opened');
     this.server.to(clientIds).emit('game:sync', game);
     this.scheduleGameStart(room.id);
+  }
+
+  @OnEvent('room.player.added')
+  handleRoomPlayerAdded({ clientId, room }: RoomUpdatedEvent) {
+    const player = room.players.find(({ id }) => id === clientId);
+
+    if (!player) {
+      return;
+    }
+
+    const game = this.gameService.addPlayer(room.id, {
+      id: player.id,
+      name: player.name,
+    });
+
+    if (!game) {
+      return;
+    }
+
+    this.server.to(clientId).emit('game:opened');
+    this.server.to(this.playerIds(room.id)).emit('game:sync', game);
   }
 
   @SubscribeMessage('leaveGame')
