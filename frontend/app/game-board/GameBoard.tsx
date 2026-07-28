@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { PixiGameBoard } from "../../features/game/components/PixiGameBoard";
 import type { GameState } from "../../features/game/types/game";
 import { socket } from "@/lib/socket";
@@ -23,6 +24,7 @@ function formatRemainingTime(ms: number): string {
 
 export default function GameBoard() {
   const { user } = useAuth();
+  const router = useRouter();
   const [game, setGame] = useState<GameState | null>(() => getLatestGame());
   const [countdown, setCountdown] = useState(GAME_START_COUNTDOWN_SECONDS);
   // Ticks once a second so the remaining-time display counts down.
@@ -59,16 +61,27 @@ export default function GameBoard() {
       setGame(nextGame);
     };
 
+    const onGameLeft = () => {
+      setGame(null);
+      router.push("/lobby");
+    };
+
     socket.on("game:sync", onGameSync);
     socket.on("game:started", onGameSync);
     socket.on("game:ended", onGameSync);
+    socket.on("game:left", onGameLeft);
 
     return () => {
       socket.off("game:sync", onGameSync);
       socket.off("game:started", onGameSync);
       socket.off("game:ended", onGameSync);
+      socket.off("game:left", onGameLeft);
     };
-  }, []);
+  }, [router]);
+
+  const handleLeaveGame = () => {
+    socket.emit("leaveGame");
+  };
 
   useEffect(() => {
     if (!isWaiting) {
@@ -154,7 +167,11 @@ export default function GameBoard() {
             </p>
           </div>
 
-          <button className={styles.leaveButton} type="button">
+          <button
+            className={styles.leaveButton}
+            type="button"
+            onClick={handleLeaveGame}
+          >
             Leave game
           </button>
         </aside>

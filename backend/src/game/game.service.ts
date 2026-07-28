@@ -36,6 +36,35 @@ export class GameService {
     return this.games.get(roomId);
   }
 
+  getPlayerGame(clientId: ClientId): GameState | undefined {
+    for (const game of this.games.values()) {
+      if (game.players.some((player) => player.id === clientId)) {
+        return game;
+      }
+    }
+  }
+
+  removePlayer(clientId: ClientId): GameState | undefined {
+    const game = this.getPlayerGame(clientId);
+
+    if (!game) {
+      return;
+    }
+
+    const remainingPlayers = game.players.filter(
+      (player) => player.id !== clientId,
+    );
+    const updatedGame: GameState = { ...game, players: remainingPlayers };
+
+    if (remainingPlayers.length === 0) {
+      this.games.delete(game.roomId);
+    } else {
+      this.games.set(game.roomId, updatedGame);
+    }
+
+    return updatedGame;
+  }
+
   startGame(roomId: RoomId): GameState | undefined {
     const game = this.games.get(roomId);
 

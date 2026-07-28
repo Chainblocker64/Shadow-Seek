@@ -57,10 +57,58 @@ export class GameGateway {
 
     this.server.to(room.players).emit('game:opened');
     this.server.to(room.players).emit('game:sync', game);
-    this.scheduleGameStart(room.id, room.players);
+    this.scheduleGameStart(room.id);
   }
 
-  private scheduleGameStart(roomId: RoomId, playerIds: ClientId[]) {
+  @SubscribeMessage('leaveGame')
+  handleLeaveGame(@ConnectedSocket() client: Socket) {
+    this.removePlayerFromGame(client.id);
+    this.lobbyService.removePlayer(client.id);
+  }
+
+  handleDisconnect({ id: clientId }: Socket) {
+    this.removePlayerFromGame(clientId);
+  }
+
+  private removePlayerFromGame(clientId: ClientId) {
+    const game = this.gameService.removePlayer(clientId);
+
+    if (!game) {
+      return;
+    }
+
+    this.server.to(clientId).emit('game:left');
+
+    if (game.players.length === 0) {
+      this.clearTimers(game.roomId);
+      return;
+    }
+
+    this.server.to(this.playerIds(game.roomId)).emit('game:sync', game);
+  }
+
+  private clearTimers(roomId: RoomId) {
+    const startTimer = this.gameStartTimers.get(roomId);
+    const endTimer = this.gameEndTimers.get(roomId);
+
+    if (startTimer) {
+      clearTimeout(startTimer);
+      this.gameStartTimers.delete(roomId);
+    }
+
+    if (endTimer) {
+      clearTimeout(endTimer);
+      this.gameEndTimers.delete(roomId);
+    }
+  }
+
+  private playerIds(roomId: RoomId): ClientId[] {
+    const game = this.gameService.getGame(roomId);
+
+    return game ? game.players.map((player) => player.id) : [];
+  }
+
+  private scheduleGameStart(roomId: RoomId) {
     if (this.gameStartTimers.has(roomId)) {
       return;
     }
@@ -71,15 +119,15 @@ export class GameGateway {
       const game = this.gameService.startGame(roomId);
 
       if (game) {
-        this.server.to(playerIds).emit('game:started', game);
-        this.scheduleGameEnd(roomId, playerIds);
+        this.server.to(this.playerIds(roomId)).emit('game:started', game);
+        this.scheduleGameEnd(roomId);
       }
     }, GAME_START_DELAY_MS);
 
     this.gameStartTimers.set(roomId, timer);
   }
 
-  private scheduleGameEnd(roomId: RoomId, playerIds: ClientId[]) {
+  private scheduleGameEnd(roomId: RoomId) {
     if (this.gameEndTimers.has(roomId)) {
       return;
     }
@@ -90,7 +138,7 @@ export class GameGateway {
       const game = this.gameService.endGame(roomId);
 
       if (game) {
-        this.server.to(playerIds).emit('game:ended', game);
+        this.server.to(this.playerIds(roomId)).emit('game:ended', game);
       }
     }, GAME_DURATION_MS);
 

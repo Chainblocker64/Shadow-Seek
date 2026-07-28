@@ -102,4 +102,51 @@ describe('GameService', () => {
     expect(game).toMatchObject({ roomId, status: ENDED, endsAt: null });
     expect(service.getGame(roomId)).toBe(game);
   });
+
+  it('removes a leaving player and keeps the game for the others', () => {
+    const roomId = randomUUID();
+    const map: GameMap = {
+      name: 'Test map',
+      width: 4,
+      height: 4,
+      baseTile: 'floor',
+      baseOverrides: [],
+      objects: [
+        { x: 0, y: 0, type: 'spawn' },
+        { x: 3, y: 3, type: 'spawn' },
+      ],
+    };
+    service.createGame(roomId, ['player-1', 'player-2'], map);
+
+    const game = service.removePlayer('player-1');
+
+    expect(game?.players).toEqual([
+      { id: 'player-2', position: { x: 3, y: 3 } },
+    ]);
+    expect(service.getGame(roomId)).toBe(game);
+    expect(service.getPlayerGame('player-1')).toBeUndefined();
+    expect(service.getPlayerGame('player-2')).toBe(game);
+  });
+
+  it('drops the game once its last player leaves', () => {
+    const roomId = randomUUID();
+    const map: GameMap = {
+      name: 'Test map',
+      width: 2,
+      height: 2,
+      baseTile: 'floor',
+      baseOverrides: [],
+      objects: [{ x: 0, y: 0, type: 'spawn' }],
+    };
+    service.createGame(roomId, ['player-1'], map);
+
+    const game = service.removePlayer('player-1');
+
+    expect(game?.players).toEqual([]);
+    expect(service.getGame(roomId)).toBeUndefined();
+  });
+
+  it('ignores a leave from a player that is not in a game', () => {
+    expect(service.removePlayer('unknown-player')).toBeUndefined();
+  });
 });
