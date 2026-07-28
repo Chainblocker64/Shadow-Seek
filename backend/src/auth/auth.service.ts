@@ -11,16 +11,10 @@ export class AuthService {
     private jwtService: JwtService,
   ) {}
 
-  async login(user: Omit<User, 'password'>): Promise<{ access_token: string }> {
-    const payload = {
-      sub: user.id,
-      email: user.email,
-      username: user.username,
-    };
-
-    return {
-      access_token: await this.jwtService.signAsync(payload),
-    };
+  login(user: { id: string; email: string; username: string }): {
+    access_token: string;
+  } {
+    return this.generateToken(user);
   }
 
   async validateUser(
@@ -34,5 +28,17 @@ export class AuthService {
       return result;
     }
     return null;
+  }
+
+  generateToken(user: { id: string; username: string; email: string }) {
+    if (!user.id) {
+      throw new Error('AuthService.generateToken called without a user id!');
+    }
+    const payload = {
+      sub: user.id,
+      username: user.username,
+      email: user.email,
+    };
+    return { access_token: this.jwtService.sign(payload) };
   }
 }

@@ -1,25 +1,29 @@
 "use client";
 
 import { useEffect } from "react";
-import { useAuth } from "../hooks/useAuth";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "../store/useAuthStore";
 
 export default function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading } = useAuthStore();
   const router = useRouter();
 
   useEffect(() => {
     if (!loading && !user) {
-      router.replace("/");
+      router.push("/");
     }
-  }, [loading, user, router]);
+  }, [user, loading, router]);
 
-  if (loading || !user) {
+  if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-100">
-        <p>Loading...</p>
+      <div className="min-h-screen flex items-center justify-center text-zinc-400">
+        Loading...
       </div>
     );
+  }
+
+  if (!user) {
+    return null;
   }
 
   return <>{children}</>;

@@ -24,11 +24,11 @@ export class AuthController {
   @UseGuards(AuthGuard('local'))
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  async login(
+  login(
     @Request() req: { user: Omit<User, 'password'> },
     @Res({ passthrough: true }) res: Response,
   ) {
-    const token = await this.authService.login(req.user);
+    const token = this.authService.login(req.user);
 
     // auth token cookie
     res.cookie('access_token', token.access_token, {
@@ -54,7 +54,24 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  getProfile(@Request() req: { user: JwtPayload }) {
+  getProfile(
+    @Request() req: { user: JwtPayload },
+    @Res({ passthrough: true }) res: express.Response,
+  ) {
+    // create clean cookie for rolling session
+    const token = this.authService.generateToken({
+      id: req.user.userId,
+      username: req.user.username,
+      email: req.user.email,
+    });
+
+    res.cookie('access_token', token.access_token, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 3600000, // 1h
+    });
+
     return req.user;
   }
 }
