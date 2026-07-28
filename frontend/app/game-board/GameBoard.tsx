@@ -39,7 +39,7 @@ export default function GameBoard() {
       setGame(nextGame);
     };
 
-    const onMovementResult = (result: MovementResult) => {
+    const onMovementConfirmed = (result: MovementResult) => {
       setGame((currentGame) => {
         if (!currentGame) {
           return currentGame;
@@ -71,12 +71,12 @@ export default function GameBoard() {
 
     socket.on("game:sync", onGameSync);
     socket.on("game:started", onGameSync);
-    socket.on("movement:confirmed", onMovementResult);
+    socket.on("movement:confirmed", onMovementConfirmed);
 
     return () => {
       socket.off("game:sync", onGameSync);
       socket.off("game:started", onGameSync);
-      socket.off("movement:confirmed", onMovementResult);
+      socket.off("movement:confirmed", onMovementConfirmed);
     };
   }, []);
 
