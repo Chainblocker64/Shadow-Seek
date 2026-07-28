@@ -82,7 +82,7 @@ export class GameGateway {
       return;
     }
 
-    this.server.to(room.id).emit('movement:result', result);
+    this.server.to(room.id).emit('movement:confirmed', result);
   }
 
   private scheduleGameStart(roomId: RoomId, playerIds: ClientId[]) {

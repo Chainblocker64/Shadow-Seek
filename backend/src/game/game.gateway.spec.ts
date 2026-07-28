@@ -101,7 +101,7 @@ describe('GameGateway movement', () => {
     );
 
     expect(to).toHaveBeenCalledWith(roomId);
-    expect(emit).toHaveBeenCalledWith('movement:result', result);
+    expect(emit).toHaveBeenCalledWith('movement:confirmed', result);
   });
 
   it('does not process movement when the player has no room', () => {

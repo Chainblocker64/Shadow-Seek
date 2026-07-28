@@ -71,12 +71,12 @@ export default function GameBoard() {
 
     socket.on("game:sync", onGameSync);
     socket.on("game:started", onGameSync);
-    socket.on("movement:result", onMovementResult);
+    socket.on("movement:confirmed", onMovementResult);
 
     return () => {
       socket.off("game:sync", onGameSync);
       socket.off("game:started", onGameSync);
-      socket.off("movement:result", onMovementResult);
+      socket.off("movement:confirmed", onMovementResult);
     };
   }, []);
 
