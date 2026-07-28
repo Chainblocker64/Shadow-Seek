@@ -1,6 +1,5 @@
 "use client";
 
-import AuthGuard from "../components/AuthGuard";
 import RoomList from "./components/RoomList";
 import { socket } from "@/lib/socket";
 import { useRooms } from "./RoomProvider";
