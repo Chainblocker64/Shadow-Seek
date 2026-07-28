@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { randomUUID } from 'node:crypto';
 import { GameService } from './game.service';
-import { RUNNING, WAITING } from './consts';
+import { ENDED, GAME_DURATION_MS, RUNNING, WAITING } from './consts';
 import type { GameMap } from './types';
 
 describe('GameService', () => {
@@ -43,6 +43,7 @@ describe('GameService', () => {
         { id: 'player-1', position: { x: 0, y: 0 } },
         { id: 'player-2', position: { x: 3, y: 3 } },
       ],
+      endsAt: null,
     });
     expect(service.getGame(roomId)).toBe(game);
   });
@@ -78,6 +79,27 @@ describe('GameService', () => {
     const game = service.startGame(roomId);
 
     expect(game).toMatchObject({ roomId, status: RUNNING });
+    expect(game?.endsAt).toBeGreaterThan(Date.now());
+    expect(game?.endsAt).toBeLessThanOrEqual(Date.now() + GAME_DURATION_MS);
+    expect(service.getGame(roomId)).toBe(game);
+  });
+
+  it('ends a running game and clears its end timestamp', () => {
+    const roomId = randomUUID();
+    const map: GameMap = {
+      name: 'Test map',
+      width: 2,
+      height: 2,
+      baseTile: 'floor',
+      baseOverrides: [],
+      objects: [{ x: 0, y: 0, type: 'spawn' }],
+    };
+    service.createGame(roomId, ['player-1'], map);
+    service.startGame(roomId);
+
+    const game = service.endGame(roomId);
+
+    expect(game).toMatchObject({ roomId, status: ENDED, endsAt: null });
     expect(service.getGame(roomId)).toBe(game);
   });
 });

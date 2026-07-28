@@ -98,6 +98,7 @@ describe('handlePlayerMovement', () => {
           },
         },
       ],
+      endsAt: null,
     };
   }
 

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { RUNNING, WAITING } from './consts';
+import { ENDED, GAME_DURATION_MS, RUNNING, WAITING } from './consts';
 import type { GameState, Position, GameMap } from './types';
 import type { ClientId, RoomId } from '../shared/types';
 
@@ -24,6 +24,7 @@ export class GameService {
         id,
         position: spawnPositions[index],
       })),
+      endsAt: null,
     };
 
     this.games.set(roomId, game);
@@ -42,10 +43,27 @@ export class GameService {
       return game;
     }
 
-    const runningGame: GameState = { ...game, status: RUNNING };
+    const runningGame: GameState = {
+      ...game,
+      status: RUNNING,
+      endsAt: Date.now() + GAME_DURATION_MS,
+    };
     this.games.set(roomId, runningGame);
 
     return runningGame;
+  }
+
+  endGame(roomId: RoomId): GameState | undefined {
+    const game = this.games.get(roomId);
+
+    if (!game || game.status !== RUNNING) {
+      return game;
+    }
+
+    const endedGame: GameState = { ...game, status: ENDED, endsAt: null };
+    this.games.set(roomId, endedGame);
+
+    return endedGame;
   }
 
   private getSpawnPositions(map: GameMap): Position[] {

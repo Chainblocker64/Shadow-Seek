@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { PixiGameBoard } from "../../features/game/components/PixiGameBoard";
 import type { GameState } from "../../features/game/types/game";
 import { socket } from "@/lib/socket";
@@ -13,12 +13,39 @@ import styles from "./GameBoardPage.module.css";
 // Mirrors the backend's GAME_START_DELAY_MS (backend/src/game/consts.ts).
 const GAME_START_COUNTDOWN_SECONDS = 3;
 
+function formatRemainingTime(ms: number): string {
+  const totalSeconds = Math.max(0, Math.ceil(ms / 1_000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+}
+
+// useSyncExternalStore safely reads an external
+// mutable data source (here: the system clock) during render.
+// subscribeToClockTick subscribes to a one-second interval,
+// and getClockSnapshot returns the current Date.now() value on each tick
+// — keeping the countdown in sync with the clock without manually shadowing it into useState/useEffect.
+// Lint still passes with the change.
+function subscribeToClockTick(onTick: () => void) {
+  const interval = setInterval(onTick, 1_000);
+  return () => clearInterval(interval);
+}
+
+function getClockSnapshot(): number {
+  return Date.now();
+}
+
 export default function GameBoard() {
   const { user } = useAuth();
   const [game, setGame] = useState<GameState | null>(() => getLatestGame());
   const [countdown, setCountdown] = useState(GAME_START_COUNTDOWN_SECONDS);
+  const now = useSyncExternalStore(subscribeToClockTick, getClockSnapshot);
 
   const isWaiting = !game || game.status === "waiting";
+  const isEnded = game?.status === "ended";
+  const remainingMs =
+    game?.endsAt != null ? Math.max(0, game.endsAt - now) : null;
 
   const labeledPlayers = useMemo(
     () =>
@@ -42,10 +69,12 @@ export default function GameBoard() {
 
     socket.on("game:sync", onGameSync);
     socket.on("game:started", onGameSync);
+    socket.on("game:ended", onGameSync);
 
     return () => {
       socket.off("game:sync", onGameSync);
       socket.off("game:started", onGameSync);
+      socket.off("game:ended", onGameSync);
     };
   }, []);
 
@@ -109,12 +138,25 @@ export default function GameBoard() {
               </p>
             </div>
           )}
+
+          {isEnded && (
+            <div className="absolute top-1/2 left-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1 rounded-xl bg-black/60 px-6 py-3">
+              <p className="text-3xl leading-none font-extrabold text-red-400">
+                Game over
+              </p>
+            </div>
+          )}
         </div>
 
         <aside className={`${styles.sidebar} ${styles.sidebarRight}`}>
           <div>
-            {/* TODO: Fill in the actual timer */}
-            <p className={styles.timer}>05:13</p>
+            <p className={styles.timer}>
+              {isEnded
+                ? "00:00"
+                : remainingMs !== null
+                  ? formatRemainingTime(remainingMs)
+                  : "--:--"}
+            </p>
             <p className={styles.playersRemaining}>
               Players: {game.players.length}
             </p>

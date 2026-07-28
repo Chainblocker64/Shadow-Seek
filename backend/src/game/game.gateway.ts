@@ -8,7 +8,11 @@ import { Server, Socket } from 'socket.io';
 import type { ClientId, RoomId } from '../shared/types';
 import { LobbyService } from '../lobby/lobby.service';
 import { MapsService } from '../maps/maps.service';
-import { GAME_START_DELAY_MS, MIN_PLAYERS_TO_START } from './consts';
+import {
+  GAME_DURATION_MS,
+  GAME_START_DELAY_MS,
+  MIN_PLAYERS_TO_START,
+} from './consts';
 import { GameService } from './game.service';
 
 @WebSocketGateway({ cors: { origin: process.env.FRONTEND_URL } })
@@ -17,6 +21,11 @@ export class GameGateway {
   server!: Server;
 
   private readonly gameStartTimers = new Map<
+    RoomId,
+    ReturnType<typeof setTimeout>
+  >();
+
+  private readonly gameEndTimers = new Map<
     RoomId,
     ReturnType<typeof setTimeout>
   >();
@@ -63,9 +72,28 @@ export class GameGateway {
 
       if (game) {
         this.server.to(playerIds).emit('game:started', game);
+        this.scheduleGameEnd(roomId, playerIds);
       }
     }, GAME_START_DELAY_MS);
 
     this.gameStartTimers.set(roomId, timer);
+  }
+
+  private scheduleGameEnd(roomId: RoomId, playerIds: ClientId[]) {
+    if (this.gameEndTimers.has(roomId)) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      this.gameEndTimers.delete(roomId);
+
+      const game = this.gameService.endGame(roomId);
+
+      if (game) {
+        this.server.to(playerIds).emit('game:ended', game);
+      }
+    }, GAME_DURATION_MS);
+
+    this.gameEndTimers.set(roomId, timer);
   }
 }
