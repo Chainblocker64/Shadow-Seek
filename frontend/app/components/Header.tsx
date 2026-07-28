@@ -26,10 +26,10 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="max-w-7xl mx-auto px-6 py-4 md:py-0 md:h-16 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0">
         <Link
-          href="/"
-          className="text-xl font-extrabold tracking-wider text-white hover:text-emerald-400 transition-colors"
+          href="/lobby"
+          className="text-xl font-extrabold tracking-wider text-white transition-colors cursor-pointer"
         >
           Shadow Seek
         </Link>
@@ -68,18 +68,16 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-zinc-300">
-                {user?.username}
-              </span>
-              <button
-                onClick={handleLogout}
-                className="text-xs font-medium text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 px-3 py-1.5 rounded transition-colors cursor-pointer"
-              >
-                Logout
-              </button>
-            </div>
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-zinc-300">
+              {user?.username}
+            </span>
+            <button
+              onClick={handleLogout}
+              className="text-xs font-medium text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 px-3 py-1.5 rounded transition-colors cursor-pointer"
+            >
+              Logout
+            </button>
           </div>
         </div>
       </div>
