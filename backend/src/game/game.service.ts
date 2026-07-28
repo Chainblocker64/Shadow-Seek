@@ -23,7 +23,11 @@ export class GameService {
       map,
       players: playerIds.map(
         (clientId, index) =>
-          new Player(clientId, spawnPositions[index], DEFAULT_COMBAT_STATS),
+          new Player({
+            clientId: clientId,
+            position: spawnPositions[index],
+            combatStats: DEFAULT_COMBAT_STATS,
+          }),
       ),
     };
 

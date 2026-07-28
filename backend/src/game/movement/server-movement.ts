@@ -40,7 +40,7 @@ export function handlePlayerMovement(
   direction: MovementDirection,
 ): MovementResult {
   const player = gameState.players.find((currentPlayer) => {
-    return currentPlayer.id === playerId;
+    return currentPlayer.clientId === playerId;
   });
 
   if (!player) {
