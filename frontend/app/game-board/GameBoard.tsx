@@ -6,7 +6,6 @@ import { PixiGameBoard } from "../../features/game/components/PixiGameBoard";
 import type { GameState } from "../../features/game/types/game";
 import { socket } from "@/lib/socket";
 import { getLatestGame } from "../../features/game/gameSync";
-import { playerFallbackLabels } from "../../features/game/data/tileTextureFrames";
 import { useAuth } from "../hooks/useAuth";
 import PlayerList from "./PlayerList";
 import styles from "./GameBoardPage.module.css";
@@ -37,15 +36,12 @@ export default function GameBoard() {
 
   const labeledPlayers = useMemo(
     () =>
-      (game?.players ?? []).map((player, index) => ({
+      (game?.players ?? []).map((player) => ({
         ...player,
-        label:
-          player.id === socket.id
-            ? (user?.username ?? "You")
-            : playerFallbackLabels[index % playerFallbackLabels.length],
+        label: player.name,
         isSelf: player.id === socket.id,
       })),
-    [game?.players, user?.username],
+    [game?.players],
   );
 
   useEffect(() => {

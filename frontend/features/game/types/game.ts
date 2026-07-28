@@ -7,6 +7,7 @@ export type GameState = {
   map: GameMap;
   players: Array<{
     id: string;
+    name: string;
     position: PlayerPosition;
   }>;
   endsAt: number | null;

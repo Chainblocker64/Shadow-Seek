@@ -8,10 +8,13 @@ import { useJoinedRoom, useLeaveRoom } from "../RoomProvider";
 import { useParams, useRouter } from "next/navigation";
 import "@/features/game/gameSync";
 import { RoomId } from "../types";
+import { useAuth } from "../../hooks/useAuth";
 
 export default function LobbyRoom() {
   const leaveRoom = useLeaveRoom();
   const router = useRouter();
+  const { user } = useAuth();
+  const username = user?.username;
   const [isLeaving, setIsLeaving] = useState(false);
 
   const handleLeaveRoom = () => {
@@ -23,8 +26,8 @@ export default function LobbyRoom() {
     socket.emit("initializeGame");
   };
 
-  const joinRoom = (roomId: RoomId) => {
-    socket.emit("joinRoom", { roomId: roomId });
+  const joinRoom = (roomId: RoomId, username: string) => {
+    socket.emit("joinRoom", { roomId: roomId, username });
   };
 
   const joinedRoom = useJoinedRoom();
@@ -45,16 +48,20 @@ export default function LobbyRoom() {
   }, [router]);
 
   useEffect(() => {
+    if (!username) {
+      return;
+    }
+
     const onJoinFailed = () => setFailedRoomId(roomId);
     socket.on("room:join:failed", onJoinFailed);
 
     if (!joinedRoom) {
-      joinRoom(roomId);
+      joinRoom(roomId, username);
     }
 
     if (roomId !== joinedRoom?.id) {
       socket.emit("leaveRoom");
-      joinRoom(roomId);
+      joinRoom(roomId, username);
     }
 
     return () => {
@@ -64,7 +71,7 @@ export default function LobbyRoom() {
      this after we set joinedRoom to undefined when leaving the room for example
      So, disable lint warning that wants us to include joinedRoom */
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [roomId]);
+  }, [roomId, username]);
 
   return (
     <>
