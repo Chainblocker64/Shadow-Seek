@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { RUNNING, WAITING } from './consts';
+import { DEFAULT_COMBAT_STATS, RUNNING, WAITING } from './consts';
 import type { GameState, Position, GameMap } from './types';
 import type { ClientId, RoomId } from '../shared/types';
+import { Player } from './player/player';
 
 @Injectable()
 export class GameService {
@@ -20,10 +21,10 @@ export class GameService {
       roomId,
       status: WAITING,
       map,
-      players: playerIds.map((id, index) => ({
-        id,
-        position: spawnPositions[index],
-      })),
+      players: playerIds.map(
+        (clientId, index) =>
+          new Player(clientId, spawnPositions[index], DEFAULT_COMBAT_STATS),
+      ),
     };
 
     this.games.set(roomId, game);
