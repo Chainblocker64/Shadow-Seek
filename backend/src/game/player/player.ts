@@ -6,7 +6,7 @@ export class Player {
   private health: number;
 
   constructor(
-    private id: ClientId,
+    public readonly id: ClientId,
     private position: Position,
     private combatStats: CombatStats,
   ) {
@@ -15,5 +15,13 @@ export class Player {
 
   isAlive(): boolean {
     return this.health > 0;
+  }
+
+  getPosition(): Position {
+    return this.position;
+  }
+
+  setPosition(position: Position) {
+    this.position = position;
   }
 }

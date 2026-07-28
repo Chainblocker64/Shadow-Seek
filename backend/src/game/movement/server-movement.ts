@@ -47,7 +47,7 @@ export function handlePlayerMovement(
     throw new Error('Player not found');
   }
 
-  const nextPosition = calculateNextPosition(player.position, direction);
+  const nextPosition = calculateNextPosition(player.getPosition(), direction);
 
   const canMove = canMoveToPosition(gameState.map, nextPosition);
 
@@ -58,7 +58,7 @@ export function handlePlayerMovement(
     };
   }
 
-  player.position = nextPosition;
+  player.setPosition(nextPosition);
 
   return {
     player: player,
