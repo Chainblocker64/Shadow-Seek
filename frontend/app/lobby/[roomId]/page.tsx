@@ -8,12 +8,12 @@ import { useJoinedRoom, useLeaveRoom } from "../RoomProvider";
 import { useParams, useRouter } from "next/navigation";
 import "@/features/game/gameSync";
 import { RoomId } from "../types";
-import { useAuth } from "../../hooks/useAuth";
+import { useAuthStore } from "../../store/useAuthStore";
 
 export default function LobbyRoom() {
   const leaveRoom = useLeaveRoom();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const username = user?.username;
   const [isLeaving, setIsLeaving] = useState(false);
 

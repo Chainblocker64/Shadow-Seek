@@ -3,11 +3,11 @@
 import RoomList from "./components/RoomList";
 import { socket } from "@/lib/socket";
 import { useRooms } from "./RoomProvider";
-import { useAuth } from "../hooks/useAuth";
+import { useAuthStore } from "../store/useAuthStore";
 
 export default function Lobby() {
   const rooms = useRooms();
-  const { user } = useAuth();
+  const { user } = useAuthStore();
   const username = user?.username;
 
   const handleCreateRoom = () => {
