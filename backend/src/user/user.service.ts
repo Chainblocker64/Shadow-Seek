@@ -1,4 +1,8 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -15,59 +19,67 @@ export class UserService {
     private userRepository: Repository<User>,
   ) {}
 
-  /**
-   * Creates a new user
-   *
-   * @param createUserDto
-   * @returns UserResponse
-   */
   async create(createUserDto: CreateUserDto): Promise<UserResponse> {
     const { email, username, password } = createUserDto;
-
-    // check for existing user - throw exception if one exists
-    const existingUser = await this.userRepository.findOneBy({ email });
-    if (existingUser) {
-      throw new ConflictException('Email already registered');
-    }
-
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // create User object and save it
-    const user = this.userRepository.create({
-      email,
-      username,
-      password: hashedPassword,
-    });
-    const savedUser = await this.userRepository.save(user);
+    try {
+      const user = this.userRepository.create({
+        email,
+        username,
+        password: hashedPassword,
+      });
+      const savedUser = await this.userRepository.save(user);
 
-    // remove password from savedUser and return it
-    const { password: _, ...userWithoutPassword } = savedUser;
-    return userWithoutPassword;
+      const { password: _, ...userWithoutPassword } = savedUser;
+      return userWithoutPassword;
+    } catch (error: unknown) {
+      const dbError = error as { code?: string; detail?: string };
+
+      if (dbError.code === '23505') {
+        if (dbError.detail?.includes('email')) {
+          throw new ConflictException('Email already registered');
+        }
+        throw new ConflictException('Username already taken');
+      }
+      throw error;
+    }
   }
 
-  /**
-   * finds a user by email
-   *
-   * @param email
-   * @returns User
-   */
   async findOneByEmail(email: string): Promise<User | null> {
     return this.userRepository.findOneBy({ email });
   }
 
-  findAll() {
-    return `This action returns all user`;
-  }
+  async update(userId: string, dto: UpdateUserDto): Promise<UserResponse> {
+    const user = await this.userRepository.findOneBy({ id: userId });
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
-  }
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
 
-  update(id: number, _updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
-  }
+    if (dto.username) {
+      user.username = dto.username;
+    }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+    if (dto.password) {
+      user.password = await bcrypt.hash(dto.password, 10);
+    }
+
+    try {
+      await this.userRepository.save(user);
+    } catch (err: unknown) {
+      if (
+        typeof err === 'object' &&
+        err !== null &&
+        'code' in err &&
+        (err as { code: string }).code === '23505'
+      ) {
+        throw new ConflictException('Username is already taken');
+      }
+      throw err;
+    }
+
+    const { password: _, ...result } = user;
+    return result;
   }
 }
