@@ -1,20 +1,37 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useAuthStore } from "../store/useAuthStore";
 
 export function Header() {
   const pathname = usePathname();
+  const router = useRouter();
+  const { user, setUser } = useAuthStore();
   const isActive = (path: string) => pathname === path;
+
+  const handleLogout = async () => {
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`, {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (e) {
+      console.error("Logout request failed", e);
+    } finally {
+      setUser(null);
+      router.push("/login");
+    }
+  };
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
         <Link
-          href="/lobby"
+          href="/"
           className="text-xl font-extrabold tracking-wider text-white hover:text-emerald-400 transition-colors"
         >
-          Shadow<span className="text-emerald-500">Seek</span>
+          Shadow Seek
         </Link>
 
         <nav className="flex items-center gap-6">
@@ -51,7 +68,19 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-4">
-          {/* TODO: username / logout button */}
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-zinc-300">
+                {user?.username}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="text-xs font-medium text-zinc-400 hover:text-white bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 px-3 py-1.5 rounded transition-colors cursor-pointer"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </header>
