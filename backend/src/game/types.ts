@@ -10,6 +10,7 @@ export type Position = {
 
 export type Player = {
   id: ClientId;
+  name: string;
   position: Position;
 };
 

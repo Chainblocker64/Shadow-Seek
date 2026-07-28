@@ -54,9 +54,10 @@ export class GameGateway {
 
     const map = await this.mapsService.findOneByName(room.map);
     const game = this.gameService.createGame(room.id, room.players, map);
+    const clientIds = room.players.map((player) => player.id);
 
-    this.server.to(room.players).emit('game:opened');
-    this.server.to(room.players).emit('game:sync', game);
+    this.server.to(clientIds).emit('game:opened');
+    this.server.to(clientIds).emit('game:sync', game);
     this.scheduleGameStart(room.id);
   }
 

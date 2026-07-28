@@ -33,15 +33,22 @@ describe('GameService', () => {
       ],
     };
 
-    const game = service.createGame(roomId, ['player-1', 'player-2'], map);
+    const game = service.createGame(
+      roomId,
+      [
+        { id: 'player-1', name: 'Alice' },
+        { id: 'player-2', name: 'Bob' },
+      ],
+      map,
+    );
 
     expect(game).toEqual({
       roomId,
       status: WAITING,
       map,
       players: [
-        { id: 'player-1', position: { x: 0, y: 0 } },
-        { id: 'player-2', position: { x: 3, y: 3 } },
+        { id: 'player-1', name: 'Alice', position: { x: 0, y: 0 } },
+        { id: 'player-2', name: 'Bob', position: { x: 3, y: 3 } },
       ],
       endsAt: null,
     });
@@ -59,7 +66,14 @@ describe('GameService', () => {
     };
 
     expect(() => {
-      service.createGame(roomId, ['player-1', 'player-2'], map);
+      service.createGame(
+        roomId,
+        [
+          { id: 'player-1', name: 'Alice' },
+          { id: 'player-2', name: 'Bob' },
+        ],
+        map,
+      );
     }).toThrow('Map does not have enough spawn positions for all players');
     expect(service.getGame(roomId)).toBeUndefined();
   });
@@ -74,7 +88,7 @@ describe('GameService', () => {
       baseOverrides: [],
       objects: [{ x: 0, y: 0, type: 'spawn' }],
     };
-    service.createGame(roomId, ['player-1'], map);
+    service.createGame(roomId, [{ id: 'player-1', name: 'Alice' }], map);
 
     const game = service.startGame(roomId);
 
@@ -94,7 +108,7 @@ describe('GameService', () => {
       baseOverrides: [],
       objects: [{ x: 0, y: 0, type: 'spawn' }],
     };
-    service.createGame(roomId, ['player-1'], map);
+    service.createGame(roomId, [{ id: 'player-1', name: 'Alice' }], map);
     service.startGame(roomId);
 
     const game = service.endGame(roomId);
@@ -116,12 +130,19 @@ describe('GameService', () => {
         { x: 3, y: 3, type: 'spawn' },
       ],
     };
-    service.createGame(roomId, ['player-1', 'player-2'], map);
+    service.createGame(
+      roomId,
+      [
+        { id: 'player-1', name: 'Alice' },
+        { id: 'player-2', name: 'Bob' },
+      ],
+      map,
+    );
 
     const game = service.removePlayer('player-1');
 
     expect(game?.players).toEqual([
-      { id: 'player-2', position: { x: 3, y: 3 } },
+      { id: 'player-2', name: 'Bob', position: { x: 3, y: 3 } },
     ]);
     expect(service.getGame(roomId)).toBe(game);
     expect(service.getPlayerGame('player-1')).toBeUndefined();
@@ -138,7 +159,7 @@ describe('GameService', () => {
       baseOverrides: [],
       objects: [{ x: 0, y: 0, type: 'spawn' }],
     };
-    service.createGame(roomId, ['player-1'], map);
+    service.createGame(roomId, [{ id: 'player-1', name: 'Alice' }], map);
 
     const game = service.removePlayer('player-1');
 

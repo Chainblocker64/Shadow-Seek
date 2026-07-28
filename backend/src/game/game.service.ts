@@ -7,10 +7,14 @@ import type { ClientId, RoomId } from '../shared/types';
 export class GameService {
   private readonly games = new Map<RoomId, GameState>();
 
-  createGame(roomId: RoomId, playerIds: ClientId[], map: GameMap): GameState {
+  createGame(
+    roomId: RoomId,
+    players: Array<{ id: ClientId; name: string }>,
+    map: GameMap,
+  ): GameState {
     const spawnPositions = this.getSpawnPositions(map);
 
-    if (spawnPositions.length < playerIds.length) {
+    if (spawnPositions.length < players.length) {
       throw new Error(
         'Map does not have enough spawn positions for all players',
       );
@@ -20,8 +24,9 @@ export class GameService {
       roomId,
       status: WAITING,
       map,
-      players: playerIds.map((id, index) => ({
+      players: players.map(({ id, name }, index) => ({
         id,
+        name,
         position: spawnPositions[index],
       })),
       endsAt: null,

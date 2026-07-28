@@ -8,6 +8,7 @@ import {
 import { UsePipes, ValidationPipe } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { LobbyService } from './lobby.service';
+import { CreateRoomDto } from './dto/create-room.dto';
 import { JoinRoomDto } from './dto/join-room.dto';
 import { OnEvent } from '@nestjs/event-emitter';
 import { RoomUpdatedEvent } from './events/room-updated.event';
@@ -39,8 +40,11 @@ export class LobbyGateway {
   }
 
   @SubscribeMessage('createRoom')
-  handleCreateRoom({ id: clientId }: Socket) {
-    const room = this.lobbyService.createRoom(clientId);
+  handleCreateRoom(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: CreateRoomDto,
+  ) {
+    const room = this.lobbyService.createRoom(client.id, payload.username);
 
     if (!room) {
       return;
@@ -55,7 +59,7 @@ export class LobbyGateway {
     const clientId = client.id;
     const roomId = payload.roomId;
 
-    const room = this.lobbyService.addPlayer(clientId, roomId);
+    const room = this.lobbyService.addPlayer(clientId, roomId, payload.username);
 
     if (!room) {
       this.server.to(clientId).emit('room:join:failed');
