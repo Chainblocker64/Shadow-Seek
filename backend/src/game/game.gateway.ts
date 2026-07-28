@@ -1,5 +1,6 @@
 import {
   ConnectedSocket,
+  MessageBody,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -10,8 +11,17 @@ import { LobbyService } from '../lobby/lobby.service';
 import { MapsService } from '../maps/maps.service';
 import { GAME_START_DELAY_MS, MIN_PLAYERS_TO_START } from './consts';
 import { GameService } from './game.service';
+import { UsePipes, ValidationPipe } from '@nestjs/common';
+import { MovePlayerDto } from './dto/move-player.dto';
 
 @WebSocketGateway({ cors: { origin: process.env.FRONTEND_URL } })
+@UsePipes(
+  new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }),
+)
 export class GameGateway {
   @WebSocketServer()
   server!: Server;
@@ -49,6 +59,30 @@ export class GameGateway {
     this.server.to(room.players).emit('game:opened');
     this.server.to(room.players).emit('game:sync', game);
     this.scheduleGameStart(room.id, room.players);
+  }
+
+  @SubscribeMessage('movePlayer')
+  handleMovePlayer(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: MovePlayerDto,
+  ) {
+    const room = this.lobbyService.getPlayerRoom(client.id);
+
+    if (!room) {
+      return;
+    }
+
+    const result = this.gameService.movePlayer(
+      room.id,
+      client.id,
+      payload.direction,
+    );
+
+    if (!result) {
+      return;
+    }
+
+    this.server.to(room.id).emit('movement:confirmed', result);
   }
 
   private scheduleGameStart(roomId: RoomId, playerIds: ClientId[]) {

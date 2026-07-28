@@ -185,16 +185,47 @@ describe('handlePlayerMovement', () => {
     const result = handlePlayerMovement(gameState, 'player-1', 'left');
 
     expect(result).toEqual({
-      playerId: 'player-1',
-      position: {
-        x: 0,
-        y: 2,
+      player: {
+        id: 'player-1',
+        position: {
+          x: 0,
+          y: 2,
+        },
       },
       moved: false,
     });
 
     expect(gameState.players[0].position).toEqual({
       x: 0,
+      y: 2,
+    });
+  });
+  it('keeps the player position when another player occupies the target tile', () => {
+    const gameState = createTestGameState();
+
+    gameState.players.push({
+      id: 'player-2',
+      position: {
+        x: 2,
+        y: 1,
+      },
+    });
+
+    const result = handlePlayerMovement(gameState, 'player-1', 'up');
+
+    expect(result).toEqual({
+      player: {
+        id: 'player-1',
+        position: {
+          x: 2,
+          y: 2,
+        },
+      },
+      moved: false,
+    });
+
+    expect(gameState.players[0].position).toEqual({
+      x: 2,
       y: 2,
     });
   });
