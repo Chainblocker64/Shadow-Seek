@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { PixiGameBoard } from "../../features/game/components/PixiGameBoard";
 import type { GameState } from "../../features/game/types/game";
 import { socket } from "@/lib/socket";
@@ -21,26 +21,12 @@ function formatRemainingTime(ms: number): string {
   return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
 }
 
-// useSyncExternalStore safely reads an external
-// mutable data source (here: the system clock) during render.
-// subscribeToClockTick subscribes to a one-second interval,
-// and getClockSnapshot returns the current Date.now() value on each tick
-// — keeping the countdown in sync with the clock without manually shadowing it into useState/useEffect.
-// Lint still passes with the change.
-function subscribeToClockTick(onTick: () => void) {
-  const interval = setInterval(onTick, 1_000);
-  return () => clearInterval(interval);
-}
-
-function getClockSnapshot(): number {
-  return Date.now();
-}
-
 export default function GameBoard() {
   const { user } = useAuth();
   const [game, setGame] = useState<GameState | null>(() => getLatestGame());
   const [countdown, setCountdown] = useState(GAME_START_COUNTDOWN_SECONDS);
-  const now = useSyncExternalStore(subscribeToClockTick, getClockSnapshot);
+  // Ticks once a second so the remaining-time display counts down.
+  const [now, setNow] = useState(() => Date.now());
 
   const isWaiting = !game || game.status === "waiting";
   const isEnded = game?.status === "ended";
@@ -59,6 +45,12 @@ export default function GameBoard() {
       })),
     [game?.players, user?.username],
   );
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(Date.now()), 1_000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     socket.connect();
