@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { ENDED, GAME_DURATION_MS, RUNNING, WAITING } from './consts';
+import { Player } from './player/player';
+import { RUNNING, WAITING, ENDED, GAME_DURATION_MS } from './consts';
 import type {
   GameMap,
   GameState,
@@ -16,12 +17,12 @@ export class GameService {
 
   createGame(
     roomId: RoomId,
-    players: Array<{ id: ClientId; name: string }>,
+    playerIds: ClientId[],
     map: GameMap,
   ): GameState {
     const spawnPositions = this.getSpawnPositions(map);
 
-    if (spawnPositions.length < players.length) {
+    if (spawnPositions.length < playerIds.length) {
       throw new Error(
         'Map does not have enough spawn positions for all players',
       );
@@ -31,11 +32,15 @@ export class GameService {
       roomId,
       status: WAITING,
       map,
-      players: players.map(({ id, name }, index) => ({
-        id,
-        name,
-        position: spawnPositions[index],
-      })),
+      players: playerIds.map(
+        (clientId, index) =>
+          new Player({
+            clientId: clientId,
+            name,
+            position: spawnPositions[index],
+            combatStats: DEFAULT_COMBAT_STATS,
+          }),
+      ),
       endsAt: null,
     };
 

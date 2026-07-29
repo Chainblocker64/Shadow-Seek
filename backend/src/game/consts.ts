@@ -1,3 +1,4 @@
+import { CombatStats } from './combat/types';
 import type { ObjectType } from './types';
 
 export const WAITING = 'waiting';
@@ -16,3 +17,9 @@ export const BLOCKING_OBJECT_TYPES: ObjectType[] = [
   'chest',
   'water',
 ];
+
+export const DEFAULT_COMBAT_STATS: CombatStats = {
+  maxHealth: 100,
+  attack: 10,
+  attackRange: 1,
+};

@@ -1,17 +1,12 @@
 import { WAITING, RUNNING, ENDED } from './consts';
-import type { ClientId, RoomId } from '../shared/types';
+import type { RoomId } from '../shared/types';
+import { Player } from './player/player';
 
 export type Status = typeof WAITING | typeof RUNNING | typeof ENDED;
 
 export type Position = {
   x: number;
   y: number;
-};
-
-export type Player = {
-  id: ClientId;
-  name: string;
-  position: Position;
 };
 
 export type GameMap = {
