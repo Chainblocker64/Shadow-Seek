@@ -56,8 +56,8 @@ export class GameGateway {
     const map = await this.mapsService.findOneByName(room.map);
     const game = this.gameService.createGame(room.id, room.players, map);
 
-    this.server.to(room.players).emit('game:opened');
-    this.server.to(room.players).emit('game:sync', game);
+    this.server.to(room.id).emit('game:opened');
+    this.server.to(room.id).emit('game:sync', game);
     this.scheduleGameStart(room.id, room.players);
   }
 
@@ -83,6 +83,17 @@ export class GameGateway {
     }
 
     this.server.to(room.id).emit('movement:confirmed', result);
+  }
+
+  @SubscribeMessage('playerAttack')
+  handlePlayerAttack({ id: clientId }: Socket) {
+    const room = this.lobbyService.getPlayerRoom(clientId);
+
+    if (!room) {
+      return;
+    }
+
+    this.gameService.playerAttack(room.id, clientId);
   }
 
   private scheduleGameStart(roomId: RoomId, playerIds: ClientId[]) {

@@ -1,6 +1,6 @@
 import type { ClientId } from '../../shared/types';
-import type { CombatStats } from '../combat/types';
-import { DEFAULT_COMBAT_STATS } from '../consts';
+import type { ActionTimestamps, CombatStats } from '../combat/types';
+import { DEFAULT_ACTION_TIMESTAMPS, DEFAULT_COMBAT_STATS } from '../consts';
 import type { FacingDirection, Position } from '../types';
 
 export class Player {
@@ -9,6 +9,7 @@ export class Player {
   private combatStats: CombatStats;
   private health: number;
   private facingDirection: FacingDirection;
+  private actionTimestamps: ActionTimestamps = DEFAULT_ACTION_TIMESTAMPS;
 
   constructor({
     clientId,
@@ -28,6 +29,14 @@ export class Player {
     this.facingDirection = facingDirection;
   }
 
+  canAct() {
+    return this.isAlive();
+  }
+
+  takeDamage(amount: number) {
+    this.health -= amount;
+  }
+
   isAlive(): boolean {
     return this.health > 0;
   }
@@ -40,8 +49,20 @@ export class Player {
     this.position = position;
   }
 
+  getCombatStats(): CombatStats {
+    return this.combatStats;
+  }
+
   getFacingDirection(): FacingDirection {
     return this.facingDirection;
+  }
+
+  getActionTimestamps(): ActionTimestamps {
+    return this.actionTimestamps;
+  }
+
+  setActionTimestamps(actionTimestamps: ActionTimestamps) {
+    this.actionTimestamps = actionTimestamps;
   }
 
   setFacingDirection(direction: FacingDirection): void {

@@ -10,6 +10,7 @@ import type {
 } from './types';
 import type { ClientId, RoomId } from '../shared/types';
 import { handlePlayerMovement } from './movement/server-movement';
+import { attack } from './combat/attack';
 
 @Injectable()
 export class GameService {
@@ -60,6 +61,15 @@ export class GameService {
     }
 
     return handlePlayerMovement(game, playerId, direction);
+  }
+
+  playerAttack(roomId: RoomId, playerId: ClientId) {
+    const game = this.games.get(roomId);
+    if (!game || game.status !== RUNNING) {
+      return;
+    }
+
+    attack(game, playerId);
   }
 
   startGame(roomId: RoomId): GameState | undefined {
