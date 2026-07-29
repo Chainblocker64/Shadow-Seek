@@ -50,8 +50,18 @@ describe('GameService', () => {
       endsAt: null,
     });
     expect(game.players.map((player) => player.toJSON())).toEqual([
-      { id: 'player-1', position: { x: 0, y: 0 }, facingDirection: 'down' },
-      { id: 'player-2', position: { x: 3, y: 3 }, facingDirection: 'down' },
+      {
+        id: 'player-1',
+        name: 'Alice',
+        position: { x: 0, y: 0 },
+        facingDirection: 'down',
+      },
+      {
+        id: 'player-2',
+        name: 'Bob',
+        position: { x: 3, y: 3 },
+        facingDirection: 'down',
+      },
     ]);
     expect(game.players).toMatchObject([
       { clientId: 'player-1', name: 'Alice', position: { x: 0, y: 0 } },

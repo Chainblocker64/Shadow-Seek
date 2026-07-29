@@ -55,6 +55,7 @@ export class Player {
   toJSON() {
     return {
       id: this.clientId,
+      name: this.name,
       position: this.position,
       facingDirection: this.facingDirection,
     };

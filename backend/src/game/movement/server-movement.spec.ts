@@ -114,6 +114,7 @@ describe('handlePlayerMovement', () => {
     }).toEqual({
       player: {
         id: 'player-1',
+        name: 'Alice',
         position: {
           x: 2,
           y: 1,
@@ -178,6 +179,7 @@ describe('handlePlayerMovement', () => {
     }).toEqual({
       player: {
         id: 'player-1',
+        name: 'Alice',
         position: {
           x: 2,
           y: 2,
@@ -206,6 +208,7 @@ describe('handlePlayerMovement', () => {
     }).toEqual({
       player: {
         id: 'player-1',
+        name: 'Alice',
         position: {
           x: 1,
           y: 2,
@@ -244,6 +247,7 @@ describe('handlePlayerMovement', () => {
     }).toEqual({
       player: {
         id: 'player-1',
+        name: 'Alice',
         position: {
           x: 0,
           y: 2,
@@ -282,6 +286,7 @@ describe('handlePlayerMovement', () => {
     }).toEqual({
       player: {
         id: 'player-1',
+        name: 'Alice',
         position: {
           x: 2,
           y: 2,
