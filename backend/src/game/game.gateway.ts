@@ -163,7 +163,7 @@ export class GameGateway {
   private playerIds(roomId: RoomId): ClientId[] {
     const game = this.gameService.getGame(roomId);
 
-    return game ? game.players.map((player) => player.id) : [];
+    return game ? game.players.map((player) => player.clientId) : [];
   }
 
   private scheduleGameStart(roomId: RoomId) {

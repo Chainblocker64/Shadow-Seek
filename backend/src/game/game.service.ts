@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { Player } from './player/player';
-import { RUNNING, WAITING, ENDED, GAME_DURATION_MS } from './consts';
+import { ENDED, GAME_DURATION_MS, RUNNING, WAITING } from './consts';
 import type {
   GameMap,
   GameState,
@@ -17,12 +17,12 @@ export class GameService {
 
   createGame(
     roomId: RoomId,
-    playerIds: ClientId[],
+    players: Array<{ id: ClientId; name: string }>,
     map: GameMap,
   ): GameState {
     const spawnPositions = this.getSpawnPositions(map);
 
-    if (spawnPositions.length < playerIds.length) {
+    if (spawnPositions.length < players.length) {
       throw new Error(
         'Map does not have enough spawn positions for all players',
       );
@@ -32,13 +32,12 @@ export class GameService {
       roomId,
       status: WAITING,
       map,
-      players: playerIds.map(
-        (clientId, index) =>
+      players: players.map(
+        ({ id: clientId, name }, index) =>
           new Player({
-            clientId: clientId,
+            clientId,
             name,
             position: spawnPositions[index],
-            combatStats: DEFAULT_COMBAT_STATS,
           }),
       ),
       endsAt: null,
@@ -69,7 +68,7 @@ export class GameService {
 
   getPlayerGame(clientId: ClientId): GameState | undefined {
     for (const game of this.games.values()) {
-      if (game.players.some((player) => player.id === clientId)) {
+      if (game.players.some((player) => player.clientId === clientId)) {
         return game;
       }
     }
@@ -85,7 +84,7 @@ export class GameService {
       return;
     }
 
-    if (game.players.some(({ id }) => id === player.id)) {
+    if (game.players.some(({ clientId }) => clientId === player.id)) {
       return game;
     }
 
@@ -97,7 +96,14 @@ export class GameService {
 
     const updatedGame: GameState = {
       ...game,
-      players: [...game.players, { ...player, position }],
+      players: [
+        ...game.players,
+        new Player({
+          clientId: player.id,
+          name: player.name,
+          position,
+        }),
+      ],
     };
 
     this.games.set(roomId, updatedGame);
@@ -113,7 +119,7 @@ export class GameService {
     }
 
     const remainingPlayers = game.players.filter(
-      (player) => player.id !== clientId,
+      (player) => player.clientId !== clientId,
     );
     const updatedGame: GameState = { ...game, players: remainingPlayers };
 
@@ -159,9 +165,11 @@ export class GameService {
   private getFreeSpawnPosition(game: GameState): Position | undefined {
     return this.getSpawnPositions(game.map).find(
       (spawn) =>
-        !game.players.some(
-          ({ position }) => position.x === spawn.x && position.y === spawn.y,
-        ),
+        !game.players.some((player) => {
+          const position = player.getPosition();
+
+          return position.x === spawn.x && position.y === spawn.y;
+        }),
     );
   }
 

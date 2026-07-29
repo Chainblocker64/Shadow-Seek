@@ -77,6 +77,7 @@ describe('handlePlayerMovement', () => {
         width: 5,
         height: 5,
         baseTile: 'floor',
+        baseOverrides: [],
         objects: [
           {
             x: 3,
@@ -90,7 +91,13 @@ describe('handlePlayerMovement', () => {
           },
         ],
       },
-      players: [new Player({ clientId: 'player-1', position: { x: 2, y: 2 } })],
+      players: [
+        new Player({
+          clientId: 'player-1',
+          name: 'Alice',
+          position: { x: 2, y: 2 },
+        }),
+      ],
       endsAt: null,
     };
   }
@@ -100,9 +107,9 @@ describe('handlePlayerMovement', () => {
 
     const result = handlePlayerMovement(gameState, 'player-1', 'up');
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       player: {
-        id: 'player-1',
+        clientId: 'player-1',
         name: 'Alice',
         position: {
           x: 2,
@@ -123,9 +130,9 @@ describe('handlePlayerMovement', () => {
 
     const result = handlePlayerMovement(gameState, 'player-1', 'right');
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       player: {
-        id: 'player-1',
+        clientId: 'player-1',
         name: 'Alice',
         position: {
           x: 2,
@@ -146,9 +153,9 @@ describe('handlePlayerMovement', () => {
 
     const result = handlePlayerMovement(gameState, 'player-1', 'left');
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       player: {
-        id: 'player-1',
+        clientId: 'player-1',
         name: 'Alice',
         position: {
           x: 1,
@@ -181,9 +188,9 @@ describe('handlePlayerMovement', () => {
 
     const result = handlePlayerMovement(gameState, 'player-1', 'left');
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       player: {
-        id: 'player-1',
+        clientId: 'player-1',
         position: {
           x: 0,
           y: 2,
@@ -200,19 +207,22 @@ describe('handlePlayerMovement', () => {
   it('keeps the player position when another player occupies the target tile', () => {
     const gameState = createTestGameState();
 
-    gameState.players.push({
-      id: 'player-2',
-      position: {
-        x: 2,
-        y: 1,
-      },
-    });
+    gameState.players.push(
+      new Player({
+        clientId: 'player-2',
+        name: 'Bob',
+        position: {
+          x: 2,
+          y: 1,
+        },
+      }),
+    );
 
     const result = handlePlayerMovement(gameState, 'player-1', 'up');
 
-    expect(result).toEqual({
+    expect(result).toMatchObject({
       player: {
-        id: 'player-1',
+        clientId: 'player-1',
         position: {
           x: 2,
           y: 2,
@@ -221,7 +231,7 @@ describe('handlePlayerMovement', () => {
       moved: false,
     });
 
-    expect(gameState.players[0].position).toEqual({
+    expect(gameState.players[0].getPosition()).toEqual({
       x: 2,
       y: 2,
     });
