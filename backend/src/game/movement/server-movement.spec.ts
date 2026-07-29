@@ -105,7 +105,10 @@ describe('handlePlayerMovement', () => {
 
     const result = handlePlayerMovement(gameState, 'player-1', 'up');
 
-    expect(result).toEqual({
+    expect({
+      player: result.player.toJSON(),
+      moved: result.moved,
+    }).toEqual({
       player: {
         id: 'player-1',
         position: {
@@ -166,7 +169,10 @@ describe('handlePlayerMovement', () => {
 
     const result = handlePlayerMovement(gameState, 'player-1', 'right');
 
-    expect(result).toEqual({
+    expect({
+      player: result.player.toJSON(),
+      moved: result.moved,
+    }).toEqual({
       player: {
         id: 'player-1',
         position: {
@@ -191,7 +197,10 @@ describe('handlePlayerMovement', () => {
 
     const result = handlePlayerMovement(gameState, 'player-1', 'left');
 
-    expect(result).toEqual({
+    expect({
+      player: result.player.toJSON(),
+      moved: result.moved,
+    }).toEqual({
       player: {
         id: 'player-1',
         position: {
@@ -226,7 +235,10 @@ describe('handlePlayerMovement', () => {
 
     const result = handlePlayerMovement(gameState, 'player-1', 'left');
 
-    expect(result).toEqual({
+    expect({
+      player: result.player.toJSON(),
+      moved: result.moved,
+    }).toEqual({
       player: {
         id: 'player-1',
         position: {
@@ -257,7 +269,10 @@ describe('handlePlayerMovement', () => {
 
     const result = handlePlayerMovement(gameState, 'player-1', 'up');
 
-    expect(result).toEqual({
+    expect({
+      player: result.player.toJSON(),
+      moved: result.moved,
+    }).toEqual({
       player: {
         id: 'player-1',
         position: {
