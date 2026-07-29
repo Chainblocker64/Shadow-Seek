@@ -3,6 +3,7 @@ import { describe, expect, it } from '@jest/globals';
 import { randomUUID } from 'node:crypto';
 import type { GameState, MovementDirection, Position } from '../types';
 import { WAITING } from '../consts';
+import { Player } from '../player/player';
 
 describe('calculateNextPosition', () => {
   it('calculates the next position for up', () => {
@@ -90,14 +91,11 @@ describe('handlePlayerMovement', () => {
         ],
       },
       players: [
-        {
-          id: 'player-1',
-          position: {
-            x: 2,
-            y: 2,
-          },
+        new Player({
+          clientId: 'player-1',
+          position: { x: 2, y: 2 },
           facingDirection: 'down',
-        },
+        }),
       ],
     };
   }
@@ -119,12 +117,12 @@ describe('handlePlayerMovement', () => {
       moved: true,
     });
 
-    expect(gameState.players[0].position).toEqual({
+    expect(gameState.players[0].getPosition()).toEqual({
       x: 2,
       y: 1,
     });
 
-    expect(gameState.players[0].facingDirection).toBe('up');
+    expect(gameState.players[0].getFacingDirection()).toBe('up');
   });
 
   it.each<{
@@ -157,9 +155,9 @@ describe('handlePlayerMovement', () => {
       const result = handlePlayerMovement(gameState, 'player-1', direction);
 
       expect(result.moved).toBe(true);
-      expect(result.player.position).toEqual(expectedPosition);
-      expect(result.player.facingDirection).toBe(direction);
-      expect(gameState.players[0].facingDirection).toBe(direction);
+      expect(result.player.getPosition()).toEqual(expectedPosition);
+      expect(result.player.getFacingDirection()).toBe(direction);
+      expect(gameState.players[0].getFacingDirection()).toBe(direction);
     },
   );
 
@@ -180,12 +178,12 @@ describe('handlePlayerMovement', () => {
       moved: false,
     });
 
-    expect(gameState.players[0].position).toEqual({
+    expect(gameState.players[0].getPosition()).toEqual({
       x: 2,
       y: 2,
     });
 
-    expect(gameState.players[0].facingDirection).toBe('right');
+    expect(gameState.players[0].getFacingDirection()).toBe('right');
   });
 
   it('allows movement to a spawn tile', () => {
@@ -205,7 +203,7 @@ describe('handlePlayerMovement', () => {
       moved: true,
     });
 
-    expect(gameState.players[0].position).toEqual({
+    expect(gameState.players[0].getPosition()).toEqual({
       x: 1,
       y: 2,
     });
@@ -221,10 +219,10 @@ describe('handlePlayerMovement', () => {
   it('keeps the player position when movement leaves the map', () => {
     const gameState = createTestGameState();
 
-    gameState.players[0].position = {
+    gameState.players[0].setPosition({
       x: 0,
       y: 2,
-    };
+    });
 
     const result = handlePlayerMovement(gameState, 'player-1', 'left');
 
@@ -240,23 +238,22 @@ describe('handlePlayerMovement', () => {
       moved: false,
     });
 
-    expect(gameState.players[0].position).toEqual({
+    expect(gameState.players[0].getPosition()).toEqual({
       x: 0,
       y: 2,
     });
-    expect(gameState.players[0].facingDirection).toBe('left');
+    expect(gameState.players[0].getFacingDirection()).toBe('left');
   });
   it('keeps the player position when another player occupies the target tile', () => {
     const gameState = createTestGameState();
 
-    gameState.players.push({
-      id: 'player-2',
-      position: {
-        x: 2,
-        y: 1,
-      },
-      facingDirection: 'down',
-    });
+    gameState.players.push(
+      new Player({
+        clientId: 'player-2',
+        position: { x: 2, y: 1 },
+        facingDirection: 'down',
+      }),
+    );
 
     const result = handlePlayerMovement(gameState, 'player-1', 'up');
 
@@ -272,10 +269,10 @@ describe('handlePlayerMovement', () => {
       moved: false,
     });
 
-    expect(gameState.players[0].position).toEqual({
+    expect(gameState.players[0].getPosition()).toEqual({
       x: 2,
       y: 2,
     });
-    expect(gameState.players[0].facingDirection).toBe('up');
+    expect(gameState.players[0].getFacingDirection()).toBe('up');
   });
 });
