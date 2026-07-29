@@ -67,14 +67,16 @@ export class GameService {
       return;
     }
 
-    if (!player.tryBeginAction()) {
+    if (player.isAction()) {
       return;
     }
+
+    player.setAction(true);
 
     try {
       return handlePlayerMovement(game, playerId, direction);
     } finally {
-      player.completeAction();
+      player.setAction(false);
     }
   }
 
