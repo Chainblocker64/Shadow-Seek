@@ -31,6 +31,8 @@ export class GameGateway {
     ReturnType<typeof setTimeout>
   >();
 
+  private readonly clientsWithActionInProgress = new Set<ClientId>();
+
   constructor(
     private readonly gameService: GameService,
     private readonly lobbyService: LobbyService,
@@ -62,27 +64,37 @@ export class GameGateway {
   }
 
   @SubscribeMessage('movePlayer')
-  handleMovePlayer(
+  async handleMovePlayer(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: MovePlayerDto,
   ) {
-    const room = this.lobbyService.getPlayerRoom(client.id);
-
-    if (!room) {
+    if (this.clientsWithActionInProgress.has(client.id)) {
       return;
     }
 
-    const result = this.gameService.movePlayer(
-      room.id,
-      client.id,
-      payload.direction,
-    );
+    this.clientsWithActionInProgress.add(client.id);
 
-    if (!result) {
-      return;
+    try {
+      const room = this.lobbyService.getPlayerRoom(client.id);
+
+      if (!room) {
+        return;
+      }
+
+      const result = await this.gameService.movePlayer(
+        room.id,
+        client.id,
+        payload.direction,
+      );
+
+      if (!result) {
+        return;
+      }
+
+      this.server.to(room.id).emit('movement:confirmed', result);
+    } finally {
+      this.clientsWithActionInProgress.delete(client.id);
     }
-
-    this.server.to(room.id).emit('movement:confirmed', result);
   }
 
   private scheduleGameStart(roomId: RoomId, playerIds: ClientId[]) {
