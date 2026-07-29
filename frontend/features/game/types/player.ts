@@ -5,6 +5,12 @@ export type PlayerPosition = {
 
 export type PlayerDirection = "up" | "down" | "left" | "right";
 
+export type Player = {
+  id: string;
+  position: PlayerPosition;
+  facingDirection: PlayerDirection;
+};
+
 export type PlayerGameState = {
   id: string;
   name: string;

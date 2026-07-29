@@ -12,7 +12,7 @@ import {
 import { useEffect, useRef } from "react";
 import type { GameMap } from "../types/map";
 import type { GameState } from "../types/game";
-import type { PlayerPosition, PlayerDirection } from "../types/player";
+import type { Player, PlayerDirection } from "../types/player";
 import {
   baseTileTextureFrames,
   mapObjectTextureFrames,
@@ -21,10 +21,7 @@ import {
 } from "../data/tileTextureFrames";
 import { useMovementControls } from "../hooks/useMovementControls";
 
-type GamePlayer = {
-  id: string;
-  position: PlayerPosition;
-  facingDirection: PlayerDirection;
+type GamePlayer = Player & {
   label: string;
 };
 
