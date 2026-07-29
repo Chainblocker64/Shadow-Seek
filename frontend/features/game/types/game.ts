@@ -6,7 +6,7 @@ export type GameState = {
   status: "waiting" | "running" | "ended";
   map: GameMap;
   players: Array<{
-    id: string;
+    clientId: string;
     name: string;
     position: PlayerPosition;
   }>;

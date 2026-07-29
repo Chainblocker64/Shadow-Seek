@@ -38,9 +38,10 @@ export default function GameBoard() {
   const labeledPlayers = useMemo(
     () =>
       (game?.players ?? []).map((player) => ({
-        ...player,
+        id: player.clientId,
         label: player.name,
-        isSelf: player.id === socket.id,
+        isSelf: player.clientId === socket.id,
+        position: player.position,
       })),
     [game?.players],
   );
@@ -65,7 +66,7 @@ export default function GameBoard() {
         }
 
         const playerExists = currentGame.players.some(
-          (player) => player.id === result.player.id,
+          (player) => player.clientId === result.player.clientId,
         );
 
         if (!playerExists) {
@@ -75,7 +76,7 @@ export default function GameBoard() {
         return {
           ...currentGame,
           players: currentGame.players.map((player) =>
-            player.id === result.player.id
+            player.clientId === result.player.clientId
               ? {
                   ...player,
                   position: {

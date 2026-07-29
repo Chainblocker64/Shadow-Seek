@@ -6,7 +6,7 @@ export type MovementDirection = (typeof MOVEMENT_DIRECTIONS)[number];
 
 export type MovementResult = {
   player: {
-    id: string;
+    clientId: string;
     position: PlayerPosition;
   };
   moved: boolean;
