@@ -38,6 +38,7 @@ export class GameService {
             clientId,
             name,
             position: spawnPositions[index],
+            facingDirection: 'down',
           }),
       ),
       endsAt: null,

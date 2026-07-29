@@ -47,6 +47,10 @@ describe('GameService', () => {
       roomId,
       status: WAITING,
       map,
+      players: [
+        { id: 'player-1', position: { x: 0, y: 0 }, facingDirection: 'down' },
+        { id: 'player-2', position: { x: 3, y: 3 }, facingDirection: 'down' },
+      ],
       endsAt: null,
     });
     expect(game.players).toMatchObject([
@@ -177,6 +181,7 @@ describe('GameService', () => {
             x: 2,
             y: 1,
           },
+          facingDirection: 'right',
         },
         moved: true,
       });

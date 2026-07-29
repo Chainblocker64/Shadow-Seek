@@ -82,6 +82,7 @@ export default function GameBoard() {
                   position: {
                     ...result.player.position,
                   },
+                  facingDirection: result.player.facingDirection,
                 }
               : player,
           ),

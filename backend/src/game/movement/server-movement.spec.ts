@@ -1,7 +1,7 @@
 import { calculateNextPosition, handlePlayerMovement } from './server-movement';
 import { describe, expect, it } from '@jest/globals';
 import { randomUUID } from 'node:crypto';
-import type { GameState } from '../types';
+import type { GameState, MovementDirection, Position } from '../types';
 import { WAITING } from '../consts';
 import { Player } from '../player/player';
 
@@ -96,6 +96,7 @@ describe('handlePlayerMovement', () => {
           clientId: 'player-1',
           name: 'Alice',
           position: { x: 2, y: 2 },
+          facingDirection: 'down',
         }),
       ],
       endsAt: null,
@@ -107,7 +108,10 @@ describe('handlePlayerMovement', () => {
 
     const result = handlePlayerMovement(gameState, 'player-1', 'up');
 
-    expect(result).toMatchObject({
+    expect({
+      player: result.player.toJSON(),
+      moved: result.moved,
+    }).toEqual({
       player: {
         clientId: 'player-1',
         name: 'Alice',
@@ -115,6 +119,7 @@ describe('handlePlayerMovement', () => {
           x: 2,
           y: 1,
         },
+        facingDirection: 'up',
       },
       moved: true,
     });
@@ -123,14 +128,55 @@ describe('handlePlayerMovement', () => {
       x: 2,
       y: 1,
     });
+
+    expect(gameState.players[0].getFacingDirection()).toBe('up');
   });
+
+  it.each<{
+    direction: MovementDirection;
+    expectedPosition: Position;
+  }>([
+    {
+      direction: 'up',
+      expectedPosition: { x: 2, y: 1 },
+    },
+    {
+      direction: 'down',
+      expectedPosition: { x: 2, y: 3 },
+    },
+    {
+      direction: 'left',
+      expectedPosition: { x: 1, y: 2 },
+    },
+    {
+      direction: 'right',
+      expectedPosition: { x: 3, y: 2 },
+    },
+  ])(
+    'sets facingDirection to $direction after successful movement',
+    ({ direction, expectedPosition }) => {
+      const gameState = createTestGameState();
+
+      gameState.map.objects = [];
+
+      const result = handlePlayerMovement(gameState, 'player-1', direction);
+
+      expect(result.moved).toBe(true);
+      expect(result.player.getPosition()).toEqual(expectedPosition);
+      expect(result.player.getFacingDirection()).toBe(direction);
+      expect(gameState.players[0].getFacingDirection()).toBe(direction);
+    },
+  );
 
   it('keeps the old player position when movement is invalid', () => {
     const gameState = createTestGameState();
 
     const result = handlePlayerMovement(gameState, 'player-1', 'right');
 
-    expect(result).toMatchObject({
+    expect({
+      player: result.player.toJSON(),
+      moved: result.moved,
+    }).toEqual({
       player: {
         clientId: 'player-1',
         name: 'Alice',
@@ -138,6 +184,7 @@ describe('handlePlayerMovement', () => {
           x: 2,
           y: 2,
         },
+        facingDirection: 'right',
       },
       moved: false,
     });
@@ -146,6 +193,8 @@ describe('handlePlayerMovement', () => {
       x: 2,
       y: 2,
     });
+
+    expect(gameState.players[0].getFacingDirection()).toBe('right');
   });
 
   it('allows movement to a spawn tile', () => {
@@ -153,7 +202,10 @@ describe('handlePlayerMovement', () => {
 
     const result = handlePlayerMovement(gameState, 'player-1', 'left');
 
-    expect(result).toMatchObject({
+    expect({
+      player: result.player.toJSON(),
+      moved: result.moved,
+    }).toEqual({
       player: {
         clientId: 'player-1',
         name: 'Alice',
@@ -161,6 +213,7 @@ describe('handlePlayerMovement', () => {
           x: 1,
           y: 2,
         },
+        facingDirection: 'left',
       },
       moved: true,
     });
@@ -188,13 +241,17 @@ describe('handlePlayerMovement', () => {
 
     const result = handlePlayerMovement(gameState, 'player-1', 'left');
 
-    expect(result).toMatchObject({
+    expect({
+      player: result.player.toJSON(),
+      moved: result.moved,
+    }).toEqual({
       player: {
         clientId: 'player-1',
         position: {
           x: 0,
           y: 2,
         },
+        facingDirection: 'left',
       },
       moved: false,
     });
@@ -203,6 +260,7 @@ describe('handlePlayerMovement', () => {
       x: 0,
       y: 2,
     });
+    expect(gameState.players[0].getFacingDirection()).toBe('left');
   });
   it('keeps the player position when another player occupies the target tile', () => {
     const gameState = createTestGameState();
@@ -215,18 +273,23 @@ describe('handlePlayerMovement', () => {
           x: 2,
           y: 1,
         },
+        facingDirection: 'down',
       }),
     );
 
     const result = handlePlayerMovement(gameState, 'player-1', 'up');
 
-    expect(result).toMatchObject({
+    expect({
+      player: result.player.toJSON(),
+      moved: result.moved,
+    }).toEqual({
       player: {
         clientId: 'player-1',
         position: {
           x: 2,
           y: 2,
         },
+        facingDirection: 'up',
       },
       moved: false,
     });
@@ -235,5 +298,6 @@ describe('handlePlayerMovement', () => {
       x: 2,
       y: 2,
     });
+    expect(gameState.players[0].getFacingDirection()).toBe('up');
   });
 });
