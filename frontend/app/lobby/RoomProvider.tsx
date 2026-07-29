@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { Room } from "./types";
 import { socket } from "@/lib/socket";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 const RoomsContext = createContext<Room[] | undefined>(undefined);
 const JoinedRoomContext = createContext<Room | undefined>(undefined);
@@ -11,6 +11,7 @@ const LeaveRoomContext = createContext<() => void>(() => {});
 
 export function RoomProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [joinedRoom, setJoinedRoom] = useState<Room | undefined>(undefined);
   const [isInGame, setIsInGame] = useState(false);
@@ -55,10 +56,10 @@ export function RoomProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     /* Redirect to room page when the id of joinedRoom changes (e.g. by having successfully created a room).
        Joining a room with a running game also updates the room, but there the game board wins. */
-    if (roomId && !isInGame) {
+    if (roomId && !isInGame && pathname === "/lobby") {
       router.push(`/lobby/${roomId}`);
     }
-  }, [roomId, isInGame, router]);
+  }, [roomId, isInGame, pathname, router]);
 
   const leaveRoom = () => {
     socket.emit("leaveRoom");
