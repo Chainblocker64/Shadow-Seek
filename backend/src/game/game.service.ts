@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Player } from './player/player';
-import { ENDED, GAME_DURATION_MS, RUNNING, WAITING } from './consts';
+import {
+  ENDED, 
+  GAME_DURATION_MS,
+  DEFAULT_VISION_RANGE,
+  RUNNING,
+  WAITING,
+} from './consts';
 import type {
   GameMap,
   GameState,
@@ -39,6 +45,7 @@ export class GameService {
             name,
             position: spawnPositions[index],
             spriteIndex: index,
+            visionRange: DEFAULT_VISION_RANGE,
             facingDirection: 'down',
           }),
       ),

@@ -1,7 +1,7 @@
 import type { ClientId } from '../../shared/types';
 import type { CombatStats } from '../combat/types';
-import { DEFAULT_COMBAT_STATS } from '../consts';
 import type { FacingDirection, Position } from '../types';
+import { DEFAULT_COMBAT_STATS, DEFAULT_VISION_RANGE } from '../consts';
 
 export class Player {
   public readonly clientId: ClientId;
@@ -10,6 +10,7 @@ export class Player {
   private position: Position;
   private combatStats: CombatStats;
   private health: number;
+  private visionRange: number;
   private facingDirection: FacingDirection;
 
   constructor({
@@ -18,6 +19,7 @@ export class Player {
     position,
     spriteIndex = 0,
     combatStats = DEFAULT_COMBAT_STATS,
+    visionRange = DEFAULT_VISION_RANGE,
     facingDirection = 'down',
   }: {
     clientId: ClientId;
@@ -25,6 +27,7 @@ export class Player {
     position: Position;
     spriteIndex?: number;
     combatStats?: CombatStats;
+    visionRange?: number;
     facingDirection?: FacingDirection;
   }) {
     this.clientId = clientId;
@@ -33,6 +36,7 @@ export class Player {
     this.position = position;
     this.combatStats = combatStats;
     this.health = this.combatStats.maxHealth;
+    this.visionRange = visionRange;
     this.facingDirection = facingDirection;
   }
 
@@ -46,6 +50,14 @@ export class Player {
 
   setPosition(position: Position): void {
     this.position = position;
+  }
+
+  getVisionRange(): number {
+    return this.visionRange;
+  }
+
+  setVisionRange(visionRange: number): void {
+    this.visionRange = visionRange;
   }
 
   getFacingDirection(): FacingDirection {
