@@ -16,6 +16,12 @@ export const BLOCKING_OBJECT_TYPES: ObjectType[] = [
   'water',
 ];
 
+export const VIEW_BLOCKING_OBJECT_TYPES: ObjectType[] = [
+  'wall',
+  'tree',
+  'rock',
+];
+
 export const DEFAULT_COMBAT_STATS: CombatStats = {
   maxHealth: 100,
   attack: 10,
