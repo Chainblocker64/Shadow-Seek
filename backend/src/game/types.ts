@@ -1,6 +1,6 @@
 import { WAITING, RUNNING } from './consts';
 import type { RoomId } from '../shared/types';
-import { Player } from './player/player';
+import type { Player } from './player/player';
 
 export type Status = typeof WAITING | typeof RUNNING;
 
@@ -8,6 +8,8 @@ export type Position = {
   x: number;
   y: number;
 };
+
+export type FacingDirection = 'up' | 'down' | 'left' | 'right';
 
 export type GameMap = {
   name: string;
