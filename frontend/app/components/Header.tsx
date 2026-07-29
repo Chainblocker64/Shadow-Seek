@@ -28,7 +28,7 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-zinc-800 bg-zinc-950/80 backdrop-blur-md">
       <div className="max-w-7xl mx-auto px-6 py-4 md:py-0 md:h-16 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0">
         <Link
-          href="/lobby"
+          href="/"
           className="text-xl font-extrabold tracking-wider text-white transition-colors cursor-pointer"
         >
           Shadow Seek
