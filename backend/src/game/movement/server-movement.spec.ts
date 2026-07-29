@@ -113,8 +113,7 @@ describe('handlePlayerMovement', () => {
       moved: result.moved,
     }).toEqual({
       player: {
-        clientId: 'player-1',
-        name: 'Alice',
+        id: 'player-1',
         position: {
           x: 2,
           y: 1,
@@ -178,8 +177,7 @@ describe('handlePlayerMovement', () => {
       moved: result.moved,
     }).toEqual({
       player: {
-        clientId: 'player-1',
-        name: 'Alice',
+        id: 'player-1',
         position: {
           x: 2,
           y: 2,
@@ -207,8 +205,7 @@ describe('handlePlayerMovement', () => {
       moved: result.moved,
     }).toEqual({
       player: {
-        clientId: 'player-1',
-        name: 'Alice',
+        id: 'player-1',
         position: {
           x: 1,
           y: 2,
@@ -246,7 +243,7 @@ describe('handlePlayerMovement', () => {
       moved: result.moved,
     }).toEqual({
       player: {
-        clientId: 'player-1',
+        id: 'player-1',
         position: {
           x: 0,
           y: 2,
@@ -284,7 +281,7 @@ describe('handlePlayerMovement', () => {
       moved: result.moved,
     }).toEqual({
       player: {
-        clientId: 'player-1',
+        id: 'player-1',
         position: {
           x: 2,
           y: 2,
