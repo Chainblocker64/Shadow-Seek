@@ -1,12 +1,9 @@
 import type { GameMap } from "./map";
-import type { PlayerPosition } from "./player";
+import type { Player } from "./player";
 
 export type GameState = {
   roomId: string;
   status: "waiting" | "running";
   map: GameMap;
-  players: Array<{
-    id: string;
-    position: PlayerPosition;
-  }>;
+  players: Player[];
 };

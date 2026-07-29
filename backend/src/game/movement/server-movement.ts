@@ -46,6 +46,7 @@ export function handlePlayerMovement(
   if (!player) {
     throw new Error('Player not found');
   }
+  player.setFacingDirection(direction);
 
   const nextPosition = calculateNextPosition(player.getPosition(), direction);
 
