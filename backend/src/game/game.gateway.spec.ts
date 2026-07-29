@@ -120,6 +120,53 @@ describe('GameGateway movement', () => {
     expect(emit).not.toHaveBeenCalled();
   });
 
+  it('allows a new movement request after the previous action finishes', async () => {
+    const roomId = randomUUID();
+
+    const room: Room = {
+      id: roomId,
+      players: ['player-1'],
+      owner: 'player-1',
+      status: 'waiting',
+      maxPlayers: 4,
+      map: 'Test map',
+    };
+
+    const result = {
+      player: {
+        id: 'player-1',
+        position: { x: 1, y: 1 },
+        facingDirection: 'right',
+      },
+      moved: true,
+    };
+
+    lobbyService.getPlayerRoom.mockReturnValue(room);
+    gameService.movePlayer.mockResolvedValue(result);
+
+    await gateway.handleMovePlayer({ id: 'player-1' } as Socket, {
+      direction: 'right',
+    });
+
+    await gateway.handleMovePlayer({ id: 'player-1' } as Socket, {
+      direction: 'left',
+    });
+
+    expect(gameService.movePlayer).toHaveBeenCalledTimes(2);
+    expect(gameService.movePlayer).toHaveBeenNthCalledWith(
+      1,
+      roomId,
+      'player-1',
+      'right',
+    );
+    expect(gameService.movePlayer).toHaveBeenNthCalledWith(
+      2,
+      roomId,
+      'player-1',
+      'left',
+    );
+  });
+
   it('ignores a movement request while another action is in progress', async () => {
     const roomId = randomUUID();
 
