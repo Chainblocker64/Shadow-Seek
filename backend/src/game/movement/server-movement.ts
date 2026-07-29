@@ -66,6 +66,7 @@ export function handlePlayerMovement(
     };
   }
 
+  player.facingDirection = direction;
   player.position = nextPosition;
 
   return {

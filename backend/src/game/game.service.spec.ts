@@ -134,7 +134,7 @@ describe('GameService', () => {
             x: 2,
             y: 1,
           },
-          facingDirection: 'down',
+          facingDirection: 'right',
         },
         moved: true,
       });
