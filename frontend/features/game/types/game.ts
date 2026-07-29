@@ -1,5 +1,5 @@
 import type { GameMap } from "./map";
-import type { PlayerPosition } from "./player";
+import type { PlayerPosition, PlayerDirection } from "./player";
 
 export type GameState = {
   roomId: string;
@@ -8,5 +8,6 @@ export type GameState = {
   players: Array<{
     id: string;
     position: PlayerPosition;
+    facingDirection: PlayerDirection;
   }>;
 };

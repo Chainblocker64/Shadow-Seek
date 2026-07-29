@@ -1,4 +1,4 @@
-import type { PlayerPosition } from "./player";
+import type { PlayerPosition, PlayerDirection } from "./player";
 
 export const MOVEMENT_DIRECTIONS = ["up", "down", "left", "right"] as const;
 
@@ -8,6 +8,7 @@ export type MovementResult = {
   player: {
     id: string;
     position: PlayerPosition;
+    facingDirection: PlayerDirection;
   };
   moved: boolean;
 };
