@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { RUNNING, WAITING } from './consts';
+import { Player } from './player/player';
+import { DEFAULT_COMBAT_STATS, RUNNING, WAITING } from './consts';
 import type {
   GameMap,
   GameState,
@@ -27,10 +28,14 @@ export class GameService {
       roomId,
       status: WAITING,
       map,
-      players: playerIds.map((id, index) => ({
-        id,
-        position: spawnPositions[index],
-      })),
+      players: playerIds.map(
+        (clientId, index) =>
+          new Player({
+            clientId: clientId,
+            position: spawnPositions[index],
+            combatStats: DEFAULT_COMBAT_STATS,
+          }),
+      ),
     };
 
     this.games.set(roomId, game);
