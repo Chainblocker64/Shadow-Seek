@@ -1,8 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import { DEFAULT_COMBAT_STATS, RUNNING, WAITING } from './consts';
-import type { GameState, Position, GameMap } from './types';
-import type { ClientId, RoomId } from '../shared/types';
 import { Player } from './player/player';
+import { DEFAULT_COMBAT_STATS, RUNNING, WAITING } from './consts';
+import type {
+  GameMap,
+  GameState,
+  MovementDirection,
+  MovementResult,
+  Position,
+} from './types';
+import type { ClientId, RoomId } from '../shared/types';
+import { handlePlayerMovement } from './movement/server-movement';
 
 @Injectable()
 export class GameService {
@@ -38,6 +45,20 @@ export class GameService {
 
   getGame(roomId: RoomId): GameState | undefined {
     return this.games.get(roomId);
+  }
+
+  movePlayer(
+    roomId: RoomId,
+    playerId: ClientId,
+    direction: MovementDirection,
+  ): MovementResult | undefined {
+    const game = this.games.get(roomId);
+
+    if (!game || game.status !== RUNNING) {
+      return;
+    }
+
+    return handlePlayerMovement(game, playerId, direction);
   }
 
   startGame(roomId: RoomId): GameState | undefined {
