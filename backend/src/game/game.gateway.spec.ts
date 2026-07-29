@@ -57,7 +57,7 @@ describe('GameGateway movement', () => {
     } as unknown as Server;
   });
 
-  it('broadcasts the server-confirmed movement result to the room', async () => {
+  it('broadcasts the server-confirmed movement result to the room', () => {
     const roomId = randomUUID();
 
     const room: Room = {
@@ -83,7 +83,7 @@ describe('GameGateway movement', () => {
     lobbyService.getPlayerRoom.mockReturnValue(room);
     gameService.movePlayer.mockReturnValue(result);
 
-    await gateway.handleMovePlayer(
+    gateway.handleMovePlayer(
       {
         id: 'player-1',
       } as Socket,
@@ -104,10 +104,10 @@ describe('GameGateway movement', () => {
     expect(emit).toHaveBeenCalledWith('movement:confirmed', result);
   });
 
-  it('does not process movement when the player has no room', async () => {
+  it('does not process movement when the player has no room', () => {
     lobbyService.getPlayerRoom.mockReturnValue(undefined);
 
-    await gateway.handleMovePlayer(
+    gateway.handleMovePlayer(
       {
         id: 'player-1',
       } as Socket,
@@ -120,7 +120,7 @@ describe('GameGateway movement', () => {
     expect(emit).not.toHaveBeenCalled();
   });
 
-  it('allows a new movement request after the previous action finishes', async () => {
+  it('allows a new movement request after the previous action finishes', () => {
     const roomId = randomUUID();
 
     const room: Room = {
@@ -142,13 +142,13 @@ describe('GameGateway movement', () => {
     };
 
     lobbyService.getPlayerRoom.mockReturnValue(room);
-    gameService.movePlayer.mockResolvedValue(result);
+    gameService.movePlayer.mockReturnValue(result);
 
-    await gateway.handleMovePlayer({ id: 'player-1' } as Socket, {
+    gateway.handleMovePlayer({ id: 'player-1' } as Socket, {
       direction: 'right',
     });
 
-    await gateway.handleMovePlayer({ id: 'player-1' } as Socket, {
+    gateway.handleMovePlayer({ id: 'player-1' } as Socket, {
       direction: 'left',
     });
 
@@ -167,7 +167,7 @@ describe('GameGateway movement', () => {
     );
   });
 
-  it('ignores a movement request while another action is in progress', async () => {
+  it('ignores a movement request while another action is in progress', () => {
     const roomId = randomUUID();
 
     const room: Room = {
@@ -188,10 +188,6 @@ describe('GameGateway movement', () => {
       moved: true,
     };
 
-    let resolveMovement!: (value: typeof result) => void;
-    const pendingMovement = new Promise<typeof result>((resolve) => {
-      resolveMovement = resolve;
-    });
     let activeActionCount = 0;
 
     lobbyService.getPlayerRoom.mockReturnValue(room);
@@ -201,28 +197,23 @@ describe('GameGateway movement', () => {
       }
 
       activeActionCount += 1;
-      return pendingMovement;
+      return result;
     });
 
-    const firstAction = gateway.handleMovePlayer({ id: 'player-1' } as Socket, {
+    gateway.handleMovePlayer({ id: 'player-1' } as Socket, {
       direction: 'right',
     });
 
-    const secondAction = gateway.handleMovePlayer(
-      { id: 'player-1' } as Socket,
-      { direction: 'left' },
-    );
+    gateway.handleMovePlayer({ id: 'player-1' } as Socket, {
+      direction: 'left',
+    });
 
     expect(gameService.movePlayer).toHaveBeenCalledTimes(2);
-
-    resolveMovement(result);
-    await Promise.all([firstAction, secondAction]);
-
     expect(emit).toHaveBeenCalledTimes(1);
     expect(emit).toHaveBeenCalledWith('movement:confirmed', result);
   });
 
-  it('does not emit when the game rejects the request', async () => {
+  it('does not emit when the game rejects the request', () => {
     const roomId = randomUUID();
 
     const room: Room = {
@@ -237,7 +228,7 @@ describe('GameGateway movement', () => {
     lobbyService.getPlayerRoom.mockReturnValue(room);
     gameService.movePlayer.mockReturnValue(undefined);
 
-    await gateway.handleMovePlayer(
+    gateway.handleMovePlayer(
       {
         id: 'player-1',
       } as Socket,

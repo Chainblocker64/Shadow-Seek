@@ -6,7 +6,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import type { RoomId } from '../shared/types';
+import type { ClientId, RoomId } from '../shared/types';
 import { LobbyService } from '../lobby/lobby.service';
 import { MapsService } from '../maps/maps.service';
 import { GAME_START_DELAY_MS, MIN_PLAYERS_TO_START } from './consts';
@@ -62,7 +62,7 @@ export class GameGateway {
   }
 
   @SubscribeMessage('movePlayer')
-  async handleMovePlayer(
+  handleMovePlayer(
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: MovePlayerDto,
   ) {
@@ -72,7 +72,7 @@ export class GameGateway {
       return;
     }
 
-    const result = await this.gameService.movePlayer(
+    const result = this.gameService.movePlayer(
       room.id,
       client.id,
       payload.direction,
