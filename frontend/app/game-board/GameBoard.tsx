@@ -42,6 +42,7 @@ export default function GameBoard() {
         name: player.name,
         label: player.name,
         isSelf: player.id === socket.id,
+        spriteIndex: player.spriteIndex,
         position: player.position,
         facingDirection: player.facingDirection,
       })),

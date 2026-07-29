@@ -115,6 +115,7 @@ describe('handlePlayerMovement', () => {
       player: {
         id: 'player-1',
         name: 'Alice',
+        spriteIndex: 0,
         position: {
           x: 2,
           y: 1,
@@ -180,6 +181,7 @@ describe('handlePlayerMovement', () => {
       player: {
         id: 'player-1',
         name: 'Alice',
+        spriteIndex: 0,
         position: {
           x: 2,
           y: 2,
@@ -209,6 +211,7 @@ describe('handlePlayerMovement', () => {
       player: {
         id: 'player-1',
         name: 'Alice',
+        spriteIndex: 0,
         position: {
           x: 1,
           y: 2,
@@ -248,6 +251,7 @@ describe('handlePlayerMovement', () => {
       player: {
         id: 'player-1',
         name: 'Alice',
+        spriteIndex: 0,
         position: {
           x: 0,
           y: 2,
@@ -287,6 +291,7 @@ describe('handlePlayerMovement', () => {
       player: {
         id: 'player-1',
         name: 'Alice',
+        spriteIndex: 0,
         position: {
           x: 2,
           y: 2,

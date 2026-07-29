@@ -51,7 +51,6 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const playersRef = useRef(players);
   const renderPlayersRef = useRef<(() => void) | null>(null);
-  const playerTextureIndexesRef = useRef(new Map<string, number>());
 
   useMovementControls(status === "running");
 
@@ -149,15 +148,10 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
         playerLayer.removeChildren();
 
         playersRef.current.forEach((player) => {
-          let textureIndex = playerTextureIndexesRef.current.get(player.id);
-
-          if (textureIndex === undefined) {
-            textureIndex =
-              playerTextureIndexesRef.current.size % playerTextureFrames.length;
-            playerTextureIndexesRef.current.set(player.id, textureIndex);
-          }
-
-          const frame = playerTextureFrames[textureIndex];
+          const frame =
+            playerTextureFrames[
+              player.spriteIndex % playerTextureFrames.length
+            ];
 
           playerLayer.addChild(
             createTileSprite(

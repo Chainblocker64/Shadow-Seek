@@ -38,6 +38,7 @@ export class GameService {
             clientId,
             name,
             position: spawnPositions[index],
+            spriteIndex: index,
             facingDirection: 'down',
           }),
       ),
@@ -103,6 +104,7 @@ export class GameService {
           clientId: player.id,
           name: player.name,
           position,
+          spriteIndex: this.getFreeSpriteIndex(game),
         }),
       ],
     };
@@ -172,6 +174,20 @@ export class GameService {
           return position.x === spawn.x && position.y === spawn.y;
         }),
     );
+  }
+
+  private getFreeSpriteIndex(game: GameState): number {
+    const usedSpriteIndexes = new Set(
+      game.players.map((player) => player.spriteIndex),
+    );
+
+    let spriteIndex = 0;
+
+    while (usedSpriteIndexes.has(spriteIndex)) {
+      spriteIndex += 1;
+    }
+
+    return spriteIndex;
   }
 
   private getSpawnPositions(map: GameMap): Position[] {

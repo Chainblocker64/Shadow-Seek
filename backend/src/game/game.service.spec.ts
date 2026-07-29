@@ -53,12 +53,14 @@ describe('GameService', () => {
       {
         id: 'player-1',
         name: 'Alice',
+        spriteIndex: 0,
         position: { x: 0, y: 0 },
         facingDirection: 'down',
       },
       {
         id: 'player-2',
         name: 'Bob',
+        spriteIndex: 1,
         position: { x: 3, y: 3 },
         facingDirection: 'down',
       },
