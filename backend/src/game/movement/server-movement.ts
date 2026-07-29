@@ -51,9 +51,9 @@ export function handlePlayerMovement(
 
   const targetPositionIsOccupied = gameState.players.some(
     (currentPlayer) =>
-      currentPlayer.id !== playerId &&
-      currentPlayer.position.x === nextPosition.x &&
-      currentPlayer.position.y === nextPosition.y,
+      currentPlayer.clientId !== playerId &&
+      currentPlayer.getPosition().x === nextPosition.x &&
+      currentPlayer.getPosition().y === nextPosition.y,
   );
 
   const canMove =
