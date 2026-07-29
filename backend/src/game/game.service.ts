@@ -59,7 +59,23 @@ export class GameService {
       return;
     }
 
-    return handlePlayerMovement(game, playerId, direction);
+    const player = game.players.find((currentPlayer) => {
+      return currentPlayer.clientId === playerId;
+    });
+
+    if (!player) {
+      return;
+    }
+
+    if (!player.tryBeginAction()) {
+      return;
+    }
+
+    try {
+      return handlePlayerMovement(game, playerId, direction);
+    } finally {
+      player.completeAction();
+    }
   }
 
   startGame(roomId: RoomId): GameState | undefined {

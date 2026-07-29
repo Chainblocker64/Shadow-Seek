@@ -192,9 +192,17 @@ describe('GameGateway movement', () => {
     const pendingMovement = new Promise<typeof result>((resolve) => {
       resolveMovement = resolve;
     });
+    let activeActionCount = 0;
 
     lobbyService.getPlayerRoom.mockReturnValue(room);
-    gameService.movePlayer.mockReturnValue(pendingMovement);
+    gameService.movePlayer.mockImplementation(() => {
+      if (activeActionCount > 0) {
+        return undefined;
+      }
+
+      activeActionCount += 1;
+      return pendingMovement;
+    });
 
     const firstAction = gateway.handleMovePlayer({ id: 'player-1' } as Socket, {
       direction: 'right',
@@ -205,10 +213,13 @@ describe('GameGateway movement', () => {
       { direction: 'left' },
     );
 
-    expect(gameService.movePlayer).toHaveBeenCalledTimes(1);
+    expect(gameService.movePlayer).toHaveBeenCalledTimes(2);
 
     resolveMovement(result);
     await Promise.all([firstAction, secondAction]);
+
+    expect(emit).toHaveBeenCalledTimes(1);
+    expect(emit).toHaveBeenCalledWith('movement:confirmed', result);
   });
 
   it('does not emit when the game rejects the request', async () => {

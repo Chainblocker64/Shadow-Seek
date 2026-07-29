@@ -9,6 +9,7 @@ export class Player {
   private combatStats: CombatStats;
   private health: number;
   private facingDirection: FacingDirection;
+  private isActionInProgress = false;
 
   constructor({
     clientId,
@@ -46,6 +47,23 @@ export class Player {
 
   setFacingDirection(direction: FacingDirection): void {
     this.facingDirection = direction;
+  }
+
+  tryBeginAction(): boolean {
+    if (this.isActionInProgress) {
+      return false;
+    }
+
+    this.isActionInProgress = true;
+    return true;
+  }
+
+  completeAction(): void {
+    this.isActionInProgress = false;
+  }
+
+  isActing(): boolean {
+    return this.isActionInProgress;
   }
 
   toJSON() {

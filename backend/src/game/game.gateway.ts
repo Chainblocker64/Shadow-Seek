@@ -6,7 +6,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import type { ClientId, RoomId } from '../shared/types';
+import type { RoomId } from '../shared/types';
 import { LobbyService } from '../lobby/lobby.service';
 import { MapsService } from '../maps/maps.service';
 import { GAME_START_DELAY_MS, MIN_PLAYERS_TO_START } from './consts';
@@ -30,8 +30,6 @@ export class GameGateway {
     RoomId,
     ReturnType<typeof setTimeout>
   >();
-
-  private readonly clientsWithActionInProgress = new Set<ClientId>();
 
   constructor(
     private readonly gameService: GameService,
@@ -68,33 +66,23 @@ export class GameGateway {
     @ConnectedSocket() client: Socket,
     @MessageBody() payload: MovePlayerDto,
   ) {
-    if (this.clientsWithActionInProgress.has(client.id)) {
+    const room = this.lobbyService.getPlayerRoom(client.id);
+
+    if (!room) {
       return;
     }
 
-    this.clientsWithActionInProgress.add(client.id);
+    const result = await this.gameService.movePlayer(
+      room.id,
+      client.id,
+      payload.direction,
+    );
 
-    try {
-      const room = this.lobbyService.getPlayerRoom(client.id);
-
-      if (!room) {
-        return;
-      }
-
-      const result = await this.gameService.movePlayer(
-        room.id,
-        client.id,
-        payload.direction,
-      );
-
-      if (!result) {
-        return;
-      }
-
-      this.server.to(room.id).emit('movement:confirmed', result);
-    } finally {
-      this.clientsWithActionInProgress.delete(client.id);
+    if (!result) {
+      return;
     }
+
+    this.server.to(room.id).emit('movement:confirmed', result);
   }
 
   private scheduleGameStart(roomId: RoomId, playerIds: ClientId[]) {
