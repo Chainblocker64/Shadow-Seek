@@ -21,3 +21,5 @@ export const DEFAULT_COMBAT_STATS: CombatStats = {
   attack: 10,
   attackRange: 1,
 };
+
+export const DEFAULT_VISION_RANGE = 3;

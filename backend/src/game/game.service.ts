@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Player } from './player/player';
-import { DEFAULT_COMBAT_STATS, RUNNING, WAITING } from './consts';
+import {
+  DEFAULT_COMBAT_STATS,
+  DEFAULT_VISION_RANGE,
+  RUNNING,
+  WAITING,
+} from './consts';
 import type {
   GameMap,
   GameState,
@@ -34,6 +39,7 @@ export class GameService {
             clientId: clientId,
             position: spawnPositions[index],
             combatStats: DEFAULT_COMBAT_STATS,
+            visionRange: DEFAULT_VISION_RANGE,
           }),
       ),
     };
