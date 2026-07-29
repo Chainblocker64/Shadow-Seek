@@ -31,9 +31,10 @@ export class GameService {
       players: playerIds.map(
         (clientId, index) =>
           new Player({
-            clientId: clientId,
+            clientId,
             position: spawnPositions[index],
             combatStats: DEFAULT_COMBAT_STATS,
+            facingDirection: 'down',
           }),
       ),
     };
