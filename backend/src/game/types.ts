@@ -8,9 +8,12 @@ export type Position = {
   y: number;
 };
 
+export type FacingDirection = 'up' | 'down' | 'left' | 'right';
+
 export type Player = {
   id: ClientId;
   position: Position;
+  facingDirection: FacingDirection;
 };
 
 export type GameMap = {

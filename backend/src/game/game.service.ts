@@ -30,6 +30,7 @@ export class GameService {
       players: playerIds.map((id, index) => ({
         id,
         position: spawnPositions[index],
+        facingDirection: 'down',
       })),
     };
 

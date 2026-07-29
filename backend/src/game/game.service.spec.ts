@@ -40,8 +40,8 @@ describe('GameService', () => {
       status: WAITING,
       map,
       players: [
-        { id: 'player-1', position: { x: 0, y: 0 } },
-        { id: 'player-2', position: { x: 3, y: 3 } },
+        { id: 'player-1', position: { x: 0, y: 0 }, facingDirection: 'down' },
+        { id: 'player-2', position: { x: 3, y: 3 }, facingDirection: 'down' },
       ],
     });
     expect(service.getGame(roomId)).toBe(game);
@@ -134,6 +134,7 @@ describe('GameService', () => {
             x: 2,
             y: 1,
           },
+          facingDirection: 'down',
         },
         moved: true,
       });
