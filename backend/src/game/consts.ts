@@ -21,3 +21,9 @@ export const DEFAULT_COMBAT_STATS: CombatStats = {
   attack: 10,
   attackRange: 1,
 };
+
+/**
+ * The vision range defines the radius of the area which is fully visible for the player.
+ * e.g. a vision range of 3 defines a visible square of 7x7 tiles with the player in the center
+ */
+export const DEFAULT_VISION_RANGE = 3;
