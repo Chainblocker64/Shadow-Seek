@@ -46,7 +46,7 @@ export function handlePlayerMovement(
   if (!player) {
     throw new Error('Player not found');
   }
-
+  player.facingDirection = direction;
   const nextPosition = calculateNextPosition(player.position, direction);
 
   const targetPositionIsOccupied = gameState.players.some(
@@ -66,7 +66,6 @@ export function handlePlayerMovement(
     };
   }
 
-  player.facingDirection = direction;
   player.position = nextPosition;
 
   return {

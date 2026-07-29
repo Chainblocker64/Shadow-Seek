@@ -175,7 +175,7 @@ describe('handlePlayerMovement', () => {
           x: 2,
           y: 2,
         },
-        facingDirection: 'down',
+        facingDirection: 'right',
       },
       moved: false,
     });
@@ -184,6 +184,8 @@ describe('handlePlayerMovement', () => {
       x: 2,
       y: 2,
     });
+
+    expect(gameState.players[0].facingDirection).toBe('right');
   });
 
   it('allows movement to a spawn tile', () => {
@@ -233,7 +235,7 @@ describe('handlePlayerMovement', () => {
           x: 0,
           y: 2,
         },
-        facingDirection: 'down',
+        facingDirection: 'left',
       },
       moved: false,
     });
@@ -242,6 +244,7 @@ describe('handlePlayerMovement', () => {
       x: 0,
       y: 2,
     });
+    expect(gameState.players[0].facingDirection).toBe('left');
   });
   it('keeps the player position when another player occupies the target tile', () => {
     const gameState = createTestGameState();
@@ -264,7 +267,7 @@ describe('handlePlayerMovement', () => {
           x: 2,
           y: 2,
         },
-        facingDirection: 'down',
+        facingDirection: 'up',
       },
       moved: false,
     });
@@ -273,6 +276,6 @@ describe('handlePlayerMovement', () => {
       x: 2,
       y: 2,
     });
-    expect(gameState.players[0].facingDirection).toBe('down');
+    expect(gameState.players[0].facingDirection).toBe('up');
   });
 });
