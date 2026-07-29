@@ -40,16 +40,25 @@ export function handlePlayerMovement(
   direction: MovementDirection,
 ): MovementResult {
   const player = gameState.players.find((currentPlayer) => {
-    return currentPlayer.id === playerId;
+    return currentPlayer.clientId === playerId;
   });
 
   if (!player) {
     throw new Error('Player not found');
   }
+  player.setFacingDirection(direction);
 
-  const nextPosition = calculateNextPosition(player.position, direction);
+  const nextPosition = calculateNextPosition(player.getPosition(), direction);
 
-  const canMove = canMoveToPosition(gameState.map, nextPosition);
+  const targetPositionIsOccupied = gameState.players.some(
+    (currentPlayer) =>
+      currentPlayer.clientId !== playerId &&
+      currentPlayer.getPosition().x === nextPosition.x &&
+      currentPlayer.getPosition().y === nextPosition.y,
+  );
+
+  const canMove =
+    !targetPositionIsOccupied && canMoveToPosition(gameState.map, nextPosition);
 
   if (!canMove) {
     return {
@@ -58,7 +67,7 @@ export function handlePlayerMovement(
     };
   }
 
-  player.position = nextPosition;
+  player.setPosition(nextPosition);
 
   return {
     player: player,

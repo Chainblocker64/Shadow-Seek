@@ -1,5 +1,6 @@
 import { WAITING, RUNNING } from './consts';
-import type { ClientId, RoomId } from '../shared/types';
+import type { RoomId } from '../shared/types';
+import type { Player } from './player/player';
 
 export type Status = typeof WAITING | typeof RUNNING;
 
@@ -8,10 +9,7 @@ export type Position = {
   y: number;
 };
 
-export type Player = {
-  id: ClientId;
-  position: Position;
-};
+export type FacingDirection = 'up' | 'down' | 'left' | 'right';
 
 export type GameMap = {
   name: string;
@@ -58,7 +56,9 @@ export type MapObject = Position & {
   type: ObjectType;
 };
 
-export type MovementDirection = 'up' | 'down' | 'left' | 'right';
+export const MOVEMENT_DIRECTIONS = ['up', 'down', 'left', 'right'] as const;
+
+export type MovementDirection = (typeof MOVEMENT_DIRECTIONS)[number];
 
 export type MovementResult = {
   player: Player;
