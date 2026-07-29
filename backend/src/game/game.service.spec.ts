@@ -117,6 +117,70 @@ describe('GameService', () => {
     expect(service.getGame(roomId)).toBe(game);
   });
 
+  describe('movePlayer', () => {
+    function createMovementGame() {
+      const roomId = randomUUID();
+
+      const map: GameMap = {
+        name: 'Movement test map',
+        width: 3,
+        height: 3,
+        baseTile: 'floor',
+        baseOverrides: [],
+        objects: [
+          {
+            x: 1,
+            y: 1,
+            type: 'spawn',
+          },
+        ],
+      };
+
+      const game = service.createGame(roomId, ['player-1'], map);
+
+      return {
+        roomId,
+        game,
+      };
+    }
+
+    it('does not move a player before the game starts', () => {
+      const { roomId, game } = createMovementGame();
+
+      const result = service.movePlayer(roomId, 'player-1', 'right');
+
+      expect(result).toBeUndefined();
+      expect(game.players[0].position).toEqual({
+        x: 1,
+        y: 1,
+      });
+    });
+
+    it('moves a player after the game starts', () => {
+      const { roomId } = createMovementGame();
+
+      service.startGame(roomId);
+
+      const result = service.movePlayer(roomId, 'player-1', 'right');
+
+      expect(result).toEqual({
+        player: {
+          id: 'player-1',
+          position: {
+            x: 2,
+            y: 1,
+          },
+        },
+        moved: true,
+      });
+
+      expect(service.getGame(roomId)?.players[0].position).toEqual({
+        x: 2,
+        y: 1,
+      });
+    });
+  });
+
   it('removes a leaving player and keeps the game for the others', () => {
     const roomId = randomUUID();
     const map: GameMap = {

@@ -1,5 +1,6 @@
 import {
   ConnectedSocket,
+  MessageBody,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
@@ -14,10 +15,19 @@ import {
   MIN_PLAYERS_TO_START,
 } from './consts';
 import { GameService } from './game.service';
+import { UsePipes, ValidationPipe } from '@nestjs/common';
+import { MovePlayerDto } from './dto/move-player.dto';
 import { OnEvent } from '@nestjs/event-emitter';
 import { RoomUpdatedEvent } from '../lobby/events/room-updated.event';
 
 @WebSocketGateway({ cors: { origin: process.env.FRONTEND_URL } })
+@UsePipes(
+  new ValidationPipe({
+    whitelist: true,
+    forbidNonWhitelisted: true,
+    transform: true,
+  }),
+)
 export class GameGateway {
   @WebSocketServer()
   server!: Server;
@@ -109,6 +119,30 @@ export class GameGateway {
     }
 
     this.server.to(this.playerIds(game.roomId)).emit('game:sync', game);
+  }
+
+  @SubscribeMessage('movePlayer')
+  handleMovePlayer(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() payload: MovePlayerDto,
+  ) {
+    const room = this.lobbyService.getPlayerRoom(client.id);
+
+    if (!room) {
+      return;
+    }
+
+    const result = this.gameService.movePlayer(
+      room.id,
+      client.id,
+      payload.direction,
+    );
+
+    if (!result) {
+      return;
+    }
+
+    this.server.to(room.id).emit('movement:confirmed', result);
   }
 
   private clearTimers(roomId: RoomId) {

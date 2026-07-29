@@ -49,7 +49,15 @@ export function handlePlayerMovement(
 
   const nextPosition = calculateNextPosition(player.position, direction);
 
-  const canMove = canMoveToPosition(gameState.map, nextPosition);
+  const targetPositionIsOccupied = gameState.players.some(
+    (currentPlayer) =>
+      currentPlayer.id !== playerId &&
+      currentPlayer.position.x === nextPosition.x &&
+      currentPlayer.position.y === nextPosition.y,
+  );
+
+  const canMove =
+    !targetPositionIsOccupied && canMoveToPosition(gameState.map, nextPosition);
 
   if (!canMove) {
     return {
