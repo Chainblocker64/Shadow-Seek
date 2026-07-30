@@ -30,5 +30,10 @@ export function attack(gameState: GameState, playerId: ClientId): boolean {
     targetPlayer.takeDamage(attackValue);
   }
 
+  player.setActionTimestamps({
+    ...player.getActionTimestamps(),
+    attack: Date.now(),
+  });
+
   return true;
 }
