@@ -12,7 +12,7 @@ export class Player {
   private health: number;
   private visionRange: number;
   private facingDirection: FacingDirection;
-  private isActionActive = false;
+  private activeAction: string | null = null;
 
   constructor({
     clientId,
@@ -45,6 +45,10 @@ export class Player {
     return this.health > 0;
   }
 
+  isHandlingAction(): boolean {
+    return Boolean(this.activeAction);
+  }
+
   getPosition(): Position {
     return this.position;
   }
@@ -69,12 +73,12 @@ export class Player {
     this.facingDirection = direction;
   }
 
-  isAction(): boolean {
-    return this.isActionActive;
+  getActiveAction(): string | null {
+    return this.activeAction;
   }
 
-  setAction(value: boolean): void {
-    this.isActionActive = value;
+  setActiveAction(actionName: string | null): void {
+    this.activeAction = actionName;
   }
 
   toJSON() {

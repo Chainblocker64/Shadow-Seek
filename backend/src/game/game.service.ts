@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Player } from './player/player';
 import {
-  ENDED, 
+  ENDED,
   GAME_DURATION_MS,
   DEFAULT_VISION_RANGE,
   RUNNING,
@@ -65,7 +65,7 @@ export class GameService {
     roomId: RoomId,
     playerId: ClientId,
     direction: MovementDirection,
-  ): MovementResult | undefined {
+  ): GameState | undefined {
     const game = this.games.get(roomId);
 
     if (!game || game.status !== RUNNING) {
@@ -80,17 +80,14 @@ export class GameService {
       return;
     }
 
-    if (player.isAction()) {
+    if (player.isHandlingAction()) {
       return;
     }
 
-    player.setAction(true);
+    player.setActiveAction('movement');
 
-    try {
-      return handlePlayerMovement(game, playerId, direction);
-    } finally {
-      player.setAction(false);
-    }
+    handlePlayerMovement(game, playerId, direction);
+    player.setActiveAction(null);
   }
 
   getPlayerGame(clientId: ClientId): GameState | undefined {
