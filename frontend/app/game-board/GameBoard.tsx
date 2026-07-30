@@ -41,6 +41,8 @@ export default function GameBoard() {
   const isEnded = game?.status === "ended";
   const remainingMs =
     game?.endsAt != null ? Math.max(0, game.endsAt - now) : null;
+  const currentPlayerSpawnPosition =
+    game?.players.find((player) => player.id === socket.id)?.position ?? null;
 
   const labeledPlayers = useMemo(
     () =>
@@ -146,6 +148,9 @@ export default function GameBoard() {
           <PixiGameBoard
             map={game.map}
             players={labeledPlayers}
+            currentPlayerSpawnPosition={
+              isWaiting ? currentPlayerSpawnPosition : null
+            }
             status={game.status}
           />
 
