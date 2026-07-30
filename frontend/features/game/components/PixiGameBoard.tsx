@@ -25,6 +25,7 @@ import {
   playerTextureFrames,
   TILE_TEXTURE_SIZE,
 } from "../data/tileTextureFrames";
+import { socket } from "@/lib/socket";
 import { useInputControls } from "../hooks/useInputControls";
 import { calculateBoardLayout, type BoardLayout } from "./boardLayout";
 
@@ -39,15 +40,44 @@ type PixiGameBoardProps = {
   currentPlayerSpawnPosition: PlayerPosition | null;
 };
 
+function getFacingTile(
+  position: { x: number; y: number },
+  direction: PlayerDirection,
+) {
+  switch (direction) {
+    case "up":
+      return {
+        x: position.x,
+        y: position.y - 1,
+      };
+
+    case "down":
+      return {
+        x: position.x,
+        y: position.y + 1,
+      };
+
+    case "left":
+      return {
+        x: position.x - 1,
+        y: position.y,
+      };
+
+    case "right":
+      return {
+        x: position.x + 1,
+        y: position.y,
+      };
+  }
+}
+
 const TILESET_PATH = "/assets/tiles/dungeon-crawl.png";
 
-const DIRECTION_SPRITE_SIZE = 48;
-const directionTexturePaths: Record<PlayerDirection, string> = {
-  up: "/assets/direction/up.png",
-  down: "/assets/direction/down.png",
-  left: "/assets/direction/left.png",
-  right: "/assets/direction/right.png",
-};
+const DIRECTION_CIRCLE_SIZE = 12;
+const DIRECTION_CIRCLE_RADIUS = DIRECTION_CIRCLE_SIZE / 2;
+
+const OWN_PLAYER_DIRECTION_COLOR = 0x22c55e;
+const OTHER_PLAYER_DIRECTION_COLOR = 0xef4444;
 
 export function PixiGameBoard({
   map,
@@ -125,13 +155,6 @@ export function PixiGameBoard({
         });
       }
 
-      const directionTextures = {
-        up: await Assets.load<Texture>(directionTexturePaths.up),
-        down: await Assets.load<Texture>(directionTexturePaths.down),
-        left: await Assets.load<Texture>(directionTexturePaths.left),
-        right: await Assets.load<Texture>(directionTexturePaths.right),
-      };
-
       function createTileSprite(
         frameX: number,
         frameY: number,
@@ -150,9 +173,18 @@ export function PixiGameBoard({
         return sprite;
       }
 
+      const directionLayer = new Container();
       const playerLayer = new Container();
       const spawnHighlightLayer = new Container();
+
       let layout: BoardLayout | null = null;
+
+      app.ticker.add(() => {
+        const blinkSpeed = 0.005;
+
+        directionLayer.alpha =
+          0.55 + ((Math.sin(Date.now() * blinkSpeed) + 1) / 2) * 0.95;
+      });
 
       // Marks where this client's own character will start while the game is
       // still waiting. Uses a border plus a "You" caption so it never relies on
@@ -212,6 +244,7 @@ export function PixiGameBoard({
 
         const { offsetX, offsetY, tileSize } = layout;
 
+        directionLayer.removeChildren();
         playerLayer.removeChildren();
 
         playersRef.current.forEach((player) => {
@@ -229,25 +262,34 @@ export function PixiGameBoard({
               tileSize,
             ),
           );
-          const directionSpriteSize = Math.min(DIRECTION_SPRITE_SIZE, tileSize);
-          const directionSprite = new Sprite(
-            directionTextures[player.facingDirection],
+
+          const facingTile = getFacingTile(
+            player.position,
+            player.facingDirection,
           );
 
-          directionSprite.x =
-            offsetX +
-            player.position.x * tileSize +
-            (tileSize - directionSpriteSize) / 2;
+          const isOwnPlayer = player.id === socket.id;
 
-          directionSprite.y =
-            offsetY +
-            player.position.y * tileSize +
-            (tileSize - directionSpriteSize) / 2;
+          const circleColor = isOwnPlayer
+            ? OWN_PLAYER_DIRECTION_COLOR
+            : OTHER_PLAYER_DIRECTION_COLOR;
 
-          directionSprite.width = directionSpriteSize;
-          directionSprite.height = directionSpriteSize;
+          const circleCenterX =
+            offsetX + facingTile.x * tileSize + tileSize / 2;
 
-          playerLayer.addChild(directionSprite);
+          const circleCenterY =
+            offsetY + facingTile.y * tileSize + tileSize / 2;
+
+          const directionCircle = new Graphics();
+
+          directionCircle
+            .circle(circleCenterX, circleCenterY, DIRECTION_CIRCLE_RADIUS)
+            .fill({
+              color: circleColor,
+              alpha: 0.9,
+            });
+
+          directionLayer.addChild(directionCircle);
 
           const playerLabel = new Text({
             text: player.label,
@@ -255,7 +297,10 @@ export function PixiGameBoard({
               fontSize: 12,
               fontWeight: "bold",
               fill: 0xffffff,
-              stroke: { color: 0x000000, width: 2 },
+              stroke: {
+                color: 0x000000,
+                width: 2,
+              },
             },
           });
 
@@ -263,6 +308,7 @@ export function PixiGameBoard({
           playerLabel.alpha = 0.5;
           playerLabel.x = offsetX + (player.position.x + 0.5) * tileSize;
           playerLabel.y = offsetY + player.position.y * tileSize;
+
           playerLayer.addChild(playerLabel);
         });
       }
@@ -344,6 +390,7 @@ export function PixiGameBoard({
           app?.stage.addChild(objectSprite);
         });
 
+        app.stage.addChild(directionLayer);
         app.stage.addChild(playerLayer);
         app.stage.addChild(spawnHighlightLayer);
         layout = { offsetX, offsetY, tileSize };
