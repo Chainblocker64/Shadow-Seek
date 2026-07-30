@@ -6,7 +6,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import type { RoomId } from '../shared/types';
+import type { ClientId, RoomId } from '../shared/types';
 import { LobbyService } from '../lobby/lobby.service';
 import { MapsService } from '../maps/maps.service';
 import {
@@ -118,7 +118,7 @@ export class GameGateway {
       return;
     }
 
-    this.server.to(room.id).emit('game:sync', game);
+    this.server.to(game.roomId).emit('game:sync', game);
   }
 
   @SubscribeMessage('movePlayer')
