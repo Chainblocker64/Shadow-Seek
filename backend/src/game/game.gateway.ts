@@ -178,7 +178,7 @@ export class GameGateway {
       const game = this.gameService.startGame(roomId);
 
       if (game) {
-        this.server.to(this.playerIds(roomId)).emit('game:started', game);
+        this.broadcastFilteredGame('game:started', game);
         this.scheduleGameEnd(roomId);
       }
     }, GAME_START_DELAY_MS);
