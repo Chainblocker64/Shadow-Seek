@@ -50,24 +50,24 @@ describe('GameService', () => {
       roomId,
       status: WAITING,
       map,
+      players: [
+        {
+          id: 'player-1',
+          name: 'Alice',
+          spriteIndex: 0,
+          position: { x: 0, y: 0 },
+          facingDirection: 'down',
+        },
+        {
+          id: 'player-2',
+          name: 'Bob',
+          spriteIndex: 1,
+          position: { x: 3, y: 3 },
+          facingDirection: 'down',
+        },
+      ],
       endsAt: null,
     });
-    expect(game.players.map((player) => player.toJSON())).toEqual([
-      {
-        id: 'player-1',
-        name: 'Alice',
-        spriteIndex: 0,
-        position: { x: 0, y: 0 },
-        facingDirection: 'down',
-      },
-      {
-        id: 'player-2',
-        name: 'Bob',
-        spriteIndex: 1,
-        position: { x: 3, y: 3 },
-        facingDirection: 'down',
-      },
-    ]);
     expect(game.players).toMatchObject([
       { clientId: 'player-1', name: 'Alice', position: { x: 0, y: 0 } },
       { clientId: 'player-2', name: 'Bob', position: { x: 3, y: 3 } },
@@ -193,13 +193,14 @@ describe('GameService', () => {
         moved: result?.moved,
       }).toEqual({
         player: {
-          clientId: 'player-1',
+          id: 'player-1',
           name: 'Alice',
           position: {
             x: 2,
             y: 1,
           },
           facingDirection: 'right',
+          spriteIndex: 0,
         },
         moved: true,
       });
