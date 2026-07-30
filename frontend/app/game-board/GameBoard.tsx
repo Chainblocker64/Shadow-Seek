@@ -8,7 +8,6 @@ import { socket } from "@/lib/socket";
 import { getLatestGame } from "../../features/game/gameSync";
 import PlayerList from "./PlayerList";
 import styles from "./GameBoardPage.module.css";
-import type { MovementResult } from "../../features/game/types/movement";
 
 // Mirrors the backend's GAME_START_DELAY_MS (backend/src/game/consts.ts).
 const GAME_START_COUNTDOWN_SECONDS = 3;
@@ -60,50 +59,17 @@ export default function GameBoard() {
       setGame(game);
     };
 
-    const onMovementConfirmed = (result: MovementResult) => {
-      setGame((currentGame) => {
-        if (!currentGame) {
-          return currentGame;
-        }
-
-        const playerExists = currentGame.players.some(
-          (player) => player.id === result.player.id,
-        );
-
-        if (!playerExists) {
-          return currentGame;
-        }
-
-        return {
-          ...currentGame,
-          players: currentGame.players.map((player) =>
-            player.id === result.player.id
-              ? {
-                  ...player,
-                  position: {
-                    ...result.player.position,
-                  },
-                  facingDirection: result.player.facingDirection,
-                }
-              : player,
-          ),
-        };
-      });
-    };
-
     const onGameLeft = () => {
       setGame(null);
       router.push("/lobby");
     };
 
     socket.on("game:sync", onGameSync);
-    socket.on("movement:confirmed", onMovementConfirmed);
     socket.on("game:ended", onGameSync);
     socket.on("game:left", onGameLeft);
 
     return () => {
       socket.off("game:sync", onGameSync);
-      socket.off("movement:confirmed", onMovementConfirmed);
       socket.off("game:ended", onGameSync);
       socket.off("game:left", onGameLeft);
     };

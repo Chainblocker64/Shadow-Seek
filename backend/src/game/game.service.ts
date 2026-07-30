@@ -7,13 +7,7 @@ import {
   RUNNING,
   WAITING,
 } from './consts';
-import type {
-  GameMap,
-  GameState,
-  MovementDirection,
-  MovementResult,
-  Position,
-} from './types';
+import type { GameMap, GameState, MovementDirection, Position } from './types';
 import type { ClientId, RoomId } from '../shared/types';
 import { handlePlayerMovement } from './movement/server-movement';
 import { attack } from './combat/attack';
@@ -65,33 +59,18 @@ export class GameService {
     return this.games.get(roomId);
   }
 
-  movePlayer(
-    roomId: RoomId,
-    playerId: ClientId,
-    direction: MovementDirection,
-  ): GameState | undefined {
+  movePlayer(roomId: RoomId, playerId: ClientId, direction: MovementDirection) {
     const game = this.games.get(roomId);
 
     if (!game || game.status !== RUNNING) {
       return;
     }
 
-    const player = game.players.find((currentPlayer) => {
-      return currentPlayer.clientId === playerId;
-    });
+    const gamestateChanged = handlePlayerMovement(game, playerId, direction);
 
-    if (!player) {
-      return;
+    if (gamestateChanged) {
+      this.triggerGamestateBroadcast(roomId);
     }
-
-    if (player.isHandlingAction()) {
-      return;
-    }
-
-    player.setActiveAction('movement');
-
-    handlePlayerMovement(game, playerId, direction);
-    player.setActiveAction(null);
   }
 
   getPlayerGame(clientId: ClientId): GameState | undefined {
@@ -122,22 +101,16 @@ export class GameService {
       return;
     }
 
-    const updatedGame: GameState = {
-      ...game,
-      players: [
-        ...game.players,
-        new Player({
-          clientId: player.id,
-          name: player.name,
-          position,
-          spriteIndex: this.getFreeSpriteIndex(game),
-        }),
-      ],
-    };
+    game.players.push(
+      new Player({
+        clientId: player.id,
+        name: player.name,
+        position,
+        spriteIndex: this.getFreeSpriteIndex(game),
+      }),
+    );
 
-    this.games.set(roomId, updatedGame);
-
-    return updatedGame;
+    return game;
   }
 
   removePlayer(clientId: ClientId): GameState | undefined {
@@ -147,18 +120,19 @@ export class GameService {
       return;
     }
 
-    const remainingPlayers = game.players.filter(
-      (player) => player.clientId !== clientId,
+    const playerIndex = game.players.findIndex(
+      (player) => player.clientId === clientId,
     );
-    const updatedGame: GameState = { ...game, players: remainingPlayers };
 
-    if (remainingPlayers.length === 0) {
-      this.games.delete(game.roomId);
-    } else {
-      this.games.set(game.roomId, updatedGame);
+    if (playerIndex !== -1) {
+      game.players.splice(playerIndex, 1);
     }
 
-    return updatedGame;
+    if (game.players.length === 0) {
+      this.games.delete(game.roomId);
+    }
+
+    return game;
   }
 
   playerAttack(roomId: RoomId, playerId: ClientId) {
@@ -169,7 +143,7 @@ export class GameService {
 
     const couldAttack = attack(game, playerId);
     if (couldAttack) {
-      this.triggerGamestateBroadcast(roomId, game);
+      this.triggerGamestateBroadcast(roomId);
     }
   }
 
@@ -180,14 +154,10 @@ export class GameService {
       return game;
     }
 
-    const runningGame: GameState = {
-      ...game,
-      status: RUNNING,
-      endsAt: Date.now() + GAME_DURATION_MS,
-    };
-    this.games.set(roomId, runningGame);
+    game.status = RUNNING;
+    game.endsAt = Date.now() + GAME_DURATION_MS;
 
-    return runningGame;
+    return game;
   }
 
   endGame(roomId: RoomId): GameState | undefined {
@@ -197,10 +167,10 @@ export class GameService {
       return game;
     }
 
-    const endedGame: GameState = { ...game, status: ENDED, endsAt: null };
-    this.games.set(roomId, endedGame);
+    game.status = ENDED;
+    game.endsAt = null;
 
-    return endedGame;
+    return game;
   }
 
   private getFreeSpawnPosition(game: GameState): Position | undefined {
@@ -234,7 +204,11 @@ export class GameService {
       .map(({ x, y }) => ({ x, y }));
   }
 
-  private triggerGamestateBroadcast(roomId: RoomId, gameState: GameState) {
+  private triggerGamestateBroadcast(roomId: RoomId) {
+    const gameState = this.games.get(roomId);
+    if (!gameState) {
+      return;
+    }
     this.eventEmitter.emit('game.broadcast', gameState);
   }
 }

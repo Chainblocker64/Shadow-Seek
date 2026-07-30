@@ -39,9 +39,10 @@ export function handlePlayerMovement(
     return currentPlayer.clientId === playerId;
   });
 
-  if (!player) {
-    return;
+  if (!player || player.isHandlingAction()) {
+    return false;
   }
+  player.setActiveAction('movement');
 
   player.setFacingDirection(direction);
 
@@ -51,5 +52,6 @@ export function handlePlayerMovement(
     player.setPosition(nextPosition);
   }
 
-  return gameState;
+  player.setActiveAction(null);
+  return true;
 }

@@ -7,9 +7,11 @@ export function attack(gameState: GameState, playerId: ClientId): boolean {
     (player) => player.clientId === playerId,
   );
 
-  if (!player || !player.canAttack()) {
+  if (!player || player.isHandlingAction() || !player.canAttack()) {
     return false;
   }
+
+  player.setActiveAction('attack');
 
   const playerPosition = player.getPosition();
   const { attackRange, attackValue } = player.getCombatStats();
@@ -34,6 +36,8 @@ export function attack(gameState: GameState, playerId: ClientId): boolean {
     ...player.getActionTimestamps(),
     attack: Date.now(),
   });
+
+  player.setActiveAction(null);
 
   return true;
 }
