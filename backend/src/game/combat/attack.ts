@@ -21,7 +21,9 @@ export function attack(gameState: GameState, playerId: ClientId): boolean {
   );
 
   const targetPlayer = gameState.players.find(
-    (player) => player.getPosition() === targetPosition,
+    (player) =>
+      player.getPosition().x === targetPosition.x &&
+      player.getPosition().y === targetPosition.y,
   );
 
   if (targetPlayer) {
