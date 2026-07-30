@@ -1,8 +1,8 @@
-import { WAITING, RUNNING } from './consts';
+import { WAITING, RUNNING, ENDED } from './consts';
 import type { RoomId } from '../shared/types';
 import type { Player } from './player/player';
 
-export type Status = typeof WAITING | typeof RUNNING;
+export type Status = typeof WAITING | typeof RUNNING | typeof ENDED;
 
 export type Position = {
   x: number;
@@ -25,6 +25,7 @@ export type GameState = {
   status: Status;
   map: GameMap;
   players: Player[];
+  endsAt: number | null;
 };
 
 export const BASE_TILE_TYPES = [

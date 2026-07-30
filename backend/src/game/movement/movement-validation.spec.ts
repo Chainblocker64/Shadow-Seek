@@ -7,6 +7,7 @@ describe('canMoveToPosition', () => {
     width: 5,
     height: 5,
     baseTile: 'floor',
+    baseOverrides: [],
     objects: [
       {
         x: 1,

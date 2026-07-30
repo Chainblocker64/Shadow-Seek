@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { LobbyService } from './lobby.service';
 
 describe('LobbyService', () => {
@@ -6,7 +7,13 @@ describe('LobbyService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [LobbyService],
+      providers: [
+        LobbyService,
+        {
+          provide: EventEmitter2,
+          useValue: {},
+        },
+      ],
     }).compile();
 
     service = module.get<LobbyService>(LobbyService);

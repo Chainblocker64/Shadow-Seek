@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { randomUUID } from 'node:crypto';
 import { GameService } from './game.service';
-import { RUNNING, WAITING } from './consts';
+import { ENDED, GAME_DURATION_MS, RUNNING, WAITING } from './consts';
 import type { GameMap } from './types';
 
 describe('GameService', () => {
@@ -26,6 +26,7 @@ describe('GameService', () => {
       width: 4,
       height: 4,
       baseTile: 'floor',
+      baseOverrides: [],
       objects: [
         { x: 0, y: 0, type: 'spawn' },
         { x: 3, y: 3, type: 'spawn' },
@@ -33,7 +34,14 @@ describe('GameService', () => {
       ],
     };
 
-    const game = service.createGame(roomId, ['player-1', 'player-2'], map);
+    const game = service.createGame(
+      roomId,
+      [
+        { id: 'player-1', name: 'Alice' },
+        { id: 'player-2', name: 'Bob' },
+      ],
+      map,
+    );
 
     expect({
       ...game,
@@ -43,10 +51,27 @@ describe('GameService', () => {
       status: WAITING,
       map,
       players: [
-        { id: 'player-1', position: { x: 0, y: 0 }, facingDirection: 'down' },
-        { id: 'player-2', position: { x: 3, y: 3 }, facingDirection: 'down' },
+        {
+          id: 'player-1',
+          name: 'Alice',
+          spriteIndex: 0,
+          position: { x: 0, y: 0 },
+          facingDirection: 'down',
+        },
+        {
+          id: 'player-2',
+          name: 'Bob',
+          spriteIndex: 1,
+          position: { x: 3, y: 3 },
+          facingDirection: 'down',
+        },
       ],
+      endsAt: null,
     });
+    expect(game.players).toMatchObject([
+      { clientId: 'player-1', name: 'Alice', position: { x: 0, y: 0 } },
+      { clientId: 'player-2', name: 'Bob', position: { x: 3, y: 3 } },
+    ]);
     expect(service.getGame(roomId)).toBe(game);
   });
 
@@ -57,11 +82,19 @@ describe('GameService', () => {
       width: 4,
       height: 4,
       baseTile: 'floor',
+      baseOverrides: [],
       objects: [{ x: 0, y: 0, type: 'spawn' }],
     };
 
     expect(() => {
-      service.createGame(roomId, ['player-1', 'player-2'], map);
+      service.createGame(
+        roomId,
+        [
+          { id: 'player-1', name: 'Alice' },
+          { id: 'player-2', name: 'Bob' },
+        ],
+        map,
+      );
     }).toThrow('Map does not have enough spawn positions for all players');
     expect(service.getGame(roomId)).toBeUndefined();
   });
@@ -76,11 +109,32 @@ describe('GameService', () => {
       baseOverrides: [],
       objects: [{ x: 0, y: 0, type: 'spawn' }],
     };
-    service.createGame(roomId, ['player-1'], map);
+    service.createGame(roomId, [{ id: 'player-1', name: 'Alice' }], map);
 
     const game = service.startGame(roomId);
 
     expect(game).toMatchObject({ roomId, status: RUNNING });
+    expect(game?.endsAt).toBeGreaterThan(Date.now());
+    expect(game?.endsAt).toBeLessThanOrEqual(Date.now() + GAME_DURATION_MS);
+    expect(service.getGame(roomId)).toBe(game);
+  });
+
+  it('ends a running game and clears its end timestamp', () => {
+    const roomId = randomUUID();
+    const map: GameMap = {
+      name: 'Test map',
+      width: 2,
+      height: 2,
+      baseTile: 'floor',
+      baseOverrides: [],
+      objects: [{ x: 0, y: 0, type: 'spawn' }],
+    };
+    service.createGame(roomId, [{ id: 'player-1', name: 'Alice' }], map);
+    service.startGame(roomId);
+
+    const game = service.endGame(roomId);
+
+    expect(game).toMatchObject({ roomId, status: ENDED, endsAt: null });
     expect(service.getGame(roomId)).toBe(game);
   });
 
@@ -103,7 +157,11 @@ describe('GameService', () => {
         ],
       };
 
-      const game = service.createGame(roomId, ['player-1'], map);
+      const game = service.createGame(
+        roomId,
+        [{ id: 'player-1', name: 'Alice' }],
+        map,
+      );
 
       return {
         roomId,
@@ -136,11 +194,13 @@ describe('GameService', () => {
       }).toEqual({
         player: {
           id: 'player-1',
+          name: 'Alice',
           position: {
             x: 2,
             y: 1,
           },
           facingDirection: 'right',
+          spriteIndex: 0,
         },
         moved: true,
       });
@@ -150,5 +210,59 @@ describe('GameService', () => {
         y: 1,
       });
     });
+  });
+
+  it('removes a leaving player and keeps the game for the others', () => {
+    const roomId = randomUUID();
+    const map: GameMap = {
+      name: 'Test map',
+      width: 4,
+      height: 4,
+      baseTile: 'floor',
+      baseOverrides: [],
+      objects: [
+        { x: 0, y: 0, type: 'spawn' },
+        { x: 3, y: 3, type: 'spawn' },
+      ],
+    };
+    service.createGame(
+      roomId,
+      [
+        { id: 'player-1', name: 'Alice' },
+        { id: 'player-2', name: 'Bob' },
+      ],
+      map,
+    );
+
+    const game = service.removePlayer('player-1');
+
+    expect(game?.players).toMatchObject([
+      { clientId: 'player-2', name: 'Bob', position: { x: 3, y: 3 } },
+    ]);
+    expect(service.getGame(roomId)).toBe(game);
+    expect(service.getPlayerGame('player-1')).toBeUndefined();
+    expect(service.getPlayerGame('player-2')).toBe(game);
+  });
+
+  it('drops the game once its last player leaves', () => {
+    const roomId = randomUUID();
+    const map: GameMap = {
+      name: 'Test map',
+      width: 2,
+      height: 2,
+      baseTile: 'floor',
+      baseOverrides: [],
+      objects: [{ x: 0, y: 0, type: 'spawn' }],
+    };
+    service.createGame(roomId, [{ id: 'player-1', name: 'Alice' }], map);
+
+    const game = service.removePlayer('player-1');
+
+    expect(game?.players).toEqual([]);
+    expect(service.getGame(roomId)).toBeUndefined();
+  });
+
+  it('ignores a leave from a player that is not in a game', () => {
+    expect(service.removePlayer('unknown-player')).toBeUndefined();
   });
 });

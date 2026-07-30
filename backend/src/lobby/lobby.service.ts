@@ -1,5 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { Room, RoomCollection, STATUS_WAITING, STATUS_FULL } from './types';
+import {
+  Room,
+  RoomCollection,
+  RoomPlayer,
+  STATUS_WAITING,
+  STATUS_FULL,
+} from './types';
 import { randomUUID } from 'node:crypto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { RoomUpdatedEvent } from './events/room-updated.event';
@@ -11,7 +17,7 @@ export class LobbyService {
 
   private readonly rooms: RoomCollection = new Map<RoomId, Room>();
 
-  createRoom(clientId: ClientId): Room | undefined {
+  createRoom(clientId: ClientId, username: string): Room | undefined {
     if (this.playerHasRoom(clientId)) {
       return;
     }
@@ -20,7 +26,7 @@ export class LobbyService {
 
     const room: Room = {
       id: roomId,
-      players: [clientId],
+      players: [{ id: clientId, name: username }],
       owner: clientId,
       status: STATUS_WAITING,
       maxPlayers: 4,
@@ -33,14 +39,18 @@ export class LobbyService {
     return room;
   }
 
-  addPlayer(clientId: ClientId, roomId: RoomId): Room | undefined {
+  addPlayer(
+    clientId: ClientId,
+    roomId: RoomId,
+    username: string,
+  ): Room | undefined {
     const room = this.rooms.get(roomId);
 
     if (!room) {
       return;
     }
 
-    if (room.players.includes(clientId)) {
+    if (this.roomHasPlayer(room, clientId)) {
       return room;
     }
 
@@ -55,7 +65,7 @@ export class LobbyService {
 
     const updatedRoom = {
       ...room,
-      players: [...room.players, clientId],
+      players: [...room.players, { id: clientId, name: username }],
     };
 
     updatedRoom.status = this.newRoomStatus(updatedRoom);
@@ -77,7 +87,9 @@ export class LobbyService {
     }
 
     const roomId = room.id;
-    const updatedPlayers = room.players.filter((player) => player !== clientId);
+    const updatedPlayers = room.players.filter(
+      (player) => player.id !== clientId,
+    );
 
     if (updatedPlayers.length === 0) {
       this.rooms.delete(roomId);
@@ -91,7 +103,7 @@ export class LobbyService {
     const updatedRoom = {
       ...room,
       players: updatedPlayers,
-      owner: clientWasOwner ? updatedPlayers[0] : room.owner,
+      owner: clientWasOwner ? updatedPlayers[0].id : room.owner,
     };
 
     updatedRoom.status = this.newRoomStatus(updatedRoom);
@@ -112,10 +124,14 @@ export class LobbyService {
 
   getPlayerRoom(clientId: ClientId): Room | undefined {
     for (const room of this.rooms.values()) {
-      if (room.players.includes(clientId)) {
+      if (this.roomHasPlayer(room, clientId)) {
         return room;
       }
     }
+  }
+
+  roomHasPlayer(room: Room, clientId: ClientId): boolean {
+    return room.players.some((player: RoomPlayer) => player.id === clientId);
   }
 
   playerHasRoom(clientId: ClientId): boolean {

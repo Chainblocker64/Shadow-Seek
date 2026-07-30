@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { Player } from './player/player';
 import {
-  DEFAULT_COMBAT_STATS,
+  ENDED, 
+  GAME_DURATION_MS,
   DEFAULT_VISION_RANGE,
   RUNNING,
   WAITING,
@@ -20,10 +21,14 @@ import { handlePlayerMovement } from './movement/server-movement';
 export class GameService {
   private readonly games = new Map<RoomId, GameState>();
 
-  createGame(roomId: RoomId, playerIds: ClientId[], map: GameMap): GameState {
+  createGame(
+    roomId: RoomId,
+    players: Array<{ id: ClientId; name: string }>,
+    map: GameMap,
+  ): GameState {
     const spawnPositions = this.getSpawnPositions(map);
 
-    if (spawnPositions.length < playerIds.length) {
+    if (spawnPositions.length < players.length) {
       throw new Error(
         'Map does not have enough spawn positions for all players',
       );
@@ -33,16 +38,18 @@ export class GameService {
       roomId,
       status: WAITING,
       map,
-      players: playerIds.map(
-        (clientId, index) =>
+      players: players.map(
+        ({ id: clientId, name }, index) =>
           new Player({
             clientId,
+            name,
             position: spawnPositions[index],
-            combatStats: DEFAULT_COMBAT_STATS,
+            spriteIndex: index,
             visionRange: DEFAULT_VISION_RANGE,
             facingDirection: 'down',
           }),
       ),
+      endsAt: null,
     };
 
     this.games.set(roomId, game);
@@ -86,6 +93,73 @@ export class GameService {
     }
   }
 
+  getPlayerGame(clientId: ClientId): GameState | undefined {
+    for (const game of this.games.values()) {
+      if (game.players.some((player) => player.clientId === clientId)) {
+        return game;
+      }
+    }
+  }
+
+  addPlayer(
+    roomId: RoomId,
+    player: { id: ClientId; name: string },
+  ): GameState | undefined {
+    const game = this.games.get(roomId);
+
+    if (!game || game.status === ENDED) {
+      return;
+    }
+
+    if (game.players.some(({ clientId }) => clientId === player.id)) {
+      return game;
+    }
+
+    const position = this.getFreeSpawnPosition(game);
+
+    if (!position) {
+      return;
+    }
+
+    const updatedGame: GameState = {
+      ...game,
+      players: [
+        ...game.players,
+        new Player({
+          clientId: player.id,
+          name: player.name,
+          position,
+          spriteIndex: this.getFreeSpriteIndex(game),
+        }),
+      ],
+    };
+
+    this.games.set(roomId, updatedGame);
+
+    return updatedGame;
+  }
+
+  removePlayer(clientId: ClientId): GameState | undefined {
+    const game = this.getPlayerGame(clientId);
+
+    if (!game) {
+      return;
+    }
+
+    const remainingPlayers = game.players.filter(
+      (player) => player.clientId !== clientId,
+    );
+    const updatedGame: GameState = { ...game, players: remainingPlayers };
+
+    if (remainingPlayers.length === 0) {
+      this.games.delete(game.roomId);
+    } else {
+      this.games.set(game.roomId, updatedGame);
+    }
+
+    return updatedGame;
+  }
+
   startGame(roomId: RoomId): GameState | undefined {
     const game = this.games.get(roomId);
 
@@ -93,10 +167,52 @@ export class GameService {
       return game;
     }
 
-    const runningGame: GameState = { ...game, status: RUNNING };
+    const runningGame: GameState = {
+      ...game,
+      status: RUNNING,
+      endsAt: Date.now() + GAME_DURATION_MS,
+    };
     this.games.set(roomId, runningGame);
 
     return runningGame;
+  }
+
+  endGame(roomId: RoomId): GameState | undefined {
+    const game = this.games.get(roomId);
+
+    if (!game || game.status !== RUNNING) {
+      return game;
+    }
+
+    const endedGame: GameState = { ...game, status: ENDED, endsAt: null };
+    this.games.set(roomId, endedGame);
+
+    return endedGame;
+  }
+
+  private getFreeSpawnPosition(game: GameState): Position | undefined {
+    return this.getSpawnPositions(game.map).find(
+      (spawn) =>
+        !game.players.some((player) => {
+          const position = player.getPosition();
+
+          return position.x === spawn.x && position.y === spawn.y;
+        }),
+    );
+  }
+
+  private getFreeSpriteIndex(game: GameState): number {
+    const usedSpriteIndexes = new Set(
+      game.players.map((player) => player.spriteIndex),
+    );
+
+    let spriteIndex = 0;
+
+    while (usedSpriteIndexes.has(spriteIndex)) {
+      spriteIndex += 1;
+    }
+
+    return spriteIndex;
   }
 
   private getSpawnPositions(map: GameMap): Position[] {
