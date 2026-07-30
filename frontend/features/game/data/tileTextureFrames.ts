@@ -15,12 +15,12 @@ export const baseTileTextureFrames: Record<
     y: 448,
   },
   dirt: {
-    x: 928,
-    y: 416,
+    x: 224,
+    y: 480,
   },
   stoneFloor: {
-    x: 576,
-    y: 448,
+    x: 1408,
+    y: 416,
   },
 };
 
