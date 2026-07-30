@@ -222,7 +222,8 @@ export class GameService {
       .map(({ x, y }) => ({ x, y }));
   }
 
-  getFilteredGameForPlayer(clientId: ClientId): GameState | undefined {
+  //todo: remove if confirmed obsolete
+  /* getFilteredGameForPlayer(clientId: ClientId): GameState | undefined {
     const game = this.getPlayerGame(clientId);
     if (!game) {
       return;
@@ -234,5 +235,14 @@ export class GameService {
     }
 
     return filterGameStateForPlayer(game, viewer);
+  } */
+
+  getFilteredGameStates(
+    gameState: GameState,
+  ): Array<{ clientId: ClientId; gameState: GameState }> {
+    return gameState.players.map((player) => ({
+      clientId: player.clientId,
+      gameState: filterGameStateForPlayer(gameState, player),
+    }));
   }
 }
