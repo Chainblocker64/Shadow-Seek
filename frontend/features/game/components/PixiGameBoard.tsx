@@ -19,7 +19,7 @@ import {
   playerTextureFrames,
   TILE_TEXTURE_SIZE,
 } from "../data/tileTextureFrames";
-import { useMovementControls } from "../hooks/useMovementControls";
+import { useInputControls } from "../hooks/useInputControls";
 
 type GamePlayer = Player & {
   label: string;
@@ -52,7 +52,7 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
   const playersRef = useRef(players);
   const renderPlayersRef = useRef<(() => void) | null>(null);
 
-  useMovementControls(status === "running");
+  useInputControls(status === "running");
 
   useEffect(() => {
     const container = containerRef.current;
