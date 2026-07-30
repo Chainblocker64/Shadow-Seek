@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { Player } from './player/player';
 import {
-  ENDED, 
+  ENDED,
   GAME_DURATION_MS,
   DEFAULT_VISION_RANGE,
   RUNNING,
