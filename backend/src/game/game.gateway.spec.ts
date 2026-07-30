@@ -6,11 +6,13 @@ import { GameService } from './game.service';
 import { LobbyService } from '../lobby/lobby.service';
 import { MapsService } from '../maps/maps.service';
 import type { Room } from '../lobby/types';
+import type { GameState } from './types';
 
-describe('GameGateway movement', () => {
+describe('GameGateway', () => {
   let gateway: GameGateway;
   let gameService: {
     movePlayer: jest.Mock;
+    playerAttack: jest.Mock;
   };
   let lobbyService: {
     getPlayerRoom: jest.Mock;
@@ -21,6 +23,7 @@ describe('GameGateway movement', () => {
   beforeEach(async () => {
     gameService = {
       movePlayer: jest.fn(),
+      playerAttack: jest.fn(),
     };
 
     lobbyService = {
@@ -57,187 +60,97 @@ describe('GameGateway movement', () => {
     } as unknown as Server;
   });
 
-  it('broadcasts the server-confirmed movement result to the room', () => {
-    const roomId = randomUUID();
+  describe('handleMovePlayer', () => {
+    it("forwards the movement request to the game service using the player's room", () => {
+      const roomId = randomUUID();
 
-    const room: Room = {
-      id: roomId,
-      players: [{ id: 'player-1', name: 'Alice' }],
-      owner: 'player-1',
-      status: 'waiting',
-      maxPlayers: 4,
-      map: 'Test map',
-    };
+      const room: Room = {
+        id: roomId,
+        players: [{ id: 'player-1', name: 'Alice' }],
+        owner: 'player-1',
+        status: 'waiting',
+        maxPlayers: 4,
+        map: 'Test map',
+      };
 
-    const result = {
-      player: {
-        id: 'player-1',
-        position: {
-          x: 1,
-          y: 1,
+      lobbyService.getPlayerRoom.mockReturnValue(room);
+
+      gateway.handleMovePlayer(
+        {
+          id: 'player-1',
+        } as Socket,
+        {
+          direction: 'right',
         },
-      },
-      moved: false,
-    };
+      );
 
-    lobbyService.getPlayerRoom.mockReturnValue(room);
-    gameService.movePlayer.mockReturnValue(result);
+      expect(lobbyService.getPlayerRoom).toHaveBeenCalledWith('player-1');
+      expect(gameService.movePlayer).toHaveBeenCalledWith(
+        roomId,
+        'player-1',
+        'right',
+      );
+    });
 
-    gateway.handleMovePlayer(
-      {
-        id: 'player-1',
-      } as Socket,
-      {
-        direction: 'right',
-      },
-    );
+    it('does not process movement when the player has no room', () => {
+      lobbyService.getPlayerRoom.mockReturnValue(undefined);
 
-    expect(lobbyService.getPlayerRoom).toHaveBeenCalledWith('player-1');
+      gateway.handleMovePlayer(
+        {
+          id: 'player-1',
+        } as Socket,
+        {
+          direction: 'right',
+        },
+      );
 
-    expect(gameService.movePlayer).toHaveBeenCalledWith(
-      roomId,
-      'player-1',
-      'right',
-    );
-
-    expect(to).toHaveBeenCalledWith(roomId);
-    expect(emit).toHaveBeenCalledWith('movement:confirmed', result);
+      expect(gameService.movePlayer).not.toHaveBeenCalled();
+    });
   });
 
-  it('does not process movement when the player has no room', () => {
-    lobbyService.getPlayerRoom.mockReturnValue(undefined);
+  describe('handlePlayerAttack', () => {
+    it("forwards the attack request to the game service using the player's room", () => {
+      const roomId = randomUUID();
 
-    gateway.handleMovePlayer(
-      {
-        id: 'player-1',
-      } as Socket,
-      {
-        direction: 'right',
-      },
-    );
+      const room: Room = {
+        id: roomId,
+        players: [{ id: 'player-1', name: 'Alice' }],
+        owner: 'player-1',
+        status: 'waiting',
+        maxPlayers: 4,
+        map: 'Test map',
+      };
 
-    expect(gameService.movePlayer).not.toHaveBeenCalled();
-    expect(emit).not.toHaveBeenCalled();
+      lobbyService.getPlayerRoom.mockReturnValue(room);
+
+      gateway.handlePlayerAttack({ id: 'player-1' } as Socket);
+
+      expect(lobbyService.getPlayerRoom).toHaveBeenCalledWith('player-1');
+      expect(gameService.playerAttack).toHaveBeenCalledWith(roomId, 'player-1');
+    });
+
+    it('does not process an attack when the player has no room', () => {
+      lobbyService.getPlayerRoom.mockReturnValue(undefined);
+
+      gateway.handlePlayerAttack({ id: 'player-1' } as Socket);
+
+      expect(gameService.playerAttack).not.toHaveBeenCalled();
+    });
   });
 
-  it('allows a new movement request after the previous action finishes', () => {
-    const roomId = randomUUID();
+  describe('broadcastGamestate', () => {
+    it('emits the game state to the room when the game service reports a change', () => {
+      const roomId = randomUUID();
 
-    const room: Room = {
-      id: roomId,
-      players: ['player-1'],
-      owner: 'player-1',
-      status: 'waiting',
-      maxPlayers: 4,
-      map: 'Test map',
-    };
+      const gameState = {
+        roomId,
+        status: 'running',
+      } as unknown as GameState;
 
-    const result = {
-      player: {
-        id: 'player-1',
-        position: { x: 1, y: 1 },
-        facingDirection: 'right',
-      },
-      moved: true,
-    };
+      gateway.broadcastGamestate(gameState);
 
-    lobbyService.getPlayerRoom.mockReturnValue(room);
-    gameService.movePlayer.mockReturnValue(result);
-
-    gateway.handleMovePlayer({ id: 'player-1' } as Socket, {
-      direction: 'right',
+      expect(to).toHaveBeenCalledWith(roomId);
+      expect(emit).toHaveBeenCalledWith('game:sync', gameState);
     });
-
-    gateway.handleMovePlayer({ id: 'player-1' } as Socket, {
-      direction: 'left',
-    });
-
-    expect(gameService.movePlayer).toHaveBeenCalledTimes(2);
-    expect(gameService.movePlayer).toHaveBeenNthCalledWith(
-      1,
-      roomId,
-      'player-1',
-      'right',
-    );
-    expect(gameService.movePlayer).toHaveBeenNthCalledWith(
-      2,
-      roomId,
-      'player-1',
-      'left',
-    );
-  });
-
-  it('ignores a movement request while another action is in progress', () => {
-    const roomId = randomUUID();
-
-    const room: Room = {
-      id: roomId,
-      players: ['player-1'],
-      owner: 'player-1',
-      status: 'waiting',
-      maxPlayers: 4,
-      map: 'Test map',
-    };
-
-    const result = {
-      player: {
-        id: 'player-1',
-        position: { x: 1, y: 1 },
-        facingDirection: 'right',
-      },
-      moved: true,
-    };
-
-    let activeActionCount = 0;
-
-    lobbyService.getPlayerRoom.mockReturnValue(room);
-    gameService.movePlayer.mockImplementation(() => {
-      if (activeActionCount > 0) {
-        return undefined;
-      }
-
-      activeActionCount += 1;
-      return result;
-    });
-
-    gateway.handleMovePlayer({ id: 'player-1' } as Socket, {
-      direction: 'right',
-    });
-
-    gateway.handleMovePlayer({ id: 'player-1' } as Socket, {
-      direction: 'left',
-    });
-
-    expect(gameService.movePlayer).toHaveBeenCalledTimes(2);
-    expect(emit).toHaveBeenCalledTimes(1);
-    expect(emit).toHaveBeenCalledWith('movement:confirmed', result);
-  });
-
-  it('does not emit when the game rejects the request', () => {
-    const roomId = randomUUID();
-
-    const room: Room = {
-      id: roomId,
-      players: [{ id: 'player-1', name: 'Alice' }],
-      owner: 'player-1',
-      status: 'waiting',
-      maxPlayers: 4,
-      map: 'Test map',
-    };
-
-    lobbyService.getPlayerRoom.mockReturnValue(room);
-    gameService.movePlayer.mockReturnValue(undefined);
-
-    gateway.handleMovePlayer(
-      {
-        id: 'player-1',
-      } as Socket,
-      {
-        direction: 'right',
-      },
-    );
-
-    expect(gameService.movePlayer).toHaveBeenCalled();
-    expect(emit).not.toHaveBeenCalled();
   });
 });

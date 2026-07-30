@@ -108,28 +108,11 @@ describe('handlePlayerMovement', () => {
 
     const result = handlePlayerMovement(gameState, 'player-1', 'up');
 
-    expect({
-      player: result.player.toJSON(),
-      moved: result.moved,
-    }).toEqual({
-      player: {
-        id: 'player-1',
-        name: 'Alice',
-        spriteIndex: 0,
-        position: {
-          x: 2,
-          y: 1,
-        },
-        facingDirection: 'up',
-      },
-      moved: true,
-    });
-
+    expect(result).toBe(true);
     expect(gameState.players[0].getPosition()).toEqual({
       x: 2,
       y: 1,
     });
-
     expect(gameState.players[0].getFacingDirection()).toBe('up');
   });
 
@@ -162,40 +145,22 @@ describe('handlePlayerMovement', () => {
 
       const result = handlePlayerMovement(gameState, 'player-1', direction);
 
-      expect(result.moved).toBe(true);
-      expect(result.player.getPosition()).toEqual(expectedPosition);
-      expect(result.player.getFacingDirection()).toBe(direction);
+      expect(result).toBe(true);
+      expect(gameState.players[0].getPosition()).toEqual(expectedPosition);
       expect(gameState.players[0].getFacingDirection()).toBe(direction);
     },
   );
 
-  it('keeps the old player position when movement is invalid', () => {
+  it('keeps the old player position when movement is invalid but still updates facing direction', () => {
     const gameState = createTestGameState();
 
     const result = handlePlayerMovement(gameState, 'player-1', 'right');
 
-    expect({
-      player: result.player.toJSON(),
-      moved: result.moved,
-    }).toEqual({
-      player: {
-        id: 'player-1',
-        name: 'Alice',
-        spriteIndex: 0,
-        position: {
-          x: 2,
-          y: 2,
-        },
-        facingDirection: 'right',
-      },
-      moved: false,
-    });
-
+    expect(result).toBe(true);
     expect(gameState.players[0].getPosition()).toEqual({
       x: 2,
       y: 2,
     });
-
     expect(gameState.players[0].getFacingDirection()).toBe('right');
   });
 
@@ -204,36 +169,34 @@ describe('handlePlayerMovement', () => {
 
     const result = handlePlayerMovement(gameState, 'player-1', 'left');
 
-    expect({
-      player: result.player.toJSON(),
-      moved: result.moved,
-    }).toEqual({
-      player: {
-        id: 'player-1',
-        name: 'Alice',
-        spriteIndex: 0,
-        position: {
-          x: 1,
-          y: 2,
-        },
-        facingDirection: 'left',
-      },
-      moved: true,
-    });
-
+    expect(result).toBe(true);
     expect(gameState.players[0].getPosition()).toEqual({
       x: 1,
       y: 2,
     });
   });
 
-  it('throws an error when the player does not exist', () => {
+  it('returns false when the player does not exist', () => {
     const gameState = createTestGameState();
 
-    expect(() => {
-      handlePlayerMovement(gameState, 'unknown-player', 'up');
-    }).toThrow('Player not found');
+    const result = handlePlayerMovement(gameState, 'unknown-player', 'up');
+
+    expect(result).toBe(false);
   });
+
+  it('returns false when the player is already handling an action', () => {
+    const gameState = createTestGameState();
+    gameState.players[0].setActiveAction('attack');
+
+    const result = handlePlayerMovement(gameState, 'player-1', 'up');
+
+    expect(result).toBe(false);
+    expect(gameState.players[0].getPosition()).toEqual({
+      x: 2,
+      y: 2,
+    });
+  });
+
   it('keeps the player position when movement leaves the map', () => {
     const gameState = createTestGameState();
 
@@ -244,29 +207,14 @@ describe('handlePlayerMovement', () => {
 
     const result = handlePlayerMovement(gameState, 'player-1', 'left');
 
-    expect({
-      player: result.player.toJSON(),
-      moved: result.moved,
-    }).toEqual({
-      player: {
-        id: 'player-1',
-        name: 'Alice',
-        spriteIndex: 0,
-        position: {
-          x: 0,
-          y: 2,
-        },
-        facingDirection: 'left',
-      },
-      moved: false,
-    });
-
+    expect(result).toBe(true);
     expect(gameState.players[0].getPosition()).toEqual({
       x: 0,
       y: 2,
     });
     expect(gameState.players[0].getFacingDirection()).toBe('left');
   });
+
   it('keeps the player position when another player occupies the target tile', () => {
     const gameState = createTestGameState();
 
@@ -284,23 +232,7 @@ describe('handlePlayerMovement', () => {
 
     const result = handlePlayerMovement(gameState, 'player-1', 'up');
 
-    expect({
-      player: result.player.toJSON(),
-      moved: result.moved,
-    }).toEqual({
-      player: {
-        id: 'player-1',
-        name: 'Alice',
-        spriteIndex: 0,
-        position: {
-          x: 2,
-          y: 2,
-        },
-        facingDirection: 'up',
-      },
-      moved: false,
-    });
-
+    expect(result).toBe(true);
     expect(gameState.players[0].getPosition()).toEqual({
       x: 2,
       y: 2,
