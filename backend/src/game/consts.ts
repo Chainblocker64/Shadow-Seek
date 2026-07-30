@@ -20,7 +20,7 @@ export const DEFAULT_COMBAT_STATS: CombatStats = {
   maxHealth: 100,
   attackValue: 10,
   attackRange: 1,
-  attackCooldown: 250, //in miliseconds
+  attackCooldown: 1000, //in miliseconds
 };
 
 export const DEFAULT_ACTION_TIMESTAMPS: ActionTimestamps = {

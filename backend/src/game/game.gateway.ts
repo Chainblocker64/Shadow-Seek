@@ -6,13 +6,15 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import type { ClientId, RoomId } from '../shared/types';
+import type { RoomId } from '../shared/types';
 import { LobbyService } from '../lobby/lobby.service';
 import { MapsService } from '../maps/maps.service';
 import { GAME_START_DELAY_MS, MIN_PLAYERS_TO_START } from './consts';
 import { GameService } from './game.service';
 import { UsePipes, ValidationPipe } from '@nestjs/common';
 import { MovePlayerDto } from './dto/move-player.dto';
+import { OnEvent } from '@nestjs/event-emitter';
+import type { GameState } from './types';
 
 @WebSocketGateway({ cors: { origin: process.env.FRONTEND_URL } })
 @UsePipes(
@@ -58,7 +60,7 @@ export class GameGateway {
 
     this.server.to(room.id).emit('game:opened');
     this.server.to(room.id).emit('game:sync', game);
-    this.scheduleGameStart(room.id, room.players);
+    this.scheduleGameStart(room.id);
   }
 
   @SubscribeMessage('movePlayer')
@@ -96,7 +98,7 @@ export class GameGateway {
     this.gameService.playerAttack(room.id, clientId);
   }
 
-  private scheduleGameStart(roomId: RoomId, playerIds: ClientId[]) {
+  private scheduleGameStart(roomId: RoomId) {
     if (this.gameStartTimers.has(roomId)) {
       return;
     }
@@ -107,10 +109,15 @@ export class GameGateway {
       const game = this.gameService.startGame(roomId);
 
       if (game) {
-        this.server.to(playerIds).emit('game:started', game);
+        this.broadcastGamestate(roomId, game);
       }
     }, GAME_START_DELAY_MS);
 
     this.gameStartTimers.set(roomId, timer);
+  }
+
+  @OnEvent('game.broadcast')
+  broadcastGamestate(roomId: RoomId, gameState: GameState) {
+    this.server.to(roomId).emit('game:sync', gameState);
   }
 }

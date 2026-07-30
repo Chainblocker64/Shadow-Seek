@@ -35,8 +35,8 @@ export default function GameBoard() {
   useEffect(() => {
     socket.connect();
 
-    const onGameSync = (nextGame: GameState) => {
-      setGame(nextGame);
+    const onGameSync = (game: GameState) => {
+      setGame(game);
     };
 
     const onMovementConfirmed = (result: MovementResult) => {
@@ -71,12 +71,10 @@ export default function GameBoard() {
     };
 
     socket.on("game:sync", onGameSync);
-    socket.on("game:started", onGameSync);
     socket.on("movement:confirmed", onMovementConfirmed);
 
     return () => {
       socket.off("game:sync", onGameSync);
-      socket.off("game:started", onGameSync);
       socket.off("movement:confirmed", onMovementConfirmed);
     };
   }, []);

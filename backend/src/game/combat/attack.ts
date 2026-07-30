@@ -3,13 +3,13 @@ import { calculateNextPosition } from '../movement/server-movement';
 import type { GameState } from '../types';
 import { canAttack } from './combat-validation';
 
-export function attack(gameState: GameState, playerId: ClientId) {
+export function attack(gameState: GameState, playerId: ClientId): boolean {
   const player = gameState.players.find(
     (player) => player.clientId === playerId,
   );
 
   if (!player || !canAttack(player)) {
-    return;
+    return false;
   }
 
   const playerPosition = player.getPosition();
@@ -25,9 +25,9 @@ export function attack(gameState: GameState, playerId: ClientId) {
     (player) => player.getPosition() === targetPosition,
   );
 
-  if (!targetPlayer) {
-    return;
+  if (targetPlayer) {
+    targetPlayer.takeDamage(attackValue);
   }
 
-  targetPlayer.takeDamage(attackValue);
+  return true;
 }
