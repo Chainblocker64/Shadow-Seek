@@ -77,6 +77,7 @@ describe('handlePlayerMovement', () => {
         width: 5,
         height: 5,
         baseTile: 'floor',
+        baseOverrides: [],
         objects: [
           {
             x: 3,
@@ -93,10 +94,12 @@ describe('handlePlayerMovement', () => {
       players: [
         new Player({
           clientId: 'player-1',
+          name: 'Alice',
           position: { x: 2, y: 2 },
           facingDirection: 'down',
         }),
       ],
+      endsAt: null,
     };
   }
 
@@ -111,6 +114,8 @@ describe('handlePlayerMovement', () => {
     }).toEqual({
       player: {
         id: 'player-1',
+        name: 'Alice',
+        spriteIndex: 0,
         position: {
           x: 2,
           y: 1,
@@ -175,6 +180,8 @@ describe('handlePlayerMovement', () => {
     }).toEqual({
       player: {
         id: 'player-1',
+        name: 'Alice',
+        spriteIndex: 0,
         position: {
           x: 2,
           y: 2,
@@ -203,6 +210,8 @@ describe('handlePlayerMovement', () => {
     }).toEqual({
       player: {
         id: 'player-1',
+        name: 'Alice',
+        spriteIndex: 0,
         position: {
           x: 1,
           y: 2,
@@ -241,6 +250,8 @@ describe('handlePlayerMovement', () => {
     }).toEqual({
       player: {
         id: 'player-1',
+        name: 'Alice',
+        spriteIndex: 0,
         position: {
           x: 0,
           y: 2,
@@ -262,7 +273,11 @@ describe('handlePlayerMovement', () => {
     gameState.players.push(
       new Player({
         clientId: 'player-2',
-        position: { x: 2, y: 1 },
+        name: 'Bob',
+        position: {
+          x: 2,
+          y: 1,
+        },
         facingDirection: 'down',
       }),
     );
@@ -275,6 +290,8 @@ describe('handlePlayerMovement', () => {
     }).toEqual({
       player: {
         id: 'player-1',
+        name: 'Alice',
+        spriteIndex: 0,
         position: {
           x: 2,
           y: 2,

@@ -4,9 +4,14 @@ export type ClientId = string;
 export type RoomId = UUID;
 export type RoomStatus = "waiting" | "full";
 
+export interface RoomPlayer {
+  id: ClientId;
+  name: string;
+}
+
 export interface Room {
   id: RoomId;
-  players: ClientId[];
+  players: RoomPlayer[];
   owner: ClientId;
   status: RoomStatus;
   maxPlayers: number;

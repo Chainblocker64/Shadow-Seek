@@ -62,7 +62,7 @@ describe('GameGateway movement', () => {
 
     const room: Room = {
       id: roomId,
-      players: ['player-1'],
+      players: [{ id: 'player-1', name: 'Alice' }],
       owner: 'player-1',
       status: 'waiting',
       maxPlayers: 4,
@@ -218,7 +218,7 @@ describe('GameGateway movement', () => {
 
     const room: Room = {
       id: roomId,
-      players: ['player-1'],
+      players: [{ id: 'player-1', name: 'Alice' }],
       owner: 'player-1',
       status: 'waiting',
       maxPlayers: 4,

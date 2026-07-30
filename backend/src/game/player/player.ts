@@ -5,6 +5,8 @@ import { DEFAULT_COMBAT_STATS, DEFAULT_VISION_RANGE } from '../consts';
 
 export class Player {
   public readonly clientId: ClientId;
+  public readonly name: string;
+  public readonly spriteIndex: number;
   private position: Position;
   private combatStats: CombatStats;
   private health: number;
@@ -14,18 +16,24 @@ export class Player {
 
   constructor({
     clientId,
+    name,
     position,
+    spriteIndex = 0,
     combatStats = DEFAULT_COMBAT_STATS,
     visionRange = DEFAULT_VISION_RANGE,
     facingDirection = 'down',
   }: {
     clientId: ClientId;
+    name: string;
     position: Position;
+    spriteIndex?: number;
     combatStats?: CombatStats;
     visionRange?: number;
     facingDirection?: FacingDirection;
   }) {
     this.clientId = clientId;
+    this.name = name;
+    this.spriteIndex = spriteIndex;
     this.position = position;
     this.combatStats = combatStats;
     this.health = this.combatStats.maxHealth;
@@ -72,6 +80,8 @@ export class Player {
   toJSON() {
     return {
       id: this.clientId,
+      name: this.name,
+      spriteIndex: this.spriteIndex,
       position: this.position,
       facingDirection: this.facingDirection,
     };

@@ -9,10 +9,16 @@ import { Server, Socket } from 'socket.io';
 import type { ClientId, RoomId } from '../shared/types';
 import { LobbyService } from '../lobby/lobby.service';
 import { MapsService } from '../maps/maps.service';
-import { GAME_START_DELAY_MS, MIN_PLAYERS_TO_START } from './consts';
+import {
+  GAME_DURATION_MS,
+  GAME_START_DELAY_MS,
+  MIN_PLAYERS_TO_START,
+} from './consts';
 import { GameService } from './game.service';
 import { UsePipes, ValidationPipe } from '@nestjs/common';
 import { MovePlayerDto } from './dto/move-player.dto';
+import { OnEvent } from '@nestjs/event-emitter';
+import { RoomUpdatedEvent } from '../lobby/events/room-updated.event';
 
 @WebSocketGateway({ cors: { origin: process.env.FRONTEND_URL } })
 @UsePipes(
@@ -27,6 +33,11 @@ export class GameGateway {
   server!: Server;
 
   private readonly gameStartTimers = new Map<
+    RoomId,
+    ReturnType<typeof setTimeout>
+  >();
+
+  private readonly gameEndTimers = new Map<
     RoomId,
     ReturnType<typeof setTimeout>
   >();
@@ -55,10 +66,59 @@ export class GameGateway {
 
     const map = await this.mapsService.findOneByName(room.map);
     const game = this.gameService.createGame(room.id, room.players, map);
+    const clientIds = room.players.map((player) => player.id);
 
-    this.server.to(room.players).emit('game:opened');
-    this.server.to(room.players).emit('game:sync', game);
-    this.scheduleGameStart(room.id, room.players);
+    this.server.to(clientIds).emit('game:opened');
+    this.server.to(clientIds).emit('game:sync', game);
+    this.scheduleGameStart(room.id);
+  }
+
+  @OnEvent('room.player.added')
+  handleRoomPlayerAdded({ clientId, room }: RoomUpdatedEvent) {
+    const player = room.players.find(({ id }) => id === clientId);
+
+    if (!player) {
+      return;
+    }
+
+    const game = this.gameService.addPlayer(room.id, {
+      id: player.id,
+      name: player.name,
+    });
+
+    if (!game) {
+      return;
+    }
+
+    this.server.to(clientId).emit('game:opened');
+    this.server.to(this.playerIds(room.id)).emit('game:sync', game);
+  }
+
+  @SubscribeMessage('leaveGame')
+  handleLeaveGame(@ConnectedSocket() client: Socket) {
+    this.removePlayerFromGame(client.id);
+    this.lobbyService.removePlayer(client.id);
+  }
+
+  handleDisconnect({ id: clientId }: Socket) {
+    this.removePlayerFromGame(clientId);
+  }
+
+  private removePlayerFromGame(clientId: ClientId) {
+    const game = this.gameService.removePlayer(clientId);
+
+    if (!game) {
+      return;
+    }
+
+    this.server.to(clientId).emit('game:left');
+
+    if (game.players.length === 0) {
+      this.clearTimers(game.roomId);
+      return;
+    }
+
+    this.server.to(this.playerIds(game.roomId)).emit('game:sync', game);
   }
 
   @SubscribeMessage('movePlayer')
@@ -85,7 +145,28 @@ export class GameGateway {
     this.server.to(room.id).emit('movement:confirmed', result);
   }
 
-  private scheduleGameStart(roomId: RoomId, playerIds: ClientId[]) {
+  private clearTimers(roomId: RoomId) {
+    const startTimer = this.gameStartTimers.get(roomId);
+    const endTimer = this.gameEndTimers.get(roomId);
+
+    if (startTimer) {
+      clearTimeout(startTimer);
+      this.gameStartTimers.delete(roomId);
+    }
+
+    if (endTimer) {
+      clearTimeout(endTimer);
+      this.gameEndTimers.delete(roomId);
+    }
+  }
+
+  private playerIds(roomId: RoomId): ClientId[] {
+    const game = this.gameService.getGame(roomId);
+
+    return game ? game.players.map((player) => player.clientId) : [];
+  }
+
+  private scheduleGameStart(roomId: RoomId) {
     if (this.gameStartTimers.has(roomId)) {
       return;
     }
@@ -96,10 +177,29 @@ export class GameGateway {
       const game = this.gameService.startGame(roomId);
 
       if (game) {
-        this.server.to(playerIds).emit('game:started', game);
+        this.server.to(this.playerIds(roomId)).emit('game:started', game);
+        this.scheduleGameEnd(roomId);
       }
     }, GAME_START_DELAY_MS);
 
     this.gameStartTimers.set(roomId, timer);
+  }
+
+  private scheduleGameEnd(roomId: RoomId) {
+    if (this.gameEndTimers.has(roomId)) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      this.gameEndTimers.delete(roomId);
+
+      const game = this.gameService.endGame(roomId);
+
+      if (game) {
+        this.server.to(this.playerIds(roomId)).emit('game:ended', game);
+      }
+    }, GAME_DURATION_MS);
+
+    this.gameEndTimers.set(roomId, timer);
   }
 }
