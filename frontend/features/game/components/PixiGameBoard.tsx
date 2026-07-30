@@ -5,6 +5,7 @@ import {
   Application,
   Assets,
   Container,
+  Graphics,
   Rectangle,
   Sprite,
   Text,
@@ -13,7 +14,11 @@ import {
 import { useEffect, useRef } from "react";
 import type { GameMap } from "../types/map";
 import type { GameState } from "../types/game";
-import type { Player, PlayerDirection } from "../types/player";
+import type {
+  Player,
+  PlayerDirection,
+  PlayerPosition,
+} from "../types/player";
 import {
   baseTileTextureFrames,
   mapObjectTextureFrames,
@@ -31,6 +36,7 @@ type PixiGameBoardProps = {
   map: GameMap;
   players: GamePlayer[];
   status: GameState["status"];
+  currentPlayerSpawnPosition: PlayerPosition | null;
 };
 
 const TILESET_PATH = "/assets/tiles/dungeon-crawl.png";
@@ -43,12 +49,24 @@ const directionTexturePaths: Record<PlayerDirection, string> = {
   right: "/assets/direction/right.png",
 };
 
-export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
+export function PixiGameBoard({
+  map,
+  players,
+  status,
+  currentPlayerSpawnPosition,
+}: PixiGameBoardProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const playersRef = useRef(players);
   const renderPlayersRef = useRef<(() => void) | null>(null);
+  const spawnHighlightRef = useRef(currentPlayerSpawnPosition);
+  const renderSpawnHighlightRef = useRef<(() => void) | null>(null);
 
   useInputControls(status === "running");
+
+  useEffect(() => {
+    spawnHighlightRef.current = currentPlayerSpawnPosition;
+    renderSpawnHighlightRef.current?.();
+  }, [currentPlayerSpawnPosition]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -67,6 +85,7 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
       app?.destroy(true);
       app = null;
       renderPlayersRef.current = null;
+      renderSpawnHighlightRef.current = null;
     }
 
     async function setupPixi() {
@@ -132,7 +151,59 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
       }
 
       const playerLayer = new Container();
+      const spawnHighlightLayer = new Container();
       let layout: BoardLayout | null = null;
+
+      // Marks where this client's own character will start while the game is
+      // still waiting. Uses a border plus a "You" caption so it never relies on
+      // colour alone and can't be mistaken for an active player.
+      function renderSpawnHighlight() {
+        if (!layout) {
+          return;
+        }
+
+        const { offsetX, offsetY, tileSize } = layout;
+
+        spawnHighlightLayer.removeChildren();
+
+        const spawn = spawnHighlightRef.current;
+
+        if (!spawn) {
+          return;
+        }
+
+        const x = offsetX + spawn.x * tileSize;
+        const y = offsetY + spawn.y * tileSize;
+
+        // The dark outer stroke keeps the marker readable on every tile type.
+        const border = new Graphics()
+          .rect(x + 1, y + 1, tileSize - 2, tileSize - 2)
+          .stroke({ width: 4, color: 0x000000, alpha: 0.7 })
+          .rect(x + 1, y + 1, tileSize - 2, tileSize - 2)
+          .stroke({ width: 2, color: 0xfacc15 });
+
+        const caption = new Text({
+          text: "You",
+          style: {
+            fontSize: Math.max(10, Math.round(tileSize * 0.45)),
+            fontWeight: "bold",
+            fill: 0xfacc15,
+            stroke: { color: 0x000000, width: 3 },
+          },
+        });
+
+        // Caption sits below the tile, except on the last row where it would be
+        // clipped by the canvas edge.
+        const isLastRow = spawn.y === map.height - 1;
+
+        caption.anchor.set(0.5, isLastRow ? 1 : 0);
+        caption.x = x + tileSize / 2;
+        caption.y = isLastRow ? y - 2 : y + tileSize + 2;
+
+        spawnHighlightLayer.addChild(border, caption);
+      }
+
+      renderSpawnHighlightRef.current = renderSpawnHighlight;
 
       function renderPlayers() {
         if (!layout) {
@@ -274,8 +345,10 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
         });
 
         app.stage.addChild(playerLayer);
+        app.stage.addChild(spawnHighlightLayer);
         layout = { offsetX, offsetY, tileSize };
         renderPlayers();
+        renderSpawnHighlight();
       }
 
       renderMap();
