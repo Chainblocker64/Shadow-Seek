@@ -1,7 +1,12 @@
 import type { ClientId } from '../../shared/types';
-import type { CombatStats } from '../combat/types';
+import type { ActionTimestamps, CombatStats } from '../combat/types';
 import type { FacingDirection, Position } from '../types';
-import { DEFAULT_COMBAT_STATS, DEFAULT_VISION_RANGE } from '../consts';
+import {
+  DEFAULT_COMBAT_STATS,
+  DEFAULT_VISION_RANGE,
+  DEFAULT_ACTION_TIMESTAMPS,
+} from '../consts';
+import { canAttack } from '../combat/combat-validation';
 
 export class Player {
   public readonly clientId: ClientId;
@@ -13,6 +18,7 @@ export class Player {
   private visionRange: number;
   private facingDirection: FacingDirection;
   private isActionActive = false;
+  private actionTimestamps: ActionTimestamps = DEFAULT_ACTION_TIMESTAMPS;
 
   constructor({
     clientId,
@@ -41,6 +47,14 @@ export class Player {
     this.facingDirection = facingDirection;
   }
 
+  canAct() {
+    return this.isAlive();
+  }
+
+  takeDamage(amount: number) {
+    this.health -= amount;
+  }
+
   isAlive(): boolean {
     return this.health > 0;
   }
@@ -61,8 +75,20 @@ export class Player {
     this.visionRange = visionRange;
   }
 
+  getCombatStats(): CombatStats {
+    return this.combatStats;
+  }
+
   getFacingDirection(): FacingDirection {
     return this.facingDirection;
+  }
+
+  getActionTimestamps(): ActionTimestamps {
+    return this.actionTimestamps;
+  }
+
+  setActionTimestamps(actionTimestamps: ActionTimestamps) {
+    this.actionTimestamps = actionTimestamps;
   }
 
   setFacingDirection(direction: FacingDirection): void {
@@ -75,6 +101,10 @@ export class Player {
 
   setAction(value: boolean): void {
     this.isActionActive = value;
+  }
+
+  canAttack(): boolean {
+    return canAttack(this);
   }
 
   toJSON() {

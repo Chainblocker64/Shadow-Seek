@@ -20,7 +20,7 @@ import {
   playerTextureFrames,
   TILE_TEXTURE_SIZE,
 } from "../data/tileTextureFrames";
-import { useMovementControls } from "../hooks/useMovementControls";
+import { useInputControls } from "../hooks/useInputControls";
 import { calculateBoardLayout, type BoardLayout } from "./boardLayout";
 
 type GamePlayer = Player & {
@@ -48,7 +48,7 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
   const playersRef = useRef(players);
   const renderPlayersRef = useRef<(() => void) | null>(null);
 
-  useMovementControls(status === "running");
+  useInputControls(status === "running");
 
   useEffect(() => {
     const container = containerRef.current;
@@ -158,10 +158,7 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
               tileSize,
             ),
           );
-          const directionSpriteSize = Math.min(
-            DIRECTION_SPRITE_SIZE,
-            tileSize,
-          );
+          const directionSpriteSize = Math.min(DIRECTION_SPRITE_SIZE, tileSize);
           const directionSprite = new Sprite(
             directionTextures[player.facingDirection],
           );
