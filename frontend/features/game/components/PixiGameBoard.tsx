@@ -7,6 +7,7 @@ import {
   Container,
   Rectangle,
   Sprite,
+  Text,
   Texture,
   Graphics,
 } from "pixi.js";
@@ -22,6 +23,7 @@ import {
 } from "../data/tileTextureFrames";
 import { useMovementControls } from "../hooks/useMovementControls";
 import { socket } from "@/lib/socket";
+import { calculateBoardLayout, type BoardLayout } from "./boardLayout";
 
 type GamePlayer = Player & {
   label: string;
@@ -31,12 +33,6 @@ type PixiGameBoardProps = {
   map: GameMap;
   players: GamePlayer[];
   status: GameState["status"];
-};
-
-type BoardLayout = {
-  offsetX: number;
-  offsetY: number;
-  tileSize: number;
 };
 
 function getFacingTile(
@@ -196,10 +192,12 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
               tileSize,
             ),
           );
+
           const facingTile = getFacingTile(
             player.position,
             player.facingDirection,
           );
+
           const isOwnPlayer = player.id === socket.id;
 
           const circleColor = isOwnPlayer
@@ -222,6 +220,26 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
             });
 
           directionLayer.addChild(directionCircle);
+
+          const playerLabel = new Text({
+            text: player.label,
+            style: {
+              fontSize: 12,
+              fontWeight: "bold",
+              fill: 0xffffff,
+              stroke: {
+                color: 0x000000,
+                width: 2,
+              },
+            },
+          });
+
+          playerLabel.anchor.set(0.5, 1);
+          playerLabel.alpha = 0.5;
+          playerLabel.x = offsetX + (player.position.x + 0.5) * tileSize;
+          playerLabel.y = offsetY + player.position.y * tileSize;
+
+          playerLayer.addChild(playerLabel);
         });
       }
 
@@ -236,18 +254,18 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
         const containerHeight = container.clientHeight;
         const boardSize = Math.min(containerWidth, containerHeight);
 
+        if (boardSize <= 0 || map.width <= 0 || map.height <= 0) {
+          return;
+        }
+
         app.renderer.resize(boardSize, boardSize);
         app.stage.removeChildren();
 
-        const tileSize = Math.floor(
-          Math.min(boardSize / map.width, boardSize / map.height),
+        const { offsetX, offsetY, tileSize } = calculateBoardLayout(
+          boardSize,
+          map.width,
+          map.height,
         );
-
-        const mapWidth = tileSize * map.width;
-        const mapHeight = tileSize * map.height;
-
-        const offsetX = Math.floor((boardSize - mapWidth) / 2);
-        const offsetY = Math.floor((boardSize - mapHeight) / 2);
 
         const baseFrame = baseTileTextureFrames[map.baseTile];
 
@@ -343,21 +361,5 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
     renderPlayersRef.current?.();
   }, [players]);
 
-  return (
-    <div className={styles.container}>
-      <div className={styles.canvasHost} ref={containerRef} />
-      {players.map((player) => (
-        <span
-          key={player.id}
-          className="pointer-events-none absolute -translate-x-1/2 -translate-y-full text-xs font-bold whitespace-nowrap text-white opacity-50 drop-shadow-[0_1px_1px_black]"
-          style={{
-            left: `${((player.position.x + 0.5) / map.width) * 100}%`,
-            top: `${(player.position.y / map.height) * 100}%`,
-          }}
-        >
-          {player.label}
-        </span>
-      ))}
-    </div>
-  );
+  return <div className={styles.canvasHost} ref={containerRef} />;
 }
