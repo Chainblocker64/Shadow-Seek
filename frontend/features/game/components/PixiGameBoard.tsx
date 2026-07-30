@@ -8,6 +8,7 @@ import {
   Rectangle,
   Sprite,
   Texture,
+  Graphics,
 } from "pixi.js";
 import { useEffect, useRef } from "react";
 import type { GameMap } from "../types/map";
@@ -20,6 +21,7 @@ import {
   TILE_TEXTURE_SIZE,
 } from "../data/tileTextureFrames";
 import { useMovementControls } from "../hooks/useMovementControls";
+import { socket } from "@/lib/socket";
 
 type GamePlayer = Player & {
   label: string;
@@ -37,15 +39,44 @@ type BoardLayout = {
   tileSize: number;
 };
 
+function getFacingTile(
+  position: { x: number; y: number },
+  direction: PlayerDirection,
+) {
+  switch (direction) {
+    case "up":
+      return {
+        x: position.x,
+        y: position.y - 1,
+      };
+
+    case "down":
+      return {
+        x: position.x,
+        y: position.y + 1,
+      };
+
+    case "left":
+      return {
+        x: position.x - 1,
+        y: position.y,
+      };
+
+    case "right":
+      return {
+        x: position.x + 1,
+        y: position.y,
+      };
+  }
+}
+
 const TILESET_PATH = "/assets/tiles/dungeon-crawl.png";
 
-const DIRECTION_SPRITE_SIZE = 48;
-const directionTexturePaths: Record<PlayerDirection, string> = {
-  up: "/assets/direction/up.png",
-  down: "/assets/direction/down.png",
-  left: "/assets/direction/left.png",
-  right: "/assets/direction/right.png",
-};
+const DIRECTION_CIRCLE_SIZE = 12;
+const DIRECTION_CIRCLE_RADIUS = DIRECTION_CIRCLE_SIZE / 2;
+
+const OWN_PLAYER_DIRECTION_COLOR = 0x22c55e;
+const OTHER_PLAYER_DIRECTION_COLOR = 0xef4444;
 
 export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -110,13 +141,6 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
         });
       }
 
-      const directionTextures = {
-        up: await Assets.load<Texture>(directionTexturePaths.up),
-        down: await Assets.load<Texture>(directionTexturePaths.down),
-        left: await Assets.load<Texture>(directionTexturePaths.left),
-        right: await Assets.load<Texture>(directionTexturePaths.right),
-      };
-
       function createTileSprite(
         frameX: number,
         frameY: number,
@@ -135,8 +159,17 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
         return sprite;
       }
 
+      const directionLayer = new Container();
       const playerLayer = new Container();
+
       let layout: BoardLayout | null = null;
+
+      app.ticker.add(() => {
+        const blinkSpeed = 0.005;
+
+        directionLayer.alpha =
+          0.55 + ((Math.sin(Date.now() * blinkSpeed) + 1) / 2) * 0.95;
+      });
 
       function renderPlayers() {
         if (!layout) {
@@ -145,6 +178,7 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
 
         const { offsetX, offsetY, tileSize } = layout;
 
+        directionLayer.removeChildren();
         playerLayer.removeChildren();
 
         playersRef.current.forEach((player) => {
@@ -162,24 +196,32 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
               tileSize,
             ),
           );
-          const directionSprite = new Sprite(
-            directionTextures[player.facingDirection],
+          const facingTile = getFacingTile(
+            player.position,
+            player.facingDirection,
           );
+          const isOwnPlayer = player.id === socket.id;
 
-          directionSprite.x =
-            offsetX +
-            player.position.x * tileSize +
-            (tileSize - DIRECTION_SPRITE_SIZE) / 2;
+          const circleColor = isOwnPlayer
+            ? OWN_PLAYER_DIRECTION_COLOR
+            : OTHER_PLAYER_DIRECTION_COLOR;
 
-          directionSprite.y =
-            offsetY +
-            player.position.y * tileSize +
-            (tileSize - DIRECTION_SPRITE_SIZE) / 2;
+          const circleCenterX =
+            offsetX + facingTile.x * tileSize + tileSize / 2;
 
-          directionSprite.width = DIRECTION_SPRITE_SIZE;
-          directionSprite.height = DIRECTION_SPRITE_SIZE;
+          const circleCenterY =
+            offsetY + facingTile.y * tileSize + tileSize / 2;
 
-          playerLayer.addChild(directionSprite);
+          const directionCircle = new Graphics();
+
+          directionCircle
+            .circle(circleCenterX, circleCenterY, DIRECTION_CIRCLE_RADIUS)
+            .fill({
+              color: circleColor,
+              alpha: 0.9,
+            });
+
+          directionLayer.addChild(directionCircle);
         });
       }
 
@@ -260,6 +302,7 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
           app?.stage.addChild(objectSprite);
         });
 
+        app.stage.addChild(directionLayer);
         app.stage.addChild(playerLayer);
         layout = { offsetX, offsetY, tileSize };
         renderPlayers();
