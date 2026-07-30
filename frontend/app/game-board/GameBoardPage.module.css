@@ -8,6 +8,7 @@
   min-height: 100dvh;
   height: 100dvh;
   overflow: hidden;
+  overflow-x: clip;
   padding: 1rem;
   color: rgb(244 244 245);
   background: rgb(9 9 11);
@@ -27,6 +28,7 @@
       --sidebar-width
     );
   grid-template-rows: var(--board-size);
+  min-width: 0;
   min-height: 0;
   justify-content: center;
   align-items: center;
@@ -35,6 +37,7 @@
 
 .sidebar {
   display: flex;
+  min-width: 0;
   height: 100%;
   flex-direction: column;
   justify-content: space-between;
@@ -73,6 +76,7 @@
 .boardArea {
   width: var(--board-size);
   height: var(--board-size);
+  min-width: 0;
   aspect-ratio: 1;
   overflow: hidden;
   border: 1px solid rgb(63 63 70);
@@ -117,6 +121,7 @@
     height: auto;
     min-height: 100vh;
     overflow: visible;
+    overflow-x: clip;
     padding: 1rem;
   }
 
