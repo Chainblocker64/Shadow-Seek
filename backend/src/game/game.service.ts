@@ -16,6 +16,7 @@ import type {
 } from './types';
 import type { ClientId, RoomId } from '../shared/types';
 import { handlePlayerMovement } from './movement/server-movement';
+import { filterGameStateForPlayer } from './utils/filter-state';
 
 @Injectable()
 export class GameService {
@@ -219,5 +220,19 @@ export class GameService {
     return map.objects
       .filter((object) => object.type === 'spawn')
       .map(({ x, y }) => ({ x, y }));
+  }
+
+  getFilteredGameForPlayer(clientId: ClientId): GameState | undefined {
+    const game = this.getPlayerGame(clientId);
+    if (!game) {
+      return;
+    }
+
+    const viewer = game.players.find((player) => player.clientId === clientId);
+    if (!viewer) {
+      return;
+    }
+
+    return filterGameStateForPlayer(game, viewer);
   }
 }
