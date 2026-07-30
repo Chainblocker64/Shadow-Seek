@@ -35,7 +35,10 @@ describe('GameService', () => {
 
     const game = service.createGame(roomId, ['player-1', 'player-2'], map);
 
-    expect(game).toEqual({
+    expect({
+      ...game,
+      players: game.players.map((player) => player.toJSON()),
+    }).toEqual({
       roomId,
       status: WAITING,
       map,
@@ -114,7 +117,7 @@ describe('GameService', () => {
       const result = service.movePlayer(roomId, 'player-1', 'right');
 
       expect(result).toBeUndefined();
-      expect(game.players[0].position).toEqual({
+      expect(game.players[0].getPosition()).toEqual({
         x: 1,
         y: 1,
       });
@@ -127,7 +130,10 @@ describe('GameService', () => {
 
       const result = service.movePlayer(roomId, 'player-1', 'right');
 
-      expect(result).toEqual({
+      expect({
+        player: result?.player.toJSON(),
+        moved: result?.moved,
+      }).toEqual({
         player: {
           id: 'player-1',
           position: {
@@ -139,7 +145,7 @@ describe('GameService', () => {
         moved: true,
       });
 
-      expect(service.getGame(roomId)?.players[0].position).toEqual({
+      expect(service.getGame(roomId)?.players[0].getPosition()).toEqual({
         x: 2,
         y: 1,
       });
