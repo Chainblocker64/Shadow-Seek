@@ -3,7 +3,8 @@ import type { Player } from "./player";
 
 export type GameState = {
   roomId: string;
-  status: "waiting" | "running";
+  status: "waiting" | "running" | "ended";
   map: GameMap;
   players: Player[];
+  endsAt: number | null;
 };

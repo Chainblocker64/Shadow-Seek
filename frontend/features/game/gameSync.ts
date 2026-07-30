@@ -9,6 +9,12 @@ socket.on("game:sync", (game: GameState) => {
 socket.on("game:started", (game: GameState) => {
   latestGame = game;
 });
+socket.on("game:ended", (game: GameState) => {
+  latestGame = game;
+});
+socket.on("game:left", () => {
+  latestGame = null;
+});
 
 export function getLatestGame(): GameState | null {
   return latestGame;

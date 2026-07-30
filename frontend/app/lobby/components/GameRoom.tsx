@@ -28,7 +28,7 @@ export default function GameRoom({
       </div>
       <ul className="flex flex-1 flex-col items-center justify-center gap-2">
         {room.players.map((player) => (
-          <li key={player}>{player}</li>
+          <li key={player.id}>{player.name}</li>
         ))}
       </ul>
       {isOwner && (

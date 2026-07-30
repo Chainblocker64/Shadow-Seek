@@ -62,7 +62,7 @@ describe('GameGateway movement', () => {
 
     const room: Room = {
       id: roomId,
-      players: ['player-1'],
+      players: [{ id: 'player-1', name: 'Alice' }],
       owner: 'player-1',
       status: 'waiting',
       maxPlayers: 4,
@@ -120,12 +120,105 @@ describe('GameGateway movement', () => {
     expect(emit).not.toHaveBeenCalled();
   });
 
-  it('does not emit when the game rejects the request', () => {
+  it('allows a new movement request after the previous action finishes', () => {
     const roomId = randomUUID();
 
     const room: Room = {
       id: roomId,
       players: ['player-1'],
+      owner: 'player-1',
+      status: 'waiting',
+      maxPlayers: 4,
+      map: 'Test map',
+    };
+
+    const result = {
+      player: {
+        id: 'player-1',
+        position: { x: 1, y: 1 },
+        facingDirection: 'right',
+      },
+      moved: true,
+    };
+
+    lobbyService.getPlayerRoom.mockReturnValue(room);
+    gameService.movePlayer.mockReturnValue(result);
+
+    gateway.handleMovePlayer({ id: 'player-1' } as Socket, {
+      direction: 'right',
+    });
+
+    gateway.handleMovePlayer({ id: 'player-1' } as Socket, {
+      direction: 'left',
+    });
+
+    expect(gameService.movePlayer).toHaveBeenCalledTimes(2);
+    expect(gameService.movePlayer).toHaveBeenNthCalledWith(
+      1,
+      roomId,
+      'player-1',
+      'right',
+    );
+    expect(gameService.movePlayer).toHaveBeenNthCalledWith(
+      2,
+      roomId,
+      'player-1',
+      'left',
+    );
+  });
+
+  it('ignores a movement request while another action is in progress', () => {
+    const roomId = randomUUID();
+
+    const room: Room = {
+      id: roomId,
+      players: ['player-1'],
+      owner: 'player-1',
+      status: 'waiting',
+      maxPlayers: 4,
+      map: 'Test map',
+    };
+
+    const result = {
+      player: {
+        id: 'player-1',
+        position: { x: 1, y: 1 },
+        facingDirection: 'right',
+      },
+      moved: true,
+    };
+
+    let activeActionCount = 0;
+
+    lobbyService.getPlayerRoom.mockReturnValue(room);
+    gameService.movePlayer.mockImplementation(() => {
+      if (activeActionCount > 0) {
+        return undefined;
+      }
+
+      activeActionCount += 1;
+      return result;
+    });
+
+    gateway.handleMovePlayer({ id: 'player-1' } as Socket, {
+      direction: 'right',
+    });
+
+    gateway.handleMovePlayer({ id: 'player-1' } as Socket, {
+      direction: 'left',
+    });
+
+    expect(gameService.movePlayer).toHaveBeenCalledTimes(2);
+    expect(emit).toHaveBeenCalledTimes(1);
+    expect(emit).toHaveBeenCalledWith('movement:confirmed', result);
+  });
+
+  it('does not emit when the game rejects the request', () => {
+    const roomId = randomUUID();
+
+    const room: Room = {
+      id: roomId,
+      players: [{ id: 'player-1', name: 'Alice' }],
       owner: 'player-1',
       status: 'waiting',
       maxPlayers: 4,

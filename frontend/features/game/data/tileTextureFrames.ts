@@ -31,13 +31,6 @@ export const playerTextureFrames: { x: number; y: number }[] = [
   { x: 896, y: 32 }, // blue-robed mage
 ];
 
-export const playerFallbackLabels: string[] = [
-  "Warrior",
-  "Emerald Mage",
-  "Violet Wizard",
-  "Azure Mage",
-];
-
 export const mapObjectTextureFrames: Record<
   MapObjectType,
   { x: number; y: number }

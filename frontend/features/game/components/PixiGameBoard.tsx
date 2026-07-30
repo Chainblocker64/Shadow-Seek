@@ -147,8 +147,11 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
 
         playerLayer.removeChildren();
 
-        playersRef.current.forEach((player, index) => {
-          const frame = playerTextureFrames[index % playerTextureFrames.length];
+        playersRef.current.forEach((player) => {
+          const frame =
+            playerTextureFrames[
+              player.spriteIndex % playerTextureFrames.length
+            ];
 
           playerLayer.addChild(
             createTileSprite(

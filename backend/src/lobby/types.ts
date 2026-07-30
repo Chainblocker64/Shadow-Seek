@@ -6,9 +6,14 @@ export const STATUS_FULL = 'full';
 export type RoomStatus = typeof STATUS_WAITING | typeof STATUS_FULL;
 export type RoomCollection = Map<RoomId, Room>;
 
+export interface RoomPlayer {
+  id: ClientId;
+  name: string;
+}
+
 export interface Room {
   id: RoomId;
-  players: ClientId[];
+  players: RoomPlayer[];
   owner: ClientId;
   status: RoomStatus;
   maxPlayers: number;

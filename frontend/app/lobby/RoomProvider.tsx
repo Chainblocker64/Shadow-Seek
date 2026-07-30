@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { Room } from "./types";
 import { socket } from "@/lib/socket";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 
 const RoomsContext = createContext<Room[] | undefined>(undefined);
 const JoinedRoomContext = createContext<Room | undefined>(undefined);
@@ -11,8 +11,10 @@ const LeaveRoomContext = createContext<() => void>(() => {});
 
 export function RoomProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [rooms, setRooms] = useState<Room[]>([]);
   const [joinedRoom, setJoinedRoom] = useState<Room | undefined>(undefined);
+  const [isInGame, setIsInGame] = useState(false);
   const roomId = joinedRoom?.id;
 
   useEffect(() => {
@@ -25,26 +27,39 @@ export function RoomProvider({ children }: { children: React.ReactNode }) {
       router.push("/lobby");
       setJoinedRoom(undefined);
     };
+    const requestRooms = () => socket.emit("requestRooms");
+    const onGameOpened = () => setIsInGame(true);
+    const onGameLeft = () => setIsInGame(false);
 
     socket.on("room:sync", onRoomSync);
     socket.on("room:updated", onRoomUpdated);
     socket.on("room:join:failed", onRoomJoinFailed);
     socket.on("room:left", onRoomLeft);
+    socket.on("connect", requestRooms);
+    socket.on("game:opened", onGameOpened);
+    socket.on("game:left", onGameLeft);
+
+    // fragt nach den aktuellen Räumen, sobald die Komponente geladen wird und der Socket verbunden ist
+    requestRooms();
 
     return () => {
+      socket.off("connect", requestRooms);
       socket.off("room:sync", onRoomSync);
       socket.off("room:updated", onRoomUpdated);
       socket.off("room:join:failed", onRoomJoinFailed);
       socket.off("room:left", onRoomLeft);
+      socket.off("game:opened", onGameOpened);
+      socket.off("game:left", onGameLeft);
     };
   }, [router]);
 
   useEffect(() => {
-    //Redirect to room page when the id of joinedRoom changes (e.g. by having successfully created a room)
-    if (roomId) {
+    /* Redirect to room page when the id of joinedRoom changes (e.g. by having successfully created a room).
+       Joining a room with a running game also updates the room, but there the game board wins. */
+    if (roomId && !isInGame && pathname === "/lobby") {
       router.push(`/lobby/${roomId}`);
     }
-  }, [roomId, router]);
+  }, [roomId, isInGame, pathname, router]);
 
   const leaveRoom = () => {
     socket.emit("leaveRoom");

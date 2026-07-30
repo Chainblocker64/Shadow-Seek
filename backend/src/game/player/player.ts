@@ -1,31 +1,48 @@
 import type { ClientId } from '../../shared/types';
 import type { ActionTimestamps, CombatStats } from '../combat/types';
-import { DEFAULT_ACTION_TIMESTAMPS, DEFAULT_COMBAT_STATS } from '../consts';
 import type { FacingDirection, Position } from '../types';
+import {
+  DEFAULT_COMBAT_STATS,
+  DEFAULT_VISION_RANGE,
+  DEFAULT_ACTION_TIMESTAMPS,
+} from '../consts';
 
 export class Player {
   public readonly clientId: ClientId;
+  public readonly name: string;
+  public readonly spriteIndex: number;
   private position: Position;
   private combatStats: CombatStats;
   private health: number;
+  private visionRange: number;
   private facingDirection: FacingDirection;
+  private isActionActive = false;
   private actionTimestamps: ActionTimestamps = DEFAULT_ACTION_TIMESTAMPS;
 
   constructor({
     clientId,
+    name,
     position,
+    spriteIndex = 0,
     combatStats = DEFAULT_COMBAT_STATS,
+    visionRange = DEFAULT_VISION_RANGE,
     facingDirection = 'down',
   }: {
     clientId: ClientId;
+    name: string;
     position: Position;
+    spriteIndex?: number;
     combatStats?: CombatStats;
+    visionRange?: number;
     facingDirection?: FacingDirection;
   }) {
     this.clientId = clientId;
+    this.name = name;
+    this.spriteIndex = spriteIndex;
     this.position = position;
     this.combatStats = combatStats;
     this.health = this.combatStats.maxHealth;
+    this.visionRange = visionRange;
     this.facingDirection = facingDirection;
   }
 
@@ -49,6 +66,14 @@ export class Player {
     this.position = position;
   }
 
+  getVisionRange(): number {
+    return this.visionRange;
+  }
+
+  setVisionRange(visionRange: number): void {
+    this.visionRange = visionRange;
+  }
+
   getCombatStats(): CombatStats {
     return this.combatStats;
   }
@@ -69,9 +94,19 @@ export class Player {
     this.facingDirection = direction;
   }
 
+  isAction(): boolean {
+    return this.isActionActive;
+  }
+
+  setAction(value: boolean): void {
+    this.isActionActive = value;
+  }
+
   toJSON() {
     return {
       id: this.clientId,
+      name: this.name,
+      spriteIndex: this.spriteIndex,
       position: this.position,
       facingDirection: this.facingDirection,
     };
