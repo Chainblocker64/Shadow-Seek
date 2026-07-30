@@ -21,7 +21,6 @@ import {
   playerTextureFrames,
   TILE_TEXTURE_SIZE,
 } from "../data/tileTextureFrames";
-import { useMovementControls } from "../hooks/useMovementControls";
 import { socket } from "@/lib/socket";
 import { useInputControls } from "../hooks/useInputControls";
 import { calculateBoardLayout, type BoardLayout } from "./boardLayout";
@@ -197,9 +196,6 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
           const facingTile = getFacingTile(
             player.position,
             player.facingDirection,
-          const directionSpriteSize = Math.min(DIRECTION_SPRITE_SIZE, tileSize);
-          const directionSprite = new Sprite(
-            directionTextures[player.facingDirection],
           );
 
           const isOwnPlayer = player.id === socket.id;
