@@ -6,6 +6,7 @@ import {
   DEFAULT_VISION_RANGE,
   DEFAULT_ACTION_TIMESTAMPS,
 } from '../consts';
+import { canAttack } from '../combat/combat-validation';
 
 export class Player {
   public readonly clientId: ClientId;
@@ -100,6 +101,10 @@ export class Player {
 
   setAction(value: boolean): void {
     this.isActionActive = value;
+  }
+
+  canAttack(): boolean {
+    return canAttack(this);
   }
 
   toJSON() {

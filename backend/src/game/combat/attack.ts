@@ -1,14 +1,13 @@
 import type { ClientId } from '../../shared/types';
 import { calculateNextPosition } from '../movement/server-movement';
 import type { GameState } from '../types';
-import { canAttack } from './combat-validation';
 
 export function attack(gameState: GameState, playerId: ClientId): boolean {
   const player = gameState.players.find(
     (player) => player.clientId === playerId,
   );
 
-  if (!player || !canAttack(player)) {
+  if (!player || !player.canAttack()) {
     return false;
   }
 
