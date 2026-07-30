@@ -43,7 +43,10 @@ describe('GameService', () => {
       map,
     );
 
-    expect(game).toMatchObject({
+    expect({
+      ...game,
+      players: game.players.map((player) => player.toJSON()),
+    }).toEqual({
       roomId,
       status: WAITING,
       map,
@@ -185,7 +188,10 @@ describe('GameService', () => {
 
       const result = service.movePlayer(roomId, 'player-1', 'right');
 
-      expect(result).toMatchObject({
+      expect({
+        player: result?.player.toJSON(),
+        moved: result?.moved,
+      }).toEqual({
         player: {
           clientId: 'player-1',
           name: 'Alice',

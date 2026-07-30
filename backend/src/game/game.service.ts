@@ -72,7 +72,25 @@ export class GameService {
       return;
     }
 
-    return handlePlayerMovement(game, playerId, direction);
+    const player = game.players.find((currentPlayer) => {
+      return currentPlayer.clientId === playerId;
+    });
+
+    if (!player) {
+      return;
+    }
+
+    if (player.isAction()) {
+      return;
+    }
+
+    player.setAction(true);
+
+    try {
+      return handlePlayerMovement(game, playerId, direction);
+    } finally {
+      player.setAction(false);
+    }
   }
 
   getPlayerGame(clientId: ClientId): GameState | undefined {

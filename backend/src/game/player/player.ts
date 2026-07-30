@@ -12,6 +12,7 @@ export class Player {
   private health: number;
   private visionRange: number;
   private facingDirection: FacingDirection;
+  private isActionActive = false;
 
   constructor({
     clientId,
@@ -66,6 +67,14 @@ export class Player {
 
   setFacingDirection(direction: FacingDirection): void {
     this.facingDirection = direction;
+  }
+
+  isAction(): boolean {
+    return this.isActionActive;
+  }
+
+  setAction(value: boolean): void {
+    this.isActionActive = value;
   }
 
   toJSON() {
