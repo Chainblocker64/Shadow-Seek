@@ -7,6 +7,7 @@ import {
   Container,
   Rectangle,
   Sprite,
+  Text,
   Texture,
 } from "pixi.js";
 import { useEffect, useRef } from "react";
@@ -19,7 +20,8 @@ import {
   playerTextureFrames,
   TILE_TEXTURE_SIZE,
 } from "../data/tileTextureFrames";
-import { useMovementControls } from "../hooks/useMovementControls";
+import { useInputControls } from "../hooks/useInputControls";
+import { calculateBoardLayout, type BoardLayout } from "./boardLayout";
 
 type GamePlayer = Player & {
   label: string;
@@ -29,12 +31,6 @@ type PixiGameBoardProps = {
   map: GameMap;
   players: GamePlayer[];
   status: GameState["status"];
-};
-
-type BoardLayout = {
-  offsetX: number;
-  offsetY: number;
-  tileSize: number;
 };
 
 const TILESET_PATH = "/assets/tiles/dungeon-crawl.png";
@@ -52,7 +48,7 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
   const playersRef = useRef(players);
   const renderPlayersRef = useRef<(() => void) | null>(null);
 
-  useMovementControls(status === "running");
+  useInputControls(status === "running");
 
   useEffect(() => {
     const container = containerRef.current;
@@ -162,6 +158,7 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
               tileSize,
             ),
           );
+          const directionSpriteSize = Math.min(DIRECTION_SPRITE_SIZE, tileSize);
           const directionSprite = new Sprite(
             directionTextures[player.facingDirection],
           );
@@ -169,17 +166,33 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
           directionSprite.x =
             offsetX +
             player.position.x * tileSize +
-            (tileSize - DIRECTION_SPRITE_SIZE) / 2;
+            (tileSize - directionSpriteSize) / 2;
 
           directionSprite.y =
             offsetY +
             player.position.y * tileSize +
-            (tileSize - DIRECTION_SPRITE_SIZE) / 2;
+            (tileSize - directionSpriteSize) / 2;
 
-          directionSprite.width = DIRECTION_SPRITE_SIZE;
-          directionSprite.height = DIRECTION_SPRITE_SIZE;
+          directionSprite.width = directionSpriteSize;
+          directionSprite.height = directionSpriteSize;
 
           playerLayer.addChild(directionSprite);
+
+          const playerLabel = new Text({
+            text: player.label,
+            style: {
+              fontSize: 12,
+              fontWeight: "bold",
+              fill: 0xffffff,
+              stroke: { color: 0x000000, width: 2 },
+            },
+          });
+
+          playerLabel.anchor.set(0.5, 1);
+          playerLabel.alpha = 0.5;
+          playerLabel.x = offsetX + (player.position.x + 0.5) * tileSize;
+          playerLabel.y = offsetY + player.position.y * tileSize;
+          playerLayer.addChild(playerLabel);
         });
       }
 
@@ -194,18 +207,18 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
         const containerHeight = container.clientHeight;
         const boardSize = Math.min(containerWidth, containerHeight);
 
+        if (boardSize <= 0 || map.width <= 0 || map.height <= 0) {
+          return;
+        }
+
         app.renderer.resize(boardSize, boardSize);
         app.stage.removeChildren();
 
-        const tileSize = Math.floor(
-          Math.min(boardSize / map.width, boardSize / map.height),
+        const { offsetX, offsetY, tileSize } = calculateBoardLayout(
+          boardSize,
+          map.width,
+          map.height,
         );
-
-        const mapWidth = tileSize * map.width;
-        const mapHeight = tileSize * map.height;
-
-        const offsetX = Math.floor((boardSize - mapWidth) / 2);
-        const offsetY = Math.floor((boardSize - mapHeight) / 2);
 
         const baseFrame = baseTileTextureFrames[map.baseTile];
 
@@ -300,21 +313,5 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
     renderPlayersRef.current?.();
   }, [players]);
 
-  return (
-    <div className={styles.container}>
-      <div className={styles.canvasHost} ref={containerRef} />
-      {players.map((player) => (
-        <span
-          key={player.id}
-          className="pointer-events-none absolute -translate-x-1/2 -translate-y-full text-xs font-bold whitespace-nowrap text-white opacity-50 drop-shadow-[0_1px_1px_black]"
-          style={{
-            left: `${((player.position.x + 0.5) / map.width) * 100}%`,
-            top: `${(player.position.y / map.height) * 100}%`,
-          }}
-        >
-          {player.label}
-        </span>
-      ))}
-    </div>
-  );
+  return <div className={styles.canvasHost} ref={containerRef} />;
 }

@@ -16,9 +16,13 @@ import type {
 } from './types';
 import type { ClientId, RoomId } from '../shared/types';
 import { handlePlayerMovement } from './movement/server-movement';
+import { attack } from './combat/attack';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class GameService {
+  constructor(private readonly eventEmitter: EventEmitter2) {}
+
   private readonly games = new Map<RoomId, GameState>();
 
   createGame(
@@ -157,6 +161,18 @@ export class GameService {
     return updatedGame;
   }
 
+  playerAttack(roomId: RoomId, playerId: ClientId) {
+    const game = this.games.get(roomId);
+    if (!game || game.status !== RUNNING) {
+      return;
+    }
+
+    const couldAttack = attack(game, playerId);
+    if (couldAttack) {
+      this.triggerGamestateBroadcast(roomId, game);
+    }
+  }
+
   startGame(roomId: RoomId): GameState | undefined {
     const game = this.games.get(roomId);
 
@@ -216,5 +232,9 @@ export class GameService {
     return map.objects
       .filter((object) => object.type === 'spawn')
       .map(({ x, y }) => ({ x, y }));
+  }
+
+  private triggerGamestateBroadcast(roomId: RoomId, gameState: GameState) {
+    this.eventEmitter.emit('game.broadcast', gameState);
   }
 }

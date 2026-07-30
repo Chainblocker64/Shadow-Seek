@@ -19,6 +19,7 @@ import { UsePipes, ValidationPipe } from '@nestjs/common';
 import { MovePlayerDto } from './dto/move-player.dto';
 import { OnEvent } from '@nestjs/event-emitter';
 import { RoomUpdatedEvent } from '../lobby/events/room-updated.event';
+import type { GameState } from './types';
 
 @WebSocketGateway({ cors: { origin: process.env.FRONTEND_URL } })
 @UsePipes(
@@ -66,10 +67,9 @@ export class GameGateway {
 
     const map = await this.mapsService.findOneByName(room.map);
     const game = this.gameService.createGame(room.id, room.players, map);
-    const clientIds = room.players.map((player) => player.id);
 
-    this.server.to(clientIds).emit('game:opened');
-    this.server.to(clientIds).emit('game:sync', game);
+    this.server.to(room.id).emit('game:opened');
+    this.server.to(room.id).emit('game:sync', game);
     this.scheduleGameStart(room.id);
   }
 
@@ -91,7 +91,7 @@ export class GameGateway {
     }
 
     this.server.to(clientId).emit('game:opened');
-    this.server.to(this.playerIds(room.id)).emit('game:sync', game);
+    this.server.to(room.id).emit('game:sync', game);
   }
 
   @SubscribeMessage('leaveGame')
@@ -118,7 +118,7 @@ export class GameGateway {
       return;
     }
 
-    this.server.to(this.playerIds(game.roomId)).emit('game:sync', game);
+    this.server.to(game.roomId).emit('game:sync', game);
   }
 
   @SubscribeMessage('movePlayer')
@@ -145,6 +145,17 @@ export class GameGateway {
     this.server.to(room.id).emit('movement:confirmed', result);
   }
 
+  @SubscribeMessage('playerAttack')
+  handlePlayerAttack({ id: clientId }: Socket) {
+    const room = this.lobbyService.getPlayerRoom(clientId);
+
+    if (!room) {
+      return;
+    }
+
+    this.gameService.playerAttack(room.id, clientId);
+  }
+
   private clearTimers(roomId: RoomId) {
     const startTimer = this.gameStartTimers.get(roomId);
     const endTimer = this.gameEndTimers.get(roomId);
@@ -160,12 +171,6 @@ export class GameGateway {
     }
   }
 
-  private playerIds(roomId: RoomId): ClientId[] {
-    const game = this.gameService.getGame(roomId);
-
-    return game ? game.players.map((player) => player.clientId) : [];
-  }
-
   private scheduleGameStart(roomId: RoomId) {
     if (this.gameStartTimers.has(roomId)) {
       return;
@@ -177,7 +182,7 @@ export class GameGateway {
       const game = this.gameService.startGame(roomId);
 
       if (game) {
-        this.server.to(this.playerIds(roomId)).emit('game:started', game);
+        this.broadcastGamestate(roomId, game);
         this.scheduleGameEnd(roomId);
       }
     }, GAME_START_DELAY_MS);
@@ -196,10 +201,15 @@ export class GameGateway {
       const game = this.gameService.endGame(roomId);
 
       if (game) {
-        this.server.to(this.playerIds(roomId)).emit('game:ended', game);
+        this.server.to(roomId).emit('game:ended', game);
       }
     }, GAME_DURATION_MS);
 
     this.gameEndTimers.set(roomId, timer);
+  }
+
+  @OnEvent('game.broadcast')
+  broadcastGamestate(roomId: RoomId, gameState: GameState) {
+    this.server.to(roomId).emit('game:sync', gameState);
   }
 }

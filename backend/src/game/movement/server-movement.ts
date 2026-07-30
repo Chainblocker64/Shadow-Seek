@@ -4,26 +4,27 @@ import { canMoveToPosition } from './movement-validation';
 export function calculateNextPosition(
   currentPosition: Position,
   direction: MovementDirection,
+  distance: number = 1,
 ): Position {
   switch (direction) {
     case 'up':
       return {
         x: currentPosition.x,
-        y: currentPosition.y - 1,
+        y: currentPosition.y - distance,
       };
     case 'down':
       return {
         x: currentPosition.x,
-        y: currentPosition.y + 1,
+        y: currentPosition.y + distance,
       };
     case 'left':
       return {
-        x: currentPosition.x - 1,
+        x: currentPosition.x - distance,
         y: currentPosition.y,
       };
     case 'right':
       return {
-        x: currentPosition.x + 1,
+        x: currentPosition.x + distance,
         y: currentPosition.y,
       };
   }

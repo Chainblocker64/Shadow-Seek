@@ -1,4 +1,4 @@
-import { CombatStats } from './combat/types';
+import { ActionTimestamps, CombatStats } from './combat/types';
 import type { ObjectType } from './types';
 
 export const WAITING = 'waiting';
@@ -26,8 +26,13 @@ export const VIEW_BLOCKING_OBJECT_TYPES: ObjectType[] = [
 
 export const DEFAULT_COMBAT_STATS: CombatStats = {
   maxHealth: 100,
-  attack: 10,
+  attackValue: 10,
   attackRange: 1,
+  attackCooldown: 1000, //in miliseconds
+};
+
+export const DEFAULT_ACTION_TIMESTAMPS: ActionTimestamps = {
+  attack: 0,
 };
 
 /**

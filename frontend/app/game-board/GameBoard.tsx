@@ -8,7 +8,6 @@ import { socket } from "@/lib/socket";
 import { getLatestGame } from "../../features/game/gameSync";
 import PlayerList from "./PlayerList";
 import styles from "./GameBoardPage.module.css";
-import { useAuthStore } from "../store/useAuthStore";
 import type { MovementResult } from "../../features/game/types/movement";
 
 // Mirrors the backend's GAME_START_DELAY_MS (backend/src/game/consts.ts).
@@ -23,7 +22,6 @@ function formatRemainingTime(ms: number): string {
 }
 
 export default function GameBoard() {
-  const { user } = useAuthStore();
   const router = useRouter();
   const [game, setGame] = useState<GameState | null>(() => getLatestGame());
   const [countdown, setCountdown] = useState(GAME_START_COUNTDOWN_SECONDS);
@@ -58,8 +56,8 @@ export default function GameBoard() {
   useEffect(() => {
     socket.connect();
 
-    const onGameSync = (nextGame: GameState) => {
-      setGame(nextGame);
+    const onGameSync = (game: GameState) => {
+      setGame(game);
     };
 
     const onMovementConfirmed = (result: MovementResult) => {
@@ -99,14 +97,12 @@ export default function GameBoard() {
     };
 
     socket.on("game:sync", onGameSync);
-    socket.on("game:started", onGameSync);
     socket.on("movement:confirmed", onMovementConfirmed);
     socket.on("game:ended", onGameSync);
     socket.on("game:left", onGameLeft);
 
     return () => {
       socket.off("game:sync", onGameSync);
-      socket.off("game:started", onGameSync);
       socket.off("movement:confirmed", onMovementConfirmed);
       socket.off("game:ended", onGameSync);
       socket.off("game:left", onGameLeft);
@@ -149,9 +145,9 @@ export default function GameBoard() {
       <section className={styles.layout}>
         <aside className={styles.sidebar}>
           <div>
-            <p className={styles.playerName}>{user?.username ?? "You"}</p>
+            <p className={styles.gameLabel}>Shadow Seek</p>
             {/* TODO: Fill in the actual health once the game state carries it */}
-            <p className={styles.playerHealth}>HP: 80/100</p>
+            <p className={styles.playerHealth}>Health Points: 80/100</p>
           </div>
 
           <PlayerList players={labeledPlayers} />
