@@ -1,5 +1,10 @@
 export type CombatStats = {
   maxHealth: number;
-  attack: number;
+  attackValue: number;
   attackRange: number;
+  attackCooldown: number;
+};
+
+export type ActionTimestamps = {
+  attack: number;
 };
