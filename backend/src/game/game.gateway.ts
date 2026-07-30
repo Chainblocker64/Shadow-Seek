@@ -19,6 +19,7 @@ import { UsePipes, ValidationPipe } from '@nestjs/common';
 import { MovePlayerDto } from './dto/move-player.dto';
 import { OnEvent } from '@nestjs/event-emitter';
 import { RoomUpdatedEvent } from '../lobby/events/room-updated.event';
+import { GameState } from './types';
 
 @WebSocketGateway({ cors: { origin: process.env.FRONTEND_URL } })
 @UsePipes(
@@ -201,5 +202,18 @@ export class GameGateway {
     }, GAME_DURATION_MS);
 
     this.gameEndTimers.set(roomId, timer);
+  }
+
+  private broadcastFilteredGame(event: string, gameState: GameState) {
+    const personalizedStates =
+      this.gameService.getFilteredGameStates(gameState);
+
+    if (!personalizedStates) {
+      return;
+    }
+
+    for (const { clientId, gameState: filteredState } of personalizedStates) {
+      this.server.to(clientId).emit(event, filteredState);
+    }
   }
 }
