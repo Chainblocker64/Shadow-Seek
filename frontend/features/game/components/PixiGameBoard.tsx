@@ -46,7 +46,9 @@ const directionTexturePaths: Record<PlayerDirection, string> = {
 export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const playersRef = useRef(players);
+  const mapRef = useRef(map);
   const renderPlayersRef = useRef<(() => void) | null>(null);
+  const renderMapRef = useRef<(() => void) | null>(null);
 
   useInputControls(status === "running");
 
@@ -67,6 +69,7 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
       app?.destroy(true);
       app = null;
       renderPlayersRef.current = null;
+      renderMapRef.current = null;
     }
 
     async function setupPixi() {
@@ -203,6 +206,7 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
           return;
         }
 
+        const map = mapRef.current;
         const containerWidth = container.clientWidth;
         const containerHeight = container.clientHeight;
         const boardSize = Math.min(containerWidth, containerHeight);
@@ -278,6 +282,7 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
         renderPlayers();
       }
 
+      renderMapRef.current = renderMap;
       renderMap();
 
       const resizeObserver = new ResizeObserver(() => {
@@ -306,6 +311,11 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
         destroyApp();
       });
     };
+  }, []);
+
+  useEffect(() => {
+    mapRef.current = map;
+    renderMapRef.current?.();
   }, [map]);
 
   useEffect(() => {
