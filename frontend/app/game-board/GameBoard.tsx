@@ -1,17 +1,25 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { PixiGameBoard } from "../../features/game/components/PixiGameBoard";
 import type { GameState } from "../../features/game/types/game";
+import type { GameMap } from "../../features/game/types/map";
 import { socket } from "@/lib/socket";
 import { getLatestGame } from "../../features/game/gameSync";
 import PlayerList from "./PlayerList";
 import styles from "./GameBoardPage.module.css";
-import type { MovementResult } from "../../features/game/types/movement";
 
 // Mirrors the backend's GAME_START_DELAY_MS (backend/src/game/consts.ts).
 const GAME_START_COUNTDOWN_SECONDS = 3;
+
+// The map is static for the lifetime of a game, but every socket payload
+// re-serializes it, giving it a new reference on every sync tick. Comparing
+// contents lets us keep the old reference so PixiGameBoard only redraws the
+// map when it actually changes.
+function areMapsEqual(a: GameMap, b: GameMap): boolean {
+  return a === b || JSON.stringify(a) === JSON.stringify(b);
+}
 
 function formatRemainingTime(ms: number): string {
   const totalSeconds = Math.max(0, Math.ceil(ms / 1_000));
@@ -27,6 +35,7 @@ export default function GameBoard() {
   const [countdown, setCountdown] = useState(GAME_START_COUNTDOWN_SECONDS);
   // Ticks once a second so the remaining-time display counts down.
   const [now, setNow] = useState(() => Date.now());
+  const previousMapRef = useRef<GameMap | null>(game?.map ?? null);
 
   const isWaiting = !game || game.status === "waiting";
   const isEnded = game?.status === "ended";
@@ -59,53 +68,28 @@ export default function GameBoard() {
     socket.connect();
 
     const onGameSync = (game: GameState) => {
-      setGame(game);
-    };
+      const previousMap = previousMapRef.current;
+      const map =
+        previousMap && areMapsEqual(previousMap, game.map)
+          ? previousMap
+          : game.map;
 
-    const onMovementConfirmed = (result: MovementResult) => {
-      setGame((currentGame) => {
-        if (!currentGame) {
-          return currentGame;
-        }
-
-        const playerExists = currentGame.players.some(
-          (player) => player.id === result.player.id,
-        );
-
-        if (!playerExists) {
-          return currentGame;
-        }
-
-        return {
-          ...currentGame,
-          players: currentGame.players.map((player) =>
-            player.id === result.player.id
-              ? {
-                  ...player,
-                  position: {
-                    ...result.player.position,
-                  },
-                  facingDirection: result.player.facingDirection,
-                }
-              : player,
-          ),
-        };
-      });
+      previousMapRef.current = map;
+      setGame({ ...game, map });
     };
 
     const onGameLeft = () => {
+      previousMapRef.current = null;
       setGame(null);
       router.push("/lobby");
     };
 
     socket.on("game:sync", onGameSync);
-    socket.on("movement:confirmed", onMovementConfirmed);
     socket.on("game:ended", onGameSync);
     socket.on("game:left", onGameLeft);
 
     return () => {
       socket.off("game:sync", onGameSync);
-      socket.off("movement:confirmed", onMovementConfirmed);
       socket.off("game:ended", onGameSync);
       socket.off("game:left", onGameLeft);
     };

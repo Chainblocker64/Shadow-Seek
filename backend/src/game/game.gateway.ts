@@ -132,17 +132,7 @@ export class GameGateway {
       return;
     }
 
-    const result = this.gameService.movePlayer(
-      room.id,
-      client.id,
-      payload.direction,
-    );
-
-    if (!result) {
-      return;
-    }
-
-    this.server.to(room.id).emit('movement:confirmed', result);
+    this.gameService.movePlayer(room.id, client.id, payload.direction);
   }
 
   @SubscribeMessage('playerAttack')
@@ -182,7 +172,7 @@ export class GameGateway {
       const game = this.gameService.startGame(roomId);
 
       if (game) {
-        this.broadcastGamestate(roomId, game);
+        this.broadcastGamestate(game);
         this.scheduleGameEnd(roomId);
       }
     }, GAME_START_DELAY_MS);
@@ -209,7 +199,7 @@ export class GameGateway {
   }
 
   @OnEvent('game.broadcast')
-  broadcastGamestate(roomId: RoomId, gameState: GameState) {
-    this.server.to(roomId).emit('game:sync', gameState);
+  broadcastGamestate(gameState: GameState) {
+    this.server.to(gameState.roomId).emit('game:sync', gameState);
   }
 }

@@ -14,11 +14,7 @@ import {
 import { useEffect, useRef } from "react";
 import type { GameMap } from "../types/map";
 import type { GameState } from "../types/game";
-import type {
-  Player,
-  PlayerDirection,
-  PlayerPosition,
-} from "../types/player";
+import type { Player, PlayerDirection, PlayerPosition } from "../types/player";
 import {
   baseTileTextureFrames,
   mapObjectTextureFrames,
@@ -87,9 +83,11 @@ export function PixiGameBoard({
 }: PixiGameBoardProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const playersRef = useRef(players);
+  const mapRef = useRef(map);
   const renderPlayersRef = useRef<(() => void) | null>(null);
   const spawnHighlightRef = useRef(currentPlayerSpawnPosition);
   const renderSpawnHighlightRef = useRef<(() => void) | null>(null);
+  const renderMapRef = useRef<(() => void) | null>(null);
 
   useInputControls(status === "running");
 
@@ -116,6 +114,7 @@ export function PixiGameBoard({
       app = null;
       renderPlayersRef.current = null;
       renderSpawnHighlightRef.current = null;
+      renderMapRef.current = null;
     }
 
     async function setupPixi() {
@@ -320,6 +319,7 @@ export function PixiGameBoard({
           return;
         }
 
+        const map = mapRef.current;
         const containerWidth = container.clientWidth;
         const containerHeight = container.clientHeight;
         const boardSize = Math.min(containerWidth, containerHeight);
@@ -398,6 +398,7 @@ export function PixiGameBoard({
         renderSpawnHighlight();
       }
 
+      renderMapRef.current = renderMap;
       renderMap();
 
       const resizeObserver = new ResizeObserver(() => {
@@ -426,6 +427,11 @@ export function PixiGameBoard({
         destroyApp();
       });
     };
+  }, []);
+
+  useEffect(() => {
+    mapRef.current = map;
+    renderMapRef.current?.();
   }, [map]);
 
   useEffect(() => {
