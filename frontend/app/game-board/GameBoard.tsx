@@ -41,8 +41,9 @@ export default function GameBoard() {
   const isEnded = game?.status === "ended";
   const remainingMs =
     game?.endsAt != null ? Math.max(0, game.endsAt - now) : null;
-  const currentPlayerSpawnPosition =
-    game?.players.find((player) => player.id === socket.id)?.position ?? null;
+  const currentPlayer =
+    game?.players.find((player) => player.id === socket.id) ?? null;
+  const currentPlayerSpawnPosition = currentPlayer?.position ?? null;
 
   const labeledPlayers = useMemo(
     () =>
@@ -128,8 +129,11 @@ export default function GameBoard() {
         <aside className={styles.sidebar}>
           <div>
             <p className={styles.gameLabel}>Shadow Seek</p>
-            {/* TODO: Fill in the actual health once the game state carries it */}
-            <p className={styles.playerHealth}>Health Points: 80/100</p>
+            {currentPlayer && (
+              <p className={styles.playerHealth}>
+                Health Points: {currentPlayer.health}/{currentPlayer.maxHealth}
+              </p>
+            )}
           </div>
 
           <PlayerList players={labeledPlayers} />

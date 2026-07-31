@@ -122,6 +122,7 @@ export class Player {
       spriteIndex: this.spriteIndex,
       position: this.position,
       health: this.health,
+      maxHealth: this.combatStats.maxHealth,
       facingDirection: this.facingDirection,
     };
   }
