@@ -5,21 +5,25 @@ import {
   Application,
   Assets,
   Container,
+  Graphics,
   Rectangle,
   Sprite,
+  Text,
   Texture,
 } from "pixi.js";
 import { useEffect, useRef } from "react";
 import type { GameMap } from "../types/map";
 import type { GameState } from "../types/game";
-import type { Player, PlayerDirection } from "../types/player";
+import type { Player, PlayerDirection, PlayerPosition } from "../types/player";
 import {
   baseTileTextureFrames,
   mapObjectTextureFrames,
   playerTextureFrames,
   TILE_TEXTURE_SIZE,
 } from "../data/tileTextureFrames";
-import { useMovementControls } from "../hooks/useMovementControls";
+import { socket } from "@/lib/socket";
+import { useInputControls } from "../hooks/useInputControls";
+import { calculateBoardLayout, type BoardLayout } from "./boardLayout";
 
 type GamePlayer = Player & {
   label: string;
@@ -29,30 +33,68 @@ type PixiGameBoardProps = {
   map: GameMap;
   players: GamePlayer[];
   status: GameState["status"];
+  currentPlayerSpawnPosition: PlayerPosition | null;
 };
 
-type BoardLayout = {
-  offsetX: number;
-  offsetY: number;
-  tileSize: number;
-};
+function getFacingTile(
+  position: { x: number; y: number },
+  direction: PlayerDirection,
+) {
+  switch (direction) {
+    case "up":
+      return {
+        x: position.x,
+        y: position.y - 1,
+      };
+
+    case "down":
+      return {
+        x: position.x,
+        y: position.y + 1,
+      };
+
+    case "left":
+      return {
+        x: position.x - 1,
+        y: position.y,
+      };
+
+    case "right":
+      return {
+        x: position.x + 1,
+        y: position.y,
+      };
+  }
+}
 
 const TILESET_PATH = "/assets/tiles/dungeon-crawl.png";
 
-const DIRECTION_SPRITE_SIZE = 48;
-const directionTexturePaths: Record<PlayerDirection, string> = {
-  up: "/assets/direction/up.png",
-  down: "/assets/direction/down.png",
-  left: "/assets/direction/left.png",
-  right: "/assets/direction/right.png",
-};
+const DIRECTION_CIRCLE_SIZE = 12;
+const DIRECTION_CIRCLE_RADIUS = DIRECTION_CIRCLE_SIZE / 2;
 
-export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
+const OWN_PLAYER_DIRECTION_COLOR = 0x22c55e;
+const OTHER_PLAYER_DIRECTION_COLOR = 0xef4444;
+
+export function PixiGameBoard({
+  map,
+  players,
+  status,
+  currentPlayerSpawnPosition,
+}: PixiGameBoardProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const playersRef = useRef(players);
+  const mapRef = useRef(map);
   const renderPlayersRef = useRef<(() => void) | null>(null);
+  const spawnHighlightRef = useRef(currentPlayerSpawnPosition);
+  const renderSpawnHighlightRef = useRef<(() => void) | null>(null);
+  const renderMapRef = useRef<(() => void) | null>(null);
 
-  useMovementControls(status === "running");
+  useInputControls(status === "running");
+
+  useEffect(() => {
+    spawnHighlightRef.current = currentPlayerSpawnPosition;
+    renderSpawnHighlightRef.current?.();
+  }, [currentPlayerSpawnPosition]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -71,6 +113,8 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
       app?.destroy(true);
       app = null;
       renderPlayersRef.current = null;
+      renderSpawnHighlightRef.current = null;
+      renderMapRef.current = null;
     }
 
     async function setupPixi() {
@@ -110,13 +154,6 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
         });
       }
 
-      const directionTextures = {
-        up: await Assets.load<Texture>(directionTexturePaths.up),
-        down: await Assets.load<Texture>(directionTexturePaths.down),
-        left: await Assets.load<Texture>(directionTexturePaths.left),
-        right: await Assets.load<Texture>(directionTexturePaths.right),
-      };
-
       function createTileSprite(
         frameX: number,
         frameY: number,
@@ -135,8 +172,69 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
         return sprite;
       }
 
+      const directionLayer = new Container();
       const playerLayer = new Container();
+      const spawnHighlightLayer = new Container();
+
       let layout: BoardLayout | null = null;
+
+      app.ticker.add(() => {
+        const blinkSpeed = 0.005;
+
+        directionLayer.alpha =
+          0.55 + ((Math.sin(Date.now() * blinkSpeed) + 1) / 2) * 0.95;
+      });
+
+      // Marks where this client's own character will start while the game is
+      // still waiting. Uses a border plus a "You" caption so it never relies on
+      // colour alone and can't be mistaken for an active player.
+      function renderSpawnHighlight() {
+        if (!layout) {
+          return;
+        }
+
+        const { offsetX, offsetY, tileSize } = layout;
+
+        spawnHighlightLayer.removeChildren();
+
+        const spawn = spawnHighlightRef.current;
+
+        if (!spawn) {
+          return;
+        }
+
+        const x = offsetX + spawn.x * tileSize;
+        const y = offsetY + spawn.y * tileSize;
+
+        // The dark outer stroke keeps the marker readable on every tile type.
+        const border = new Graphics()
+          .rect(x + 1, y + 1, tileSize - 2, tileSize - 2)
+          .stroke({ width: 4, color: 0x000000, alpha: 0.7 })
+          .rect(x + 1, y + 1, tileSize - 2, tileSize - 2)
+          .stroke({ width: 2, color: 0xfacc15 });
+
+        const caption = new Text({
+          text: "You",
+          style: {
+            fontSize: Math.max(10, Math.round(tileSize * 0.45)),
+            fontWeight: "bold",
+            fill: 0xfacc15,
+            stroke: { color: 0x000000, width: 3 },
+          },
+        });
+
+        // Caption sits below the tile, except on the last row where it would be
+        // clipped by the canvas edge.
+        const isLastRow = spawn.y === map.height - 1;
+
+        caption.anchor.set(0.5, isLastRow ? 1 : 0);
+        caption.x = x + tileSize / 2;
+        caption.y = isLastRow ? y - 2 : y + tileSize + 2;
+
+        spawnHighlightLayer.addChild(border, caption);
+      }
+
+      renderSpawnHighlightRef.current = renderSpawnHighlight;
 
       function renderPlayers() {
         if (!layout) {
@@ -145,6 +243,7 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
 
         const { offsetX, offsetY, tileSize } = layout;
 
+        directionLayer.removeChildren();
         playerLayer.removeChildren();
 
         playersRef.current.forEach((player) => {
@@ -162,24 +261,54 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
               tileSize,
             ),
           );
-          const directionSprite = new Sprite(
-            directionTextures[player.facingDirection],
+
+          const facingTile = getFacingTile(
+            player.position,
+            player.facingDirection,
           );
 
-          directionSprite.x =
-            offsetX +
-            player.position.x * tileSize +
-            (tileSize - DIRECTION_SPRITE_SIZE) / 2;
+          const isOwnPlayer = player.id === socket.id;
 
-          directionSprite.y =
-            offsetY +
-            player.position.y * tileSize +
-            (tileSize - DIRECTION_SPRITE_SIZE) / 2;
+          const circleColor = isOwnPlayer
+            ? OWN_PLAYER_DIRECTION_COLOR
+            : OTHER_PLAYER_DIRECTION_COLOR;
 
-          directionSprite.width = DIRECTION_SPRITE_SIZE;
-          directionSprite.height = DIRECTION_SPRITE_SIZE;
+          const circleCenterX =
+            offsetX + facingTile.x * tileSize + tileSize / 2;
 
-          playerLayer.addChild(directionSprite);
+          const circleCenterY =
+            offsetY + facingTile.y * tileSize + tileSize / 2;
+
+          const directionCircle = new Graphics();
+
+          directionCircle
+            .circle(circleCenterX, circleCenterY, DIRECTION_CIRCLE_RADIUS)
+            .fill({
+              color: circleColor,
+              alpha: 0.9,
+            });
+
+          directionLayer.addChild(directionCircle);
+
+          const playerLabel = new Text({
+            text: player.label,
+            style: {
+              fontSize: 12,
+              fontWeight: "bold",
+              fill: 0xffffff,
+              stroke: {
+                color: 0x000000,
+                width: 2,
+              },
+            },
+          });
+
+          playerLabel.anchor.set(0.5, 1);
+          playerLabel.alpha = 0.5;
+          playerLabel.x = offsetX + (player.position.x + 0.5) * tileSize;
+          playerLabel.y = offsetY + player.position.y * tileSize;
+
+          playerLayer.addChild(playerLabel);
         });
       }
 
@@ -190,22 +319,23 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
           return;
         }
 
+        const map = mapRef.current;
         const containerWidth = container.clientWidth;
         const containerHeight = container.clientHeight;
         const boardSize = Math.min(containerWidth, containerHeight);
 
+        if (boardSize <= 0 || map.width <= 0 || map.height <= 0) {
+          return;
+        }
+
         app.renderer.resize(boardSize, boardSize);
         app.stage.removeChildren();
 
-        const tileSize = Math.floor(
-          Math.min(boardSize / map.width, boardSize / map.height),
+        const { offsetX, offsetY, tileSize } = calculateBoardLayout(
+          boardSize,
+          map.width,
+          map.height,
         );
-
-        const mapWidth = tileSize * map.width;
-        const mapHeight = tileSize * map.height;
-
-        const offsetX = Math.floor((boardSize - mapWidth) / 2);
-        const offsetY = Math.floor((boardSize - mapHeight) / 2);
 
         const baseFrame = baseTileTextureFrames[map.baseTile];
 
@@ -260,11 +390,15 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
           app?.stage.addChild(objectSprite);
         });
 
+        app.stage.addChild(directionLayer);
         app.stage.addChild(playerLayer);
+        app.stage.addChild(spawnHighlightLayer);
         layout = { offsetX, offsetY, tileSize };
         renderPlayers();
+        renderSpawnHighlight();
       }
 
+      renderMapRef.current = renderMap;
       renderMap();
 
       const resizeObserver = new ResizeObserver(() => {
@@ -293,6 +427,11 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
         destroyApp();
       });
     };
+  }, []);
+
+  useEffect(() => {
+    mapRef.current = map;
+    renderMapRef.current?.();
   }, [map]);
 
   useEffect(() => {
@@ -300,21 +439,5 @@ export function PixiGameBoard({ map, players, status }: PixiGameBoardProps) {
     renderPlayersRef.current?.();
   }, [players]);
 
-  return (
-    <div className={styles.container}>
-      <div className={styles.canvasHost} ref={containerRef} />
-      {players.map((player) => (
-        <span
-          key={player.id}
-          className="pointer-events-none absolute -translate-x-1/2 -translate-y-full text-xs font-bold whitespace-nowrap text-white opacity-50 drop-shadow-[0_1px_1px_black]"
-          style={{
-            left: `${((player.position.x + 0.5) / map.width) * 100}%`,
-            top: `${(player.position.y / map.height) * 100}%`,
-          }}
-        >
-          {player.label}
-        </span>
-      ))}
-    </div>
-  );
+  return <div className={styles.canvasHost} ref={containerRef} />;
 }

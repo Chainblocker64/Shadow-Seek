@@ -1,15 +1,22 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { randomUUID } from 'node:crypto';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { GameService } from './game.service';
 import { ENDED, GAME_DURATION_MS, RUNNING, WAITING } from './consts';
 import type { GameMap } from './types';
 
 describe('GameService', () => {
   let service: GameService;
+  let eventEmitter: { emit: jest.Mock };
 
   beforeEach(async () => {
+    eventEmitter = { emit: jest.fn() };
+
     const module: TestingModule = await Test.createTestingModule({
-      providers: [GameService],
+      providers: [
+        GameService,
+        { provide: EventEmitter2, useValue: eventEmitter },
+      ],
     }).compile();
 
     service = module.get<GameService>(GameService);
@@ -172,43 +179,30 @@ describe('GameService', () => {
     it('does not move a player before the game starts', () => {
       const { roomId, game } = createMovementGame();
 
-      const result = service.movePlayer(roomId, 'player-1', 'right');
+      service.movePlayer(roomId, 'player-1', 'right');
 
-      expect(result).toBeUndefined();
       expect(game.players[0].getPosition()).toEqual({
         x: 1,
         y: 1,
       });
+      expect(eventEmitter.emit).not.toHaveBeenCalled();
     });
 
-    it('moves a player after the game starts', () => {
-      const { roomId } = createMovementGame();
+    it('moves a player and broadcasts the updated game state after the game starts', () => {
+      const { roomId, game } = createMovementGame();
 
       service.startGame(roomId);
 
-      const result = service.movePlayer(roomId, 'player-1', 'right');
+      service.movePlayer(roomId, 'player-1', 'right');
 
-      expect({
-        player: result?.player.toJSON(),
-        moved: result?.moved,
-      }).toEqual({
-        player: {
-          id: 'player-1',
-          name: 'Alice',
-          position: {
-            x: 2,
-            y: 1,
-          },
-          facingDirection: 'right',
-          spriteIndex: 0,
-        },
-        moved: true,
-      });
-
-      expect(service.getGame(roomId)?.players[0].getPosition()).toEqual({
+      expect(game.players[0].getPosition()).toEqual({
         x: 2,
         y: 1,
       });
+      expect(game.players[0].toJSON()).toMatchObject({
+        facingDirection: 'right',
+      });
+      expect(eventEmitter.emit).toHaveBeenCalledWith('game.broadcast', game);
     });
   });
 

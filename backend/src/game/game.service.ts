@@ -7,19 +7,17 @@ import {
   RUNNING,
   WAITING,
 } from './consts';
-import type {
-  GameMap,
-  GameState,
-  MovementDirection,
-  MovementResult,
-  Position,
-} from './types';
+import type { GameMap, GameState, MovementDirection, Position } from './types';
 import type { ClientId, RoomId } from '../shared/types';
 import { handlePlayerMovement } from './movement/server-movement';
 import { filterGameStateForPlayer } from './utils/filter-state';
+import { attack } from './combat/attack';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
 export class GameService {
+  constructor(private readonly eventEmitter: EventEmitter2) {}
+
   private readonly games = new Map<RoomId, GameState>();
 
   createGame(
@@ -62,35 +60,17 @@ export class GameService {
     return this.games.get(roomId);
   }
 
-  movePlayer(
-    roomId: RoomId,
-    playerId: ClientId,
-    direction: MovementDirection,
-  ): MovementResult | undefined {
+  movePlayer(roomId: RoomId, playerId: ClientId, direction: MovementDirection) {
     const game = this.games.get(roomId);
 
     if (!game || game.status !== RUNNING) {
       return;
     }
 
-    const player = game.players.find((currentPlayer) => {
-      return currentPlayer.clientId === playerId;
-    });
+    const gamestateChanged = handlePlayerMovement(game, playerId, direction);
 
-    if (!player) {
-      return;
-    }
-
-    if (player.isAction()) {
-      return;
-    }
-
-    player.setAction(true);
-
-    try {
-      return handlePlayerMovement(game, playerId, direction);
-    } finally {
-      player.setAction(false);
+    if (gamestateChanged) {
+      this.triggerGamestateBroadcast(roomId);
     }
   }
 
@@ -122,22 +102,16 @@ export class GameService {
       return;
     }
 
-    const updatedGame: GameState = {
-      ...game,
-      players: [
-        ...game.players,
-        new Player({
-          clientId: player.id,
-          name: player.name,
-          position,
-          spriteIndex: this.getFreeSpriteIndex(game),
-        }),
-      ],
-    };
+    game.players.push(
+      new Player({
+        clientId: player.id,
+        name: player.name,
+        position,
+        spriteIndex: this.getFreeSpriteIndex(game),
+      }),
+    );
 
-    this.games.set(roomId, updatedGame);
-
-    return updatedGame;
+    return game;
   }
 
   removePlayer(clientId: ClientId): GameState | undefined {
@@ -147,18 +121,31 @@ export class GameService {
       return;
     }
 
-    const remainingPlayers = game.players.filter(
-      (player) => player.clientId !== clientId,
+    const playerIndex = game.players.findIndex(
+      (player) => player.clientId === clientId,
     );
-    const updatedGame: GameState = { ...game, players: remainingPlayers };
 
-    if (remainingPlayers.length === 0) {
-      this.games.delete(game.roomId);
-    } else {
-      this.games.set(game.roomId, updatedGame);
+    if (playerIndex !== -1) {
+      game.players.splice(playerIndex, 1);
     }
 
-    return updatedGame;
+    if (game.players.length === 0) {
+      this.games.delete(game.roomId);
+    }
+
+    return game;
+  }
+
+  playerAttack(roomId: RoomId, playerId: ClientId) {
+    const game = this.games.get(roomId);
+    if (!game || game.status !== RUNNING) {
+      return;
+    }
+
+    const couldAttack = attack(game, playerId);
+    if (couldAttack) {
+      this.triggerGamestateBroadcast(roomId);
+    }
   }
 
   startGame(roomId: RoomId): GameState | undefined {
@@ -168,14 +155,10 @@ export class GameService {
       return game;
     }
 
-    const runningGame: GameState = {
-      ...game,
-      status: RUNNING,
-      endsAt: Date.now() + GAME_DURATION_MS,
-    };
-    this.games.set(roomId, runningGame);
+    game.status = RUNNING;
+    game.endsAt = Date.now() + GAME_DURATION_MS;
 
-    return runningGame;
+    return game;
   }
 
   endGame(roomId: RoomId): GameState | undefined {
@@ -185,10 +168,10 @@ export class GameService {
       return game;
     }
 
-    const endedGame: GameState = { ...game, status: ENDED, endsAt: null };
-    this.games.set(roomId, endedGame);
+    game.status = ENDED;
+    game.endsAt = null;
 
-    return endedGame;
+    return game;
   }
 
   private getFreeSpawnPosition(game: GameState): Position | undefined {
@@ -222,21 +205,6 @@ export class GameService {
       .map(({ x, y }) => ({ x, y }));
   }
 
-  //todo: remove if confirmed obsolete
-  /* getFilteredGameForPlayer(clientId: ClientId): GameState | undefined {
-    const game = this.getPlayerGame(clientId);
-    if (!game) {
-      return;
-    }
-
-    const viewer = game.players.find((player) => player.clientId === clientId);
-    if (!viewer) {
-      return;
-    }
-
-    return filterGameStateForPlayer(game, viewer);
-  } */
-
   getFilteredGameStates(
     gameState: GameState,
   ): Array<{ clientId: ClientId; gameState: GameState }> {
@@ -244,5 +212,13 @@ export class GameService {
       clientId: player.clientId,
       gameState: filterGameStateForPlayer(gameState, player),
     }));
+  }
+
+  private triggerGamestateBroadcast(roomId: RoomId) {
+    const gameState = this.games.get(roomId);
+    if (!gameState) {
+      return;
+    }
+    this.eventEmitter.emit('game.broadcast', gameState);
   }
 }
