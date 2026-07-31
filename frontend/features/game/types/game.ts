@@ -7,4 +7,5 @@ export type GameState = {
   map: GameMap;
   players: Player[];
   endsAt: number | null;
+  winner: string | null;
 };

@@ -44,6 +44,10 @@ export default function GameBoard() {
   const currentPlayer =
     game?.players.find((player) => player.id === socket.id) ?? null;
   const currentPlayerSpawnPosition = currentPlayer?.position ?? null;
+  const winner =
+    isEnded && game.winner
+      ? (game.players.find((player) => player.id === game.winner) ?? null)
+      : null;
 
   const labeledPlayers = useMemo(
     () =>
@@ -151,6 +155,7 @@ export default function GameBoard() {
             currentPlayerSpawnPosition={
               isWaiting ? currentPlayerSpawnPosition : null
             }
+            winnerPosition={winner?.position ?? null}
             status={game.status}
           />
 
