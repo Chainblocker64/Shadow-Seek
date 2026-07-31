@@ -263,27 +263,27 @@ export function PixiGameBoard({
 
         for (let y = 0; y < map.height; y++) {
           for (let x = 0; x < map.width; x++) {
-            const isVisible =
-              localPlayer &&
-              x >= playerX - visionRange &&
-              x <= playerX + visionRange &&
-              y >= playerY - visionRange &&
-              y <= playerY + visionRange;
+            const dx = Math.abs(x - playerX);
+            const dy = Math.abs(y - playerY);
+            const distance = Math.max(dx, dy);
 
-            if (isVisible) {
+            if (localPlayer && distance <= visionRange - 1) {
               continue;
             }
-
-            const tileX = x * tileSize;
-            const tileY = y * tileSize;
 
             const fogSprite = createTileSprite(
               fogFrameX,
               fogFrameY,
-              tileX,
-              tileY,
+              x * tileSize,
+              y * tileSize,
               tileSize,
             );
+
+            // add some alpha to the edges of the vision range to make it look more blurry
+            if (localPlayer && distance === visionRange) {
+              fogSprite.alpha = 0.4;
+            }
+
             fogContainer.addChild(fogSprite);
           }
         }
