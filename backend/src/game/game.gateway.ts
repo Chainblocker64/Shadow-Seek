@@ -160,7 +160,7 @@ export class GameGateway {
     const game = this.gameService.endGame(roomId);
 
     if (game) {
-      this.server.to(roomId).emit('game:ended', game);
+      this.server.to(roomId).emit('game:ended', toGameStatePayload(game));
     }
   }
 

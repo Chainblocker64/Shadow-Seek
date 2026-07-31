@@ -21,6 +21,7 @@ describe('toGameStatePayload', () => {
       map,
       players,
       endsAt: null,
+      winner: null,
     };
   }
 

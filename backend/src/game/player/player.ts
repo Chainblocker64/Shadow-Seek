@@ -1,6 +1,11 @@
 import type { ClientId } from '../../shared/types';
 import type { ActionTimestamps, CombatStats } from '../combat/types';
-import type { FacingDirection, PlayerStatus, Position, PublicPlayerState } from '../types';
+import type {
+  FacingDirection,
+  PlayerStatus,
+  Position,
+  PublicPlayerState,
+} from '../types';
 import {
   DEFAULT_COMBAT_STATS,
   DEFAULT_VISION_RANGE,
