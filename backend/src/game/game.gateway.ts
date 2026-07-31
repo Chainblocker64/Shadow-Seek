@@ -172,8 +172,6 @@ export class GameGateway {
       const game = this.gameService.startGame(roomId);
 
       if (game) {
-        this.broadcastFilteredGame('game:started', game);
-
         this.broadcastGamestate(game);
 
         this.scheduleGameEnd(roomId);
