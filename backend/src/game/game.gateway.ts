@@ -20,6 +20,7 @@ import { MovePlayerDto } from './dto/move-player.dto';
 import { OnEvent } from '@nestjs/event-emitter';
 import { RoomUpdatedEvent } from '../lobby/events/room-updated.event';
 import type { GameState } from './types';
+import { toGameStatePayload } from './game-state-payload';
 
 @WebSocketGateway({ cors: { origin: process.env.FRONTEND_URL } })
 @UsePipes(
@@ -70,7 +71,7 @@ export class GameGateway {
 
     this.lobbyService.setRunning(room.id);
     this.server.to(room.id).emit('game:opened');
-    this.server.to(room.id).emit('game:sync', game);
+    this.server.to(room.id).emit('game:sync', toGameStatePayload(game));
     this.scheduleGameStart(room.id);
   }
 
@@ -92,7 +93,7 @@ export class GameGateway {
     }
 
     this.server.to(clientId).emit('game:opened');
-    this.server.to(room.id).emit('game:sync', game);
+    this.server.to(room.id).emit('game:sync', toGameStatePayload(game));
   }
 
   @SubscribeMessage('leaveGame')
@@ -119,7 +120,7 @@ export class GameGateway {
       return;
     }
 
-    this.server.to(game.roomId).emit('game:sync', game);
+    this.server.to(game.roomId).emit('game:sync', toGameStatePayload(game));
   }
 
   @SubscribeMessage('movePlayer')
@@ -192,7 +193,7 @@ export class GameGateway {
       const game = this.gameService.endGame(roomId);
 
       if (game) {
-        this.server.to(roomId).emit('game:ended', game);
+        this.server.to(roomId).emit('game:ended', toGameStatePayload(game));
       }
     }, GAME_DURATION_MS);
 
@@ -201,6 +202,8 @@ export class GameGateway {
 
   @OnEvent('game.broadcast')
   broadcastGamestate(gameState: GameState) {
-    this.server.to(gameState.roomId).emit('game:sync', gameState);
+    this.server
+      .to(gameState.roomId)
+      .emit('game:sync', toGameStatePayload(gameState));
   }
 }

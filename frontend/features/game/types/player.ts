@@ -5,12 +5,15 @@ export type PlayerPosition = {
 
 export type PlayerDirection = "up" | "down" | "left" | "right";
 
-export type Player = {
+export type PublicPlayer = {
   id: string;
   name: string;
-  spriteIndex: number;
-  position: PlayerPosition;
   health: number;
   maxHealth: number;
+};
+
+export type Player = PublicPlayer & {
+  spriteIndex: number;
+  position: PlayerPosition;
   facingDirection: PlayerDirection;
 };

@@ -7,6 +7,8 @@ import { LobbyService } from '../lobby/lobby.service';
 import { MapsService } from '../maps/maps.service';
 import type { Room } from '../lobby/types';
 import type { GameState } from './types';
+import { Player } from './player/player';
+import { DEFAULT_COMBAT_STATS } from './consts';
 
 describe('GameGateway', () => {
   let gateway: GameGateway;
@@ -145,12 +147,31 @@ describe('GameGateway', () => {
       const gameState = {
         roomId,
         status: 'running',
+        players: [
+          new Player({
+            clientId: 'player-1',
+            name: 'Alice',
+            position: { x: 0, y: 0 },
+          }),
+        ],
       } as unknown as GameState;
 
       gateway.broadcastGamestate(gameState);
 
       expect(to).toHaveBeenCalledWith(roomId);
-      expect(emit).toHaveBeenCalledWith('game:sync', gameState);
+      expect(emit).toHaveBeenCalledWith('game:sync', {
+        ...gameState,
+        publicGameInformation: {
+          players: [
+            {
+              id: 'player-1',
+              name: 'Alice',
+              health: DEFAULT_COMBAT_STATS.maxHealth,
+              maxHealth: DEFAULT_COMBAT_STATS.maxHealth,
+            },
+          ],
+        },
+      });
     });
   });
 });
