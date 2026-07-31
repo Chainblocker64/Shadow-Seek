@@ -39,7 +39,7 @@ export function handlePlayerMovement(
     return currentPlayer.clientId === playerId;
   });
 
-  if (!player || player.isHandlingAction()) {
+  if (!player || player.isHandlingAction() || !player.canAct()) {
     return false;
   }
   player.setActiveAction('movement');

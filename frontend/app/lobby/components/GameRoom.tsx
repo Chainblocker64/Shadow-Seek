@@ -28,7 +28,20 @@ export default function GameRoom({
       </div>
       <ul className="flex flex-1 flex-col items-center justify-center gap-2">
         {room.players.map((player) => (
-          <li key={player.id}>{player.name}</li>
+          <li key={player.id} className="flex items-center gap-1.5">
+            {player.id === room.owner && (
+              <svg
+                className="h-4 w-4 text-yellow-400"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                role="img"
+                aria-label="Room owner"
+              >
+                <path d="M5 18h14l1.5-9-5 3-3.5-6-3.5 6-5-3L5 18Z" />
+              </svg>
+            )}
+            {player.name}
+          </li>
         ))}
       </ul>
       {isOwner && (
