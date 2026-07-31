@@ -5,6 +5,8 @@ import {
   RoomPlayer,
   STATUS_WAITING,
   STATUS_FULL,
+  STATUS_RUNNING,
+  RoomStatus,
 } from './types';
 import { randomUUID } from 'node:crypto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
@@ -122,6 +124,18 @@ export class LobbyService {
     return this.rooms;
   }
 
+  setRunning(roomId: RoomId) {
+    const room = this.rooms.get(roomId);
+    if (!room) {
+      return;
+    }
+    this.rooms.set(roomId, {
+      ...room,
+      status: STATUS_RUNNING,
+    });
+    this.triggerRoomBroadcast();
+  }
+
   getPlayerRoom(clientId: ClientId): Room | undefined {
     for (const room of this.rooms.values()) {
       if (this.roomHasPlayer(room, clientId)) {
@@ -142,7 +156,10 @@ export class LobbyService {
     return room.players.length === room.maxPlayers;
   }
 
-  private newRoomStatus(room: Room) {
+  private newRoomStatus(room: Room): RoomStatus {
+    if (room.status === STATUS_RUNNING) {
+      return STATUS_RUNNING;
+    }
     return this.roomIsFull(room) ? STATUS_FULL : STATUS_WAITING;
   }
 
