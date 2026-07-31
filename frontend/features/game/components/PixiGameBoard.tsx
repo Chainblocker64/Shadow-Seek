@@ -253,7 +253,7 @@ export function PixiGameBoard({
 
         // Caption sits below the tile, except on the last row where it would be
         // clipped by the canvas edge.
-        const isLastRow = spawn.y === map.height - 1;
+        const isLastRow = spawn.y === mapRef.current.height - 1;
 
         caption.anchor.set(0.5, isLastRow ? 1 : 0);
         caption.x = x + tileSize / 2;
