@@ -11,5 +11,6 @@ export type Player = {
   spriteIndex: number;
   position: PlayerPosition;
   health: number;
+  maxHealth: number;
   facingDirection: PlayerDirection;
 };
