@@ -11,6 +11,7 @@ export type Player = {
   spriteIndex: number;
   position: PlayerPosition;
   facingDirection: PlayerDirection;
+  visionRange: number;
 };
 
 export type PlayerGameState = {

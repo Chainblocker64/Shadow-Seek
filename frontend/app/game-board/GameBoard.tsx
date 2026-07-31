@@ -54,6 +54,7 @@ export default function GameBoard() {
         spriteIndex: player.spriteIndex,
         position: player.position,
         facingDirection: player.facingDirection,
+        visionRange: player.visionRange,
       })),
     [game?.players],
   );
