@@ -75,6 +75,34 @@ const DIRECTION_CIRCLE_RADIUS = DIRECTION_CIRCLE_SIZE / 2;
 const OWN_PLAYER_DIRECTION_COLOR = 0x22c55e;
 const OTHER_PLAYER_DIRECTION_COLOR = 0xef4444;
 
+const HEALTH_BAR_WIDTH_RATIO = 0.9;
+const HEALTH_BAR_HEIGHT_RATIO = 0.12;
+const HEALTH_BAR_MIN_HEIGHT = 3;
+const HEALTH_FONT_SIZE_RATIO = 0.3;
+const HEALTH_MIN_FONT_SIZE = 9;
+// Vertical breathing room between the name label, the health value and the bar.
+const HEALTH_ELEMENT_GAP = 2;
+
+const HEALTH_HIGH_COLOR = 0x22c55e;
+const HEALTH_MEDIUM_COLOR = 0xfacc15;
+const HEALTH_LOW_COLOR = 0xef4444;
+const HEALTH_MEDIUM_RATIO = 0.5;
+const HEALTH_LOW_RATIO = 0.25;
+
+// Colour reinforces the bar length, it never carries the value on its own — the
+// number above the bar states it outright.
+function getHealthBarColor(ratio: number): number {
+  if (ratio > HEALTH_MEDIUM_RATIO) {
+    return HEALTH_HIGH_COLOR;
+  }
+
+  if (ratio > HEALTH_LOW_RATIO) {
+    return HEALTH_MEDIUM_COLOR;
+  }
+
+  return HEALTH_LOW_COLOR;
+}
+
 export function PixiGameBoard({
   map,
   players,
@@ -290,6 +318,62 @@ export function PixiGameBoard({
 
           directionLayer.addChild(directionCircle);
 
+          const centerX = offsetX + (player.position.x + 0.5) * tileSize;
+          const tileTopY = offsetY + player.position.y * tileSize;
+
+          // Stacked upwards from the tile so nothing covers the sprite:
+          // name label, then the health value, then the bar sitting closest to
+          // the character it belongs to.
+          const barWidth = tileSize * HEALTH_BAR_WIDTH_RATIO;
+          const barHeight = Math.max(
+            HEALTH_BAR_MIN_HEIGHT,
+            Math.round(tileSize * HEALTH_BAR_HEIGHT_RATIO),
+          );
+          const barX = centerX - barWidth / 2;
+          const barY = tileTopY - HEALTH_ELEMENT_GAP - barHeight;
+
+          // The server keeps health within 0…maxHealth, so only the division
+          // itself needs guarding.
+          const healthRatio =
+            player.maxHealth > 0 ? player.health / player.maxHealth : 0;
+
+          const healthBar = new Graphics()
+            .rect(barX, barY, barWidth, barHeight)
+            .fill({ color: 0x000000, alpha: 0.65 });
+
+          // A zero-width fill would still paint a hairline, so a dead player
+          // only gets the empty track.
+          if (healthRatio > 0) {
+            healthBar
+              .rect(barX, barY, barWidth * healthRatio, barHeight)
+              .fill({ color: getHealthBarColor(healthRatio) });
+          }
+
+          // The dark outline keeps the bar readable on every tile type.
+          healthBar
+            .rect(barX, barY, barWidth, barHeight)
+            .stroke({ width: 1, color: 0x000000, alpha: 0.9 });
+
+          const healthLabel = new Text({
+            text: `${player.health}/${player.maxHealth}`,
+            style: {
+              fontSize: Math.max(
+                HEALTH_MIN_FONT_SIZE,
+                Math.round(tileSize * HEALTH_FONT_SIZE_RATIO),
+              ),
+              fontWeight: "bold",
+              fill: 0xffffff,
+              stroke: {
+                color: 0x000000,
+                width: 2,
+              },
+            },
+          });
+
+          healthLabel.anchor.set(0.5, 1);
+          healthLabel.x = centerX;
+          healthLabel.y = barY - HEALTH_ELEMENT_GAP;
+
           const playerLabel = new Text({
             text: player.label,
             style: {
@@ -305,10 +389,10 @@ export function PixiGameBoard({
 
           playerLabel.anchor.set(0.5, 1);
           playerLabel.alpha = 0.5;
-          playerLabel.x = offsetX + (player.position.x + 0.5) * tileSize;
-          playerLabel.y = offsetY + player.position.y * tileSize;
+          playerLabel.x = centerX;
+          playerLabel.y = healthLabel.y - healthLabel.height;
 
-          playerLayer.addChild(playerLabel);
+          playerLayer.addChild(playerLabel, healthLabel, healthBar);
         });
       }
 
