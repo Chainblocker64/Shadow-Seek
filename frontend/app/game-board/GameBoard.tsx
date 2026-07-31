@@ -173,6 +173,9 @@ export default function GameBoard() {
               <p className="text-3xl leading-none font-extrabold text-red-400">
                 Game over
               </p>
+              <p className="font-semibold text-zinc-200">
+                {winner ? `${winner.name} wins` : "Draw"}
+              </p>
             </div>
           )}
         </div>
