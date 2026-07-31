@@ -500,7 +500,7 @@ export function PixiGameBoard({
         destroyApp();
       });
     };
-  }, []);
+  }, [map.height, map.width]);
 
   useEffect(() => {
     mapRef.current = map;
