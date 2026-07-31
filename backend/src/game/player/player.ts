@@ -52,7 +52,11 @@ export class Player {
   }
 
   takeDamage(amount: number) {
-    this.health -= amount;
+    if (amount > this.health) {
+      this.health = 0;
+    } else {
+      this.health -= amount;
+    }
   }
 
   isAlive(): boolean {
@@ -117,6 +121,7 @@ export class Player {
       name: this.name,
       spriteIndex: this.spriteIndex,
       position: this.position,
+      health: this.health,
       facingDirection: this.facingDirection,
     };
   }

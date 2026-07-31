@@ -172,6 +172,7 @@ export class GameGateway {
       const game = this.gameService.startGame(roomId);
 
       if (game) {
+        this.lobbyService.setRunning(roomId);
         this.broadcastGamestate(game);
         this.scheduleGameEnd(roomId);
       }

@@ -63,6 +63,7 @@ export function RoomProvider({ children }: { children: React.ReactNode }) {
 
   const leaveRoom = () => {
     socket.emit("leaveRoom");
+    setJoinedRoom(undefined);
     router.push("/lobby");
   };
 

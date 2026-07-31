@@ -47,13 +47,9 @@ export default function GameBoard() {
   const labeledPlayers = useMemo(
     () =>
       (game?.players ?? []).map((player) => ({
-        id: player.id,
-        name: player.name,
+        ...player,
         label: player.name,
         isSelf: player.id === socket.id,
-        spriteIndex: player.spriteIndex,
-        position: player.position,
-        facingDirection: player.facingDirection,
       })),
     [game?.players],
   );
