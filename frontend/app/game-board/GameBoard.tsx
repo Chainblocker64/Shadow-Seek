@@ -44,6 +44,10 @@ export default function GameBoard() {
   const currentPlayer =
     game?.players.find((player) => player.id === socket.id) ?? null;
   const currentPlayerSpawnPosition = currentPlayer?.position ?? null;
+  const winner =
+    isEnded && game.winner
+      ? (game.players.find((player) => player.id === game.winner) ?? null)
+      : null;
 
   const publicPlayers = game?.publicGameInformation?.players;
 
@@ -164,6 +168,7 @@ export default function GameBoard() {
             currentPlayerSpawnPosition={
               isWaiting ? currentPlayerSpawnPosition : null
             }
+            winnerPosition={winner?.position ?? null}
             status={game.status}
           />
 
@@ -180,6 +185,9 @@ export default function GameBoard() {
             <div className="absolute top-1/2 left-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1 rounded-xl bg-black/60 px-6 py-3">
               <p className="text-3xl leading-none font-extrabold text-red-400">
                 Game over
+              </p>
+              <p className="font-semibold text-zinc-200">
+                {winner ? `${winner.name} wins` : "Draw"}
               </p>
             </div>
           )}

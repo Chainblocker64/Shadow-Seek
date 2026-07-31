@@ -15,6 +15,8 @@ describe('GameGateway', () => {
   let gameService: {
     movePlayer: jest.Mock;
     playerAttack: jest.Mock;
+    removePlayer: jest.Mock;
+    endGame: jest.Mock;
   };
   let lobbyService: {
     getPlayerRoom: jest.Mock;
@@ -26,6 +28,8 @@ describe('GameGateway', () => {
     gameService = {
       movePlayer: jest.fn(),
       playerAttack: jest.fn(),
+      removePlayer: jest.fn(),
+      endGame: jest.fn(),
     };
 
     lobbyService = {
@@ -137,6 +141,47 @@ describe('GameGateway', () => {
       gateway.handlePlayerAttack({ id: 'player-1' } as Socket);
 
       expect(gameService.playerAttack).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('handleDisconnect', () => {
+    function createRemainingGame(status: GameState['status']) {
+      const roomId = randomUUID();
+
+      const game = {
+        roomId,
+        status,
+        players: [{ clientId: 'player-1' }],
+      } as unknown as GameState;
+
+      gameService.removePlayer.mockReturnValue(game);
+
+      return { roomId, game };
+    }
+
+    it('ends a running game when only one player remains', () => {
+      const { roomId, game } = createRemainingGame('running');
+
+      const endedGame = { ...game, status: 'ended', winner: 'player-1' };
+
+      gameService.endGame.mockReturnValue(endedGame);
+
+      gateway.handleDisconnect({ id: 'player-2' } as Socket);
+
+      expect(gameService.endGame).toHaveBeenCalledWith(roomId);
+      expect(to).toHaveBeenCalledWith(roomId);
+      expect(emit).toHaveBeenCalledWith('game:ended', endedGame);
+      expect(emit).not.toHaveBeenCalledWith('game:sync', expect.anything());
+    });
+
+    it('keeps a waiting game running when only one player remains', () => {
+      const { roomId, game } = createRemainingGame('waiting');
+
+      gateway.handleDisconnect({ id: 'player-2' } as Socket);
+
+      expect(gameService.endGame).not.toHaveBeenCalled();
+      expect(to).toHaveBeenCalledWith(roomId);
+      expect(emit).toHaveBeenCalledWith('game:sync', game);
     });
   });
 

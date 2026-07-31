@@ -12,4 +12,5 @@ export type GameState = {
   players: Player[];
   publicGameInformation: PublicGameInformation;
   endsAt: number | null;
+  winner: string | null;
 };

@@ -24,6 +24,7 @@ import {
 import { socket } from "@/lib/socket";
 import { useInputControls } from "../hooks/useInputControls";
 import { calculateBoardLayout, type BoardLayout } from "./boardLayout";
+import { createTileHighlight } from "./tileHighlight";
 
 type GamePlayer = Player & {
   label: string;
@@ -34,6 +35,7 @@ type PixiGameBoardProps = {
   players: GamePlayer[];
   status: GameState["status"];
   currentPlayerSpawnPosition: PlayerPosition | null;
+  winnerPosition: PlayerPosition | null;
 };
 
 function getFacingTile(
@@ -108,6 +110,7 @@ export function PixiGameBoard({
   players,
   status,
   currentPlayerSpawnPosition,
+  winnerPosition,
 }: PixiGameBoardProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const playersRef = useRef(players);
@@ -115,6 +118,8 @@ export function PixiGameBoard({
   const renderPlayersRef = useRef<(() => void) | null>(null);
   const spawnHighlightRef = useRef(currentPlayerSpawnPosition);
   const renderSpawnHighlightRef = useRef<(() => void) | null>(null);
+  const winnerHighlightRef = useRef(winnerPosition);
+  const renderWinnerHighlightRef = useRef<(() => void) | null>(null);
   const renderMapRef = useRef<(() => void) | null>(null);
 
   useInputControls(status === "running");
@@ -123,6 +128,11 @@ export function PixiGameBoard({
     spawnHighlightRef.current = currentPlayerSpawnPosition;
     renderSpawnHighlightRef.current?.();
   }, [currentPlayerSpawnPosition]);
+
+  useEffect(() => {
+    winnerHighlightRef.current = winnerPosition;
+    renderWinnerHighlightRef.current?.();
+  }, [winnerPosition]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -203,6 +213,7 @@ export function PixiGameBoard({
       const directionLayer = new Container();
       const playerLayer = new Container();
       const spawnHighlightLayer = new Container();
+      const winnerHighlightLayer = new Container();
 
       let layout: BoardLayout | null = null;
 
@@ -221,8 +232,6 @@ export function PixiGameBoard({
           return;
         }
 
-        const { offsetX, offsetY, tileSize } = layout;
-
         spawnHighlightLayer.removeChildren();
 
         const spawn = spawnHighlightRef.current;
@@ -231,38 +240,44 @@ export function PixiGameBoard({
           return;
         }
 
-        const x = offsetX + spawn.x * tileSize;
-        const y = offsetY + spawn.y * tileSize;
-
-        // The dark outer stroke keeps the marker readable on every tile type.
-        const border = new Graphics()
-          .rect(x + 1, y + 1, tileSize - 2, tileSize - 2)
-          .stroke({ width: 4, color: 0x000000, alpha: 0.7 })
-          .rect(x + 1, y + 1, tileSize - 2, tileSize - 2)
-          .stroke({ width: 2, color: 0xfacc15 });
-
-        const caption = new Text({
-          text: "You",
-          style: {
-            fontSize: Math.max(10, Math.round(tileSize * 0.45)),
-            fontWeight: "bold",
-            fill: 0xfacc15,
-            stroke: { color: 0x000000, width: 3 },
-          },
-        });
-
-        // Caption sits below the tile, except on the last row where it would be
-        // clipped by the canvas edge.
-        const isLastRow = spawn.y === mapRef.current.height - 1;
-
-        caption.anchor.set(0.5, isLastRow ? 1 : 0);
-        caption.x = x + tileSize / 2;
-        caption.y = isLastRow ? y - 2 : y + tileSize + 2;
-
-        spawnHighlightLayer.addChild(border, caption);
+        spawnHighlightLayer.addChild(
+          createTileHighlight({
+            position: spawn,
+            caption: "You",
+            layout,
+            mapHeight: mapRef.current.height,
+          }),
+        );
       }
 
       renderSpawnHighlightRef.current = renderSpawnHighlight;
+
+      // Marks the winner once the game has ended, using the same highlight as
+      // the spawn marker so both read as the same kind of annotation.
+      function renderWinnerHighlight() {
+        if (!layout) {
+          return;
+        }
+
+        winnerHighlightLayer.removeChildren();
+
+        const winner = winnerHighlightRef.current;
+
+        if (!winner) {
+          return;
+        }
+
+        winnerHighlightLayer.addChild(
+          createTileHighlight({
+            position: winner,
+            caption: "Winner",
+            layout,
+            mapHeight: mapRef.current.height,
+          }),
+        );
+      }
+
+      renderWinnerHighlightRef.current = renderWinnerHighlight;
 
       function renderPlayers() {
         if (!layout) {
@@ -477,9 +492,11 @@ export function PixiGameBoard({
         app.stage.addChild(directionLayer);
         app.stage.addChild(playerLayer);
         app.stage.addChild(spawnHighlightLayer);
+        app.stage.addChild(winnerHighlightLayer);
         layout = { offsetX, offsetY, tileSize };
         renderPlayers();
         renderSpawnHighlight();
+        renderWinnerHighlight();
       }
 
       renderMapRef.current = renderMap;
