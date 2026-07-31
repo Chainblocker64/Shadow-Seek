@@ -40,6 +40,7 @@ export class GameService {
           }),
       ),
       endsAt: null,
+      winner: null,
     };
 
     this.games.set(roomId, game);
