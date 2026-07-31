@@ -2,7 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { randomUUID } from 'node:crypto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { GameService } from './game.service';
-import { ENDED, GAME_DURATION_MS, RUNNING, WAITING } from './consts';
+import {
+  DEFAULT_COMBAT_STATS,
+  ENDED,
+  GAME_DURATION_MS,
+  RUNNING,
+  WAITING,
+} from './consts';
 import type { GameMap } from './types';
 
 describe('GameService', () => {
@@ -63,6 +69,8 @@ describe('GameService', () => {
         spriteIndex: 0,
         position: { x: 0, y: 0 },
         facingDirection: 'down',
+        health: DEFAULT_COMBAT_STATS.maxHealth,
+        maxHealth: DEFAULT_COMBAT_STATS.maxHealth,
       },
       {
         id: 'player-2',
@@ -70,6 +78,8 @@ describe('GameService', () => {
         spriteIndex: 1,
         position: { x: 3, y: 3 },
         facingDirection: 'down',
+        health: DEFAULT_COMBAT_STATS.maxHealth,
+        maxHealth: DEFAULT_COMBAT_STATS.maxHealth,
       },
     ]);
     expect(game.players).toMatchObject([
