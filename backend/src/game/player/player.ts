@@ -70,6 +70,10 @@ export class Player {
     return this.health > 0;
   }
 
+  getHealth(): number {
+    return this.health;
+  }
+
   isHandlingAction(): boolean {
     return Boolean(this.activeAction);
   }

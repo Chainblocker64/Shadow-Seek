@@ -152,6 +152,61 @@ describe('GameService', () => {
     expect(service.getGame(roomId)).toBe(game);
   });
 
+  describe('endGame winner', () => {
+    function createEndableGame() {
+      const roomId = randomUUID();
+      const map: GameMap = {
+        name: 'Test map',
+        width: 4,
+        height: 4,
+        baseTile: 'floor',
+        baseOverrides: [],
+        objects: [
+          { x: 0, y: 0, type: 'spawn' },
+          { x: 3, y: 3, type: 'spawn' },
+        ],
+      };
+
+      const game = service.createGame(
+        roomId,
+        [
+          { id: 'player-1', name: 'Alice' },
+          { id: 'player-2', name: 'Bob' },
+        ],
+        map,
+      );
+
+      service.startGame(roomId);
+
+      return { roomId, game };
+    }
+
+    it('declares the player with the most health the winner', () => {
+      const { roomId, game } = createEndableGame();
+
+      game.players[1].takeDamage(10);
+
+      expect(service.endGame(roomId)?.winner).toBe('player-1');
+    });
+
+    it('declares no winner when the highest health is tied', () => {
+      const { roomId, game } = createEndableGame();
+
+      game.players[0].takeDamage(10);
+      game.players[1].takeDamage(10);
+
+      expect(service.endGame(roomId)?.winner).toBeNull();
+    });
+
+    it('declares no winner when the game has no players left', () => {
+      const { roomId, game } = createEndableGame();
+
+      game.players.length = 0;
+
+      expect(service.endGame(roomId)?.winner).toBeNull();
+    });
+  });
+
   describe('movePlayer', () => {
     function createMovementGame() {
       const roomId = randomUUID();
