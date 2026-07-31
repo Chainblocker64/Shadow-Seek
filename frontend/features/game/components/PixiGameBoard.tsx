@@ -140,6 +140,9 @@ export function PixiGameBoard({
 
       const tilesetTexture = await Assets.load<Texture>(TILESET_PATH);
 
+      // remove "gaps" between tiles
+      tilesetTexture.source.scaleMode = "nearest";
+
       if (isDestroyed || !app) {
         destroyApp();
         return;
@@ -252,7 +255,7 @@ export function PixiGameBoard({
           (player) => player.id === socket.id,
         );
 
-        const fogFrameX = 1152;
+        const fogFrameX = 768;
         const fogFrameY = 608;
 
         const fogContainer = new Container();
@@ -292,10 +295,12 @@ export function PixiGameBoard({
         colorMatrix.desaturate();
 
         fogContainer.filters = [colorMatrix];
-        fogContainer.alpha = 0.7;
+        fogContainer.tint = 0x222222; // darkness
+        fogContainer.alpha = 0.9; // opacity
 
         fogContainer.x = offsetX;
         fogContainer.y = offsetY;
+
         fovLayer.addChild(fogContainer);
       }
 
