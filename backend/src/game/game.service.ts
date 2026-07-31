@@ -40,6 +40,7 @@ export class GameService {
           }),
       ),
       endsAt: null,
+      winner: null,
     };
 
     this.games.set(roomId, game);
@@ -161,8 +162,25 @@ export class GameService {
 
     game.status = ENDED;
     game.endsAt = null;
+    game.winner = this.determineWinner(game.players);
 
     return game;
+  }
+
+  private determineWinner(players: Player[]): ClientId | null {
+    const highestHealth = Math.max(
+      ...players.map((player) => player.getHealth()),
+    );
+
+    const healthiestPlayers = players.filter(
+      (player) => player.getHealth() === highestHealth,
+    );
+
+    if (healthiestPlayers.length !== 1) {
+      return null;
+    }
+
+    return healthiestPlayers[0].clientId;
   }
 
   private getFreeSpawnPosition(game: GameState): Position | undefined {

@@ -1,5 +1,5 @@
 import { WAITING, RUNNING, ENDED } from './consts';
-import type { RoomId } from '../shared/types';
+import type { ClientId, RoomId } from '../shared/types';
 import type { Player } from './player/player';
 
 export type Status = typeof WAITING | typeof RUNNING | typeof ENDED;
@@ -26,6 +26,7 @@ export type GameState = {
   map: GameMap;
   players: Player[];
   endsAt: number | null;
+  winner: ClientId | null;
 };
 
 export const BASE_TILE_TYPES = [

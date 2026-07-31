@@ -26,6 +26,7 @@ function createTestGameState(): GameState {
       }),
     ],
     endsAt: null,
+    winner: null,
   };
 }
 
