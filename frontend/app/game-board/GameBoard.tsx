@@ -11,7 +11,7 @@ import PlayerList from "./PlayerList";
 import styles from "./GameBoardPage.module.css";
 
 // Mirrors the backend's GAME_START_DELAY_MS (backend/src/game/consts.ts).
-const GAME_START_COUNTDOWN_SECONDS = 3;
+const GAME_START_COUNTDOWN_SECONDS = 5;
 
 // The map is static for the lifetime of a game, but every socket payload
 // re-serializes it, giving it a new reference on every sync tick. Comparing

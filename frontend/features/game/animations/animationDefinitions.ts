@@ -37,6 +37,32 @@ export const animationDefinitions = {
     speed: 0.22,
     loop: false,
   },
+
+  portalOpen: {
+    frames: [
+      { x: 544, y: 320 },
+      { x: 576, y: 320 },
+      { x: 608, y: 320 },
+      { x: 1120, y: 480 },
+      { x: 928, y: 480 },
+      { x: 960, y: 480 },
+    ],
+    speed: 0.11,
+    loop: false,
+  },
+
+  portalClose: {
+    frames: [
+      { x: 960, y: 480 },
+      { x: 928, y: 480 },
+      { x: 1120, y: 480 },
+      { x: 608, y: 320 },
+      { x: 576, y: 320 },
+      { x: 544, y: 320 },
+    ],
+    speed: 0.11,
+    loop: false,
+  },
 } satisfies Record<string, AnimationDefinition>;
 
 export type AnimationName = keyof typeof animationDefinitions;

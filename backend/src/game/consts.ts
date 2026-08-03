@@ -4,7 +4,7 @@ import type { ObjectType } from './types';
 export const WAITING = 'waiting';
 export const RUNNING = 'running';
 export const ENDED = 'ended';
-export const GAME_START_DELAY_MS: number = 3_000;
+export const GAME_START_DELAY_MS: number = 5_000;
 export const GAME_DURATION_MS: number = 5 * 60_000;
 export const MIN_PLAYERS_TO_START: number = 2;
 

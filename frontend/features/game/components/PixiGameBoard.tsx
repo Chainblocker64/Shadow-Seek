@@ -134,6 +134,7 @@ export function PixiGameBoard({
   const renderWinnerHighlightRef = useRef<(() => void) | null>(null);
   const renderMapRef = useRef<(() => void) | null>(null);
   const hiddenAttackPreviewPlayerIdsRef = useRef<Set<string>>(new Set());
+  const portalPlayedRef = useRef(false);
 
   useInputControls(status === "running");
 
@@ -163,6 +164,7 @@ export function PixiGameBoard({
     function destroyApp() {
       app?.destroy(true);
       app = null;
+      portalPlayedRef.current = false;
       renderPlayersRef.current = null;
       renderSpawnHighlightRef.current = null;
       renderWinnerHighlightRef.current = null;
@@ -231,11 +233,62 @@ export function PixiGameBoard({
       const playerLayer = new Container();
       const attackPreviewLayer = new Container();
       const attackAnimationLayer = new Container();
+      const portalLayer = new Container();
       const spawnHighlightLayer = new Container();
       const winnerHighlightLayer = new Container();
 
       let layout: BoardLayout | null = null;
 
+      function playSpawnPortalAnimation() {
+        if (!layout || portalPlayedRef.current) {
+          return;
+        }
+
+        const spawnPosition = spawnHighlightRef.current;
+
+        if (!spawnPosition) {
+          return;
+        }
+
+        portalPlayedRef.current = true;
+
+        const { offsetX, offsetY, tileSize } = layout;
+
+        const portalX = offsetX + spawnPosition.x * tileSize;
+        const portalY = offsetY + spawnPosition.y * tileSize;
+
+        const portalOpen = animationManager.create("portalOpen", {
+          x: portalX,
+          y: portalY,
+          width: tileSize,
+          height: tileSize,
+          autoPlay: false,
+        });
+
+        portalOpen.onComplete = () => {
+          portalLayer.removeChild(portalOpen);
+          portalOpen.destroy();
+
+          const portalClose = animationManager.create("portalClose", {
+            x: portalX,
+            y: portalY,
+            width: tileSize,
+            height: tileSize,
+            autoPlay: false,
+          });
+
+          portalClose.onComplete = () => {
+            portalLayer.removeChild(portalClose);
+            portalClose.destroy();
+          };
+
+          portalLayer.addChild(portalClose);
+          portalClose.play();
+        };
+
+        portalLayer.addChild(portalOpen);
+        portalOpen.play();
+      }
       function playAttackAnimation({
         attackerId,
         targetId,
@@ -595,6 +648,7 @@ export function PixiGameBoard({
         app.stage.addChild(playerLayer);
         app.stage.addChild(attackPreviewLayer);
         app.stage.addChild(attackAnimationLayer);
+        app.stage.addChild(portalLayer);
         app.stage.addChild(spawnHighlightLayer);
         app.stage.addChild(winnerHighlightLayer);
 
@@ -607,6 +661,7 @@ export function PixiGameBoard({
         renderPlayers();
         renderSpawnHighlight();
         renderWinnerHighlight();
+        playSpawnPortalAnimation();
       }
 
       renderMapRef.current = renderMap;
