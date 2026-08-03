@@ -207,6 +207,109 @@ describe('GameService', () => {
     });
   });
 
+  describe('playerAttack', () => {
+    function createCombatGame() {
+      const roomId = randomUUID();
+      const map: GameMap = {
+        name: 'Combat test map',
+        width: 3,
+        height: 3,
+        baseTile: 'floor',
+        baseOverrides: [],
+        objects: [
+          { x: 1, y: 0, type: 'spawn' },
+          { x: 1, y: 1, type: 'spawn' },
+          { x: 2, y: 2, type: 'spawn' },
+        ],
+      };
+
+      const game = service.createGame(
+        roomId,
+        [
+          { id: 'player-1', name: 'Alice' },
+          { id: 'player-2', name: 'Bob' },
+        ],
+        map,
+      );
+
+      service.startGame(roomId);
+
+      return { roomId, game };
+    }
+
+    it('broadcasts the game state while the opponent survives the attack', () => {
+      const { roomId, game } = createCombatGame();
+
+      service.playerAttack(roomId, 'player-1');
+
+      expect(game.players[1].getHealth()).toBe(
+        DEFAULT_COMBAT_STATS.maxHealth - DEFAULT_COMBAT_STATS.attackValue,
+      );
+      expect(game.status).toBe(RUNNING);
+      expect(eventEmitter.emit).toHaveBeenCalledWith('game.broadcast', game);
+      expect(eventEmitter.emit).not.toHaveBeenCalledWith(
+        'game.ended',
+        expect.anything(),
+      );
+    });
+
+    it('ends the game once the attack defeats the last opponent', () => {
+      const { roomId, game } = createCombatGame();
+
+      game.players[1].takeDamage(
+        DEFAULT_COMBAT_STATS.maxHealth - DEFAULT_COMBAT_STATS.attackValue,
+      );
+
+      service.playerAttack(roomId, 'player-1');
+
+      expect(game.players[1].getHealth()).toBe(0);
+      expect(game).toMatchObject({
+        status: ENDED,
+        endsAt: null,
+        winner: 'player-1',
+      });
+      expect(eventEmitter.emit).toHaveBeenCalledWith('game.ended', game);
+      expect(eventEmitter.emit).not.toHaveBeenCalledWith(
+        'game.broadcast',
+        expect.anything(),
+      );
+    });
+
+    it('keeps the game running while two opponents are still alive', () => {
+      const { roomId, game } = createCombatGame();
+
+      service.addPlayer(roomId, { id: 'player-3', name: 'Carol' });
+
+      game.players[1].takeDamage(
+        DEFAULT_COMBAT_STATS.maxHealth - DEFAULT_COMBAT_STATS.attackValue,
+      );
+
+      service.playerAttack(roomId, 'player-1');
+
+      expect(game.players[1].getHealth()).toBe(0);
+      expect(game.status).toBe(RUNNING);
+      expect(eventEmitter.emit).toHaveBeenCalledWith('game.broadcast', game);
+      expect(eventEmitter.emit).not.toHaveBeenCalledWith(
+        'game.ended',
+        expect.anything(),
+      );
+    });
+
+    it('does not end the game when the attack misses', () => {
+      const { roomId, game } = createCombatGame();
+
+      service.movePlayer(roomId, 'player-1', 'up');
+      service.playerAttack(roomId, 'player-1');
+
+      expect(game.players[1].getHealth()).toBe(DEFAULT_COMBAT_STATS.maxHealth);
+      expect(game.status).toBe(RUNNING);
+      expect(eventEmitter.emit).not.toHaveBeenCalledWith(
+        'game.ended',
+        expect.anything(),
+      );
+    });
+  });
+
   describe('movePlayer', () => {
     function createMovementGame() {
       const roomId = randomUUID();

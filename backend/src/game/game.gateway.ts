@@ -122,7 +122,7 @@ export class GameGateway {
     }
 
     if (game.status === RUNNING && game.players.length === 1) {
-      this.endGameEarly(game.roomId);
+      this.endGame(game.roomId);
       return;
     }
 
@@ -154,13 +154,11 @@ export class GameGateway {
     this.gameService.playerAttack(room.id, clientId);
   }
 
-  private endGameEarly(roomId: RoomId) {
-    this.clearTimers(roomId);
-
+  private endGame(roomId: RoomId) {
     const game = this.gameService.endGame(roomId);
 
     if (game) {
-      this.server.to(roomId).emit('game:ended', toGameStatePayload(game));
+      this.handleGameEnded(game);
     }
   }
 
@@ -207,14 +205,19 @@ export class GameGateway {
     const timer = setTimeout(() => {
       this.gameEndTimers.delete(roomId);
 
-      const game = this.gameService.endGame(roomId);
-
-      if (game) {
-        this.server.to(roomId).emit('game:ended', toGameStatePayload(game));
-      }
+      this.endGame(roomId);
     }, GAME_DURATION_MS);
 
     this.gameEndTimers.set(roomId, timer);
+  }
+
+  @OnEvent('game.ended')
+  handleGameEnded(gameState: GameState) {
+    this.clearTimers(gameState.roomId);
+
+    this.server
+      .to(gameState.roomId)
+      .emit('game:ended', toGameStatePayload(gameState));
   }
 
   @OnEvent('game.broadcast')

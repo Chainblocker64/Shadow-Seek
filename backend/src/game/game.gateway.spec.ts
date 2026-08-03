@@ -213,6 +213,27 @@ describe('GameGateway', () => {
     });
   });
 
+  describe('handleGameEnded', () => {
+    it('emits the ended game state to the room', () => {
+      const roomId = randomUUID();
+
+      const game = {
+        roomId,
+        status: 'ended',
+        winner: 'player-1',
+        players: [createAlice()],
+      } as unknown as GameState;
+
+      gateway.handleGameEnded(game);
+
+      expect(to).toHaveBeenCalledWith(roomId);
+      expect(emit).toHaveBeenCalledWith('game:ended', {
+        ...game,
+        publicGameInformation: publicGameInformationOfAlice,
+      });
+    });
+  });
+
   describe('broadcastGamestate', () => {
     it('emits the game state to the player when the game service reports a change', () => {
       const clientId = randomUUID();
