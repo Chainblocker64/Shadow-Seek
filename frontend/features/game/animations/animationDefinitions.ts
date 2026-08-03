@@ -22,7 +22,7 @@ export const animationDefinitions = {
       { x: 1088, y: 608 },
       { x: 1120, y: 608 },
     ],
-    speed: 0.12,
+    speed: 0.08,
     loop: true,
   },
 
