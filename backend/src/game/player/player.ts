@@ -127,6 +127,10 @@ export class Player {
     this.activeAction = actionName;
   }
 
+  getStatus(): PlayerStatus {
+    return this.status;
+  }
+
   canAttack(): boolean {
     return canAttack(this);
   }
@@ -137,6 +141,7 @@ export class Player {
       name: this.name,
       health: this.health,
       maxHealth: this.combatStats.maxHealth,
+      status: this.status,
     };
   }
 

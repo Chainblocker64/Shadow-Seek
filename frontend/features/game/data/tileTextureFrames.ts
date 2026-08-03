@@ -31,6 +31,11 @@ export const playerTextureFrames: { x: number; y: number }[] = [
   { x: 896, y: 32 }, // blue-robed mage
 ];
 
+export const defeatedPlayerTextureFrame: { x: number; y: number } = {
+  x: 800,
+  y: 384,
+};
+
 export const mapObjectTextureFrames: Record<
   MapObjectType,
   { x: number; y: number }

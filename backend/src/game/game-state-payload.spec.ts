@@ -1,7 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { toGameStatePayload } from './game-state-payload';
 import { Player } from './player/player';
-import { DEFAULT_COMBAT_STATS, RUNNING } from './consts';
+import {
+  DEFAULT_COMBAT_STATS,
+  PLAYER_STATUS_ALIVE,
+  PLAYER_STATUS_DEFEATED,
+  RUNNING,
+} from './consts';
 import type { GameMap, GameState } from './types';
 
 describe('toGameStatePayload', () => {
@@ -47,12 +52,14 @@ describe('toGameStatePayload', () => {
         name: 'Alice',
         health: DEFAULT_COMBAT_STATS.maxHealth,
         maxHealth: DEFAULT_COMBAT_STATS.maxHealth,
+        status: PLAYER_STATUS_ALIVE,
       },
       {
         id: 'player-2',
         name: 'Bob',
         health: DEFAULT_COMBAT_STATS.maxHealth - 1,
         maxHealth: DEFAULT_COMBAT_STATS.maxHealth,
+        status: PLAYER_STATUS_ALIVE,
       },
     ]);
   });
@@ -105,6 +112,7 @@ describe('toGameStatePayload', () => {
         name: 'Alice',
         health: 0,
         maxHealth: DEFAULT_COMBAT_STATS.maxHealth,
+        status: PLAYER_STATUS_DEFEATED,
       },
     ]);
   });
