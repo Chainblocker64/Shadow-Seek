@@ -7,6 +7,27 @@ import { LobbyService } from '../lobby/lobby.service';
 import { MapsService } from '../maps/maps.service';
 import type { Room } from '../lobby/types';
 import type { GameState } from './types';
+import { Player } from './player/player';
+import { DEFAULT_COMBAT_STATS } from './consts';
+
+function createAlice() {
+  return new Player({
+    clientId: 'player-1',
+    name: 'Alice',
+    position: { x: 0, y: 0 },
+  });
+}
+
+const publicGameInformationOfAlice = {
+  players: [
+    {
+      id: 'player-1',
+      name: 'Alice',
+      health: DEFAULT_COMBAT_STATS.maxHealth,
+      maxHealth: DEFAULT_COMBAT_STATS.maxHealth,
+    },
+  ],
+};
 
 describe('GameGateway', () => {
   let gateway: GameGateway;
@@ -149,7 +170,7 @@ describe('GameGateway', () => {
       const game = {
         roomId,
         status,
-        players: [{ clientId: 'player-1' }],
+        players: [createAlice()],
       } as unknown as GameState;
 
       gameService.removePlayer.mockReturnValue(game);
@@ -168,7 +189,10 @@ describe('GameGateway', () => {
 
       expect(gameService.endGame).toHaveBeenCalledWith(roomId);
       expect(to).toHaveBeenCalledWith(roomId);
-      expect(emit).toHaveBeenCalledWith('game:ended', endedGame);
+      expect(emit).toHaveBeenCalledWith('game:ended', {
+        ...endedGame,
+        publicGameInformation: publicGameInformationOfAlice,
+      });
       expect(emit).not.toHaveBeenCalledWith('game:sync', expect.anything());
     });
 
@@ -179,7 +203,10 @@ describe('GameGateway', () => {
 
       expect(gameService.endGame).not.toHaveBeenCalled();
       expect(to).toHaveBeenCalledWith(roomId);
-      expect(emit).toHaveBeenCalledWith('game:sync', game);
+      expect(emit).toHaveBeenCalledWith('game:sync', {
+        ...game,
+        publicGameInformation: publicGameInformationOfAlice,
+      });
     });
   });
 
@@ -190,12 +217,16 @@ describe('GameGateway', () => {
       const gameState = {
         roomId,
         status: 'running',
+        players: [createAlice()],
       } as unknown as GameState;
 
       gateway.broadcastGamestate(gameState);
 
       expect(to).toHaveBeenCalledWith(roomId);
-      expect(emit).toHaveBeenCalledWith('game:sync', gameState);
+      expect(emit).toHaveBeenCalledWith('game:sync', {
+        ...gameState,
+        publicGameInformation: publicGameInformationOfAlice,
+      });
     });
   });
 });

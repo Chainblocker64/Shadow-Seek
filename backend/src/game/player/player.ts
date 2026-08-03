@@ -1,6 +1,11 @@
 import type { ClientId } from '../../shared/types';
 import type { ActionTimestamps, CombatStats } from '../combat/types';
-import type { FacingDirection, PlayerStatus, Position } from '../types';
+import type {
+  FacingDirection,
+  PlayerStatus,
+  Position,
+  PublicPlayerState,
+} from '../types';
 import {
   DEFAULT_COMBAT_STATS,
   DEFAULT_VISION_RANGE,
@@ -126,14 +131,20 @@ export class Player {
     return canAttack(this);
   }
 
-  toJSON() {
+  toPublicState(): PublicPlayerState {
     return {
       id: this.clientId,
       name: this.name,
-      spriteIndex: this.spriteIndex,
-      position: this.position,
       health: this.health,
       maxHealth: this.combatStats.maxHealth,
+    };
+  }
+
+  toJSON() {
+    return {
+      ...this.toPublicState(),
+      spriteIndex: this.spriteIndex,
+      position: this.position,
       facingDirection: this.facingDirection,
       status: this.status,
     };
