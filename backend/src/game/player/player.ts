@@ -127,6 +127,10 @@ export class Player {
     this.activeAction = actionName;
   }
 
+  getStatus(): PlayerStatus {
+    return this.status;
+  }
+
   canAttack(): boolean {
     return canAttack(this);
   }

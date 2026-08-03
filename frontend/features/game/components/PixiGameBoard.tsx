@@ -298,6 +298,10 @@ export function PixiGameBoard({
           (player) => player.id === socket.id,
         );
 
+        if (localPlayer?.status === "defeated") {
+          return;
+        }
+
         const fogFrameX = 768;
         const fogFrameY = 608;
 
