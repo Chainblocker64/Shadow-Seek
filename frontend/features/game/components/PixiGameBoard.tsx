@@ -27,9 +27,16 @@ import { socket } from "@/lib/socket";
 import { useInputControls } from "../hooks/useInputControls";
 import { calculateBoardLayout, type BoardLayout } from "./boardLayout";
 import { createTileHighlight } from "./tileHighlight";
+import { createAnimationManager } from "../animations/createAnimationManager";
 
 type GamePlayer = Player & {
   label: string;
+};
+
+type AttackEvent = {
+  attackerId: string;
+  targetId: string | null;
+  targetPosition: PlayerPosition;
 };
 
 type PixiGameBoardProps = {
@@ -41,9 +48,9 @@ type PixiGameBoardProps = {
 };
 
 function getFacingTile(
-  position: { x: number; y: number },
+  position: PlayerPosition,
   direction: PlayerDirection,
-) {
+): PlayerPosition {
   switch (direction) {
     case "up":
       return {
@@ -75,6 +82,19 @@ const TILESET_PATH = "/assets/tiles/dungeon-crawl.png";
 
 const DIRECTION_CIRCLE_SIZE = 12;
 const DIRECTION_CIRCLE_RADIUS = DIRECTION_CIRCLE_SIZE / 2;
+
+const ATTACK_PREVIEW_FRAME = {
+  x: 1696,
+  y: 864,
+};
+
+const ATTACK_COOLDOWN_MS = 1_000;
+
+const COOLDOWN_BAR_WIDTH_RATIO = 0.9;
+const COOLDOWN_BAR_HEIGHT = 4;
+
+const COOLDOWN_READY_COLOR = 0x3b82f6;
+const COOLDOWN_BACKGROUND_COLOR = 0x18181b;
 
 const OWN_PLAYER_DIRECTION_COLOR = 0x22c55e;
 const OTHER_PLAYER_DIRECTION_COLOR = 0xef4444;
@@ -123,6 +143,9 @@ export function PixiGameBoard({
   const winnerHighlightRef = useRef(winnerPosition);
   const renderWinnerHighlightRef = useRef<(() => void) | null>(null);
   const renderMapRef = useRef<(() => void) | null>(null);
+  const hiddenAttackPreviewPlayerIdsRef = useRef<Set<string>>(new Set());
+  const portalPlayedRef = useRef(false);
+  const attackCooldownsRef = useRef<Map<string, number>>(new Map());
   const renderFovRef = useRef<(() => void) | null>(null);
 
   useInputControls(status === "running");
@@ -153,8 +176,11 @@ export function PixiGameBoard({
     function destroyApp() {
       app?.destroy(true);
       app = null;
+      portalPlayedRef.current = false;
+      attackCooldownsRef.current.clear();
       renderPlayersRef.current = null;
       renderSpawnHighlightRef.current = null;
+      renderWinnerHighlightRef.current = null;
       renderMapRef.current = null;
       renderFovRef.current = null;
     }
@@ -186,6 +212,9 @@ export function PixiGameBoard({
         destroyApp();
         return;
       }
+
+      // Hier wird der gemeinsame Manager für alle Animationen einmal erstellt.
+      const animationManager = createAnimationManager(tilesetTexture);
 
       function createTileTexture(frameX: number, frameY: number) {
         return new Texture({
@@ -219,22 +248,204 @@ export function PixiGameBoard({
 
       const directionLayer = new Container();
       const playerLayer = new Container();
+      const attackPreviewLayer = new Container();
+      const attackAnimationLayer = new Container();
+      const attackCooldownLayer = new Container();
+      const portalLayer = new Container();
       const spawnHighlightLayer = new Container();
       const fovLayer = new Container();
       const winnerHighlightLayer = new Container();
 
       let layout: BoardLayout | null = null;
 
+      function renderAttackCooldowns() {
+        if (!layout) {
+          return;
+        }
+
+        attackCooldownLayer.removeChildren();
+
+        const currentTime = Date.now();
+        const { offsetX, offsetY, tileSize } = layout;
+
+        attackCooldownsRef.current.forEach((cooldownEndsAt, playerId) => {
+          const remainingTime = cooldownEndsAt - currentTime;
+
+          if (remainingTime <= 0) {
+            attackCooldownsRef.current.delete(playerId);
+            return;
+          }
+
+          const player = playersRef.current.find(
+            (currentPlayer) => currentPlayer.id === playerId,
+          );
+
+          if (!player) {
+            attackCooldownsRef.current.delete(playerId);
+            return;
+          }
+
+          const remainingRatio = remainingTime / ATTACK_COOLDOWN_MS;
+
+          const barWidth = tileSize * COOLDOWN_BAR_WIDTH_RATIO;
+          const barX =
+            offsetX + player.position.x * tileSize + (tileSize - barWidth) / 2;
+
+          const barY = offsetY + (player.position.y + 1) * tileSize + 4;
+
+          const cooldownBar = new Graphics()
+            .rect(barX, barY, barWidth, COOLDOWN_BAR_HEIGHT)
+            .fill({
+              color: COOLDOWN_BACKGROUND_COLOR,
+              alpha: 0.9,
+            });
+
+          cooldownBar
+            .rect(barX, barY, barWidth * remainingRatio, COOLDOWN_BAR_HEIGHT)
+            .fill({
+              color: COOLDOWN_READY_COLOR,
+              alpha: 1,
+            });
+
+          cooldownBar.rect(barX, barY, barWidth, COOLDOWN_BAR_HEIGHT).stroke({
+            width: 1,
+            color: 0x000000,
+            alpha: 0.9,
+          });
+
+          const cooldownLabel = new Text({
+            text: `${(remainingTime / 1_000).toFixed(1)}s`,
+            style: {
+              fontSize: 9,
+              fontWeight: "bold",
+              fill: 0xffffff,
+              stroke: {
+                color: 0x000000,
+                width: 2,
+              },
+            },
+          });
+
+          cooldownLabel.anchor.set(0.5, 1);
+          cooldownLabel.x = offsetX + (player.position.x + 0.5) * tileSize;
+
+          cooldownLabel.y = barY + COOLDOWN_BAR_HEIGHT + 12;
+
+          attackCooldownLayer.addChild(cooldownBar, cooldownLabel);
+        });
+      }
+
+      function playSpawnPortalAnimation() {
+        if (!layout || portalPlayedRef.current) {
+          return;
+        }
+
+        const spawnPosition = spawnHighlightRef.current;
+
+        if (!spawnPosition) {
+          return;
+        }
+
+        portalPlayedRef.current = true;
+
+        const { offsetX, offsetY, tileSize } = layout;
+
+        const portalX = offsetX + spawnPosition.x * tileSize;
+        const portalY = offsetY + spawnPosition.y * tileSize;
+
+        const portalOpen = animationManager.create("portalOpen", {
+          x: portalX,
+          y: portalY,
+          width: tileSize,
+          height: tileSize,
+          autoPlay: false,
+        });
+
+        portalOpen.onComplete = () => {
+          portalLayer.removeChild(portalOpen);
+          portalOpen.destroy();
+
+          const portalClose = animationManager.create("portalClose", {
+            x: portalX,
+            y: portalY,
+            width: tileSize,
+            height: tileSize,
+            autoPlay: false,
+          });
+
+          portalClose.onComplete = () => {
+            portalLayer.removeChild(portalClose);
+            portalClose.destroy();
+          };
+
+          portalLayer.addChild(portalClose);
+          portalClose.play();
+        };
+
+        portalLayer.addChild(portalOpen);
+        portalOpen.play();
+      }
+      function playAttackAnimation({
+        attackerId,
+        targetId,
+        targetPosition,
+      }: AttackEvent) {
+        if (!layout) {
+          return;
+        }
+
+        attackCooldownsRef.current.set(
+          attackerId,
+          Date.now() + ATTACK_COOLDOWN_MS,
+        );
+
+        renderAttackCooldowns();
+
+        if (!targetId) {
+          return;
+        }
+
+        const { offsetX, offsetY, tileSize } = layout;
+
+        hiddenAttackPreviewPlayerIdsRef.current.add(attackerId);
+
+        renderPlayers();
+
+        const attackAnimation = animationManager.create("attack", {
+          x: offsetX + targetPosition.x * tileSize,
+          y: offsetY + targetPosition.y * tileSize,
+          width: tileSize,
+          height: tileSize,
+          autoPlay: false,
+        });
+
+        attackAnimation.onComplete = () => {
+          attackAnimationLayer.removeChild(attackAnimation);
+          attackAnimation.destroy();
+
+          hiddenAttackPreviewPlayerIdsRef.current.delete(attackerId);
+
+          renderPlayers();
+        };
+
+        attackAnimationLayer.addChild(attackAnimation);
+        attackAnimation.play();
+      }
+
+      socket.on("game:attack", playAttackAnimation);
+
       app.ticker.add(() => {
         const blinkSpeed = 0.005;
 
-        directionLayer.alpha =
-          0.55 + ((Math.sin(Date.now() * blinkSpeed) + 1) / 2) * 0.95;
+        const blinkAlpha =
+          0.4 + ((Math.sin(Date.now() * blinkSpeed) + 1) / 2) * 0.6;
+
+        directionLayer.alpha = blinkAlpha;
+        attackPreviewLayer.alpha = blinkAlpha;
+
+        renderAttackCooldowns();
       });
 
-      // Marks where this client's own character will start while the game is
-      // still waiting. Uses a border plus a "You" caption so it never relies on
-      // colour alone and can't be mistaken for an active player.
       function renderSpawnHighlight() {
         if (!layout) {
           return;
@@ -363,6 +574,7 @@ export function PixiGameBoard({
 
         directionLayer.removeChildren();
         playerLayer.removeChildren();
+        attackPreviewLayer.removeChildren();
 
         const defeatedPlayers = playersRef.current.filter(
           (player) => player.status === "defeated",
@@ -381,55 +593,80 @@ export function PixiGameBoard({
                   player.spriteIndex % playerTextureFrames.length
                 ];
 
-          playerLayer.addChild(
-            createTileSprite(
-              frame.x,
-              frame.y,
-              offsetX + player.position.x * tileSize,
-              offsetY + player.position.y * tileSize,
-              tileSize,
-            ),
+          const playerSprite = createTileSprite(
+            frame.x,
+            frame.y,
+            offsetX + player.position.x * tileSize,
+            offsetY + player.position.y * tileSize,
+            tileSize,
           );
+
+          playerLayer.addChild(playerSprite);
 
           const facingTile = getFacingTile(
             player.position,
             player.facingDirection,
           );
 
+          const targetPlayer = playersRef.current.find((otherPlayer) => {
+            return (
+              otherPlayer.id !== player.id &&
+              otherPlayer.position.x === facingTile.x &&
+              otherPlayer.position.y === facingTile.y
+            );
+          });
+
           const isOwnPlayer = player.id === socket.id;
 
-          const circleColor = isOwnPlayer
-            ? OWN_PLAYER_DIRECTION_COLOR
-            : OTHER_PLAYER_DIRECTION_COLOR;
+          const attackPreviewIsHidden =
+            hiddenAttackPreviewPlayerIdsRef.current.has(player.id);
 
-          const circleCenterX =
-            offsetX + facingTile.x * tileSize + tileSize / 2;
+          if (targetPlayer && !attackPreviewIsHidden) {
+            const attackPreviewSprite = createTileSprite(
+              ATTACK_PREVIEW_FRAME.x,
+              ATTACK_PREVIEW_FRAME.y,
+              offsetX + targetPlayer.position.x * tileSize,
+              offsetY + targetPlayer.position.y * tileSize,
+              tileSize,
+            );
 
-          const circleCenterY =
-            offsetY + facingTile.y * tileSize + tileSize / 2;
+            attackPreviewSprite.alpha = 0.85;
 
-          const directionCircle = new Graphics();
+            attackPreviewLayer.addChild(attackPreviewSprite);
+          } else {
+            const circleColor = isOwnPlayer
+              ? OWN_PLAYER_DIRECTION_COLOR
+              : OTHER_PLAYER_DIRECTION_COLOR;
 
-          directionCircle
-            .circle(circleCenterX, circleCenterY, DIRECTION_CIRCLE_RADIUS)
-            .fill({
-              color: circleColor,
-              alpha: 0.9,
-            });
+            const circleCenterX =
+              offsetX + facingTile.x * tileSize + tileSize / 2;
 
-          directionLayer.addChild(directionCircle);
+            const circleCenterY =
+              offsetY + facingTile.y * tileSize + tileSize / 2;
+
+            const directionCircle = new Graphics();
+
+            directionCircle
+              .circle(circleCenterX, circleCenterY, DIRECTION_CIRCLE_RADIUS)
+              .fill({
+                color: circleColor,
+                alpha: 0.9,
+              });
+
+            directionLayer.addChild(directionCircle);
+          }
 
           const centerX = offsetX + (player.position.x + 0.5) * tileSize;
+
           const tileTopY = offsetY + player.position.y * tileSize;
 
-          // Stacked upwards from the tile so nothing covers the sprite:
-          // name label, then the health value, then the bar sitting closest to
-          // the character it belongs to.
           const barWidth = tileSize * HEALTH_BAR_WIDTH_RATIO;
+
           const barHeight = Math.max(
             HEALTH_BAR_MIN_HEIGHT,
             Math.round(tileSize * HEALTH_BAR_HEIGHT_RATIO),
           );
+
           const barX = centerX - barWidth / 2;
           const barY = tileTopY - HEALTH_ELEMENT_GAP - barHeight;
 
@@ -440,20 +677,24 @@ export function PixiGameBoard({
 
           const healthBar = new Graphics()
             .rect(barX, barY, barWidth, barHeight)
-            .fill({ color: 0x000000, alpha: 0.65 });
+            .fill({
+              color: 0x000000,
+              alpha: 0.65,
+            });
 
           // A zero-width fill would still paint a hairline, so a dead player
           // only gets the empty track.
           if (healthRatio > 0) {
-            healthBar
-              .rect(barX, barY, barWidth * healthRatio, barHeight)
-              .fill({ color: getHealthBarColor(healthRatio) });
+            healthBar.rect(barX, barY, barWidth * healthRatio, barHeight).fill({
+              color: getHealthBarColor(healthRatio),
+            });
           }
 
-          // The dark outline keeps the bar readable on every tile type.
-          healthBar
-            .rect(barX, barY, barWidth, barHeight)
-            .stroke({ width: 1, color: 0x000000, alpha: 0.9 });
+          healthBar.rect(barX, barY, barWidth, barHeight).stroke({
+            width: 1,
+            color: 0x000000,
+            alpha: 0.9,
+          });
 
           const healthLabel = new Text({
             text: `${player.health}/${player.maxHealth}`,
@@ -559,10 +800,22 @@ export function PixiGameBoard({
         });
 
         map.objects.forEach((object) => {
-          const objectFrame = mapObjectTextureFrames[object.type];
-
           const objectX = offsetX + object.x * tileSize;
           const objectY = offsetY + object.y * tileSize;
+          // Wasser wird vollständig über den gemeinsamen Manager erstellt.
+          if (object.type === "water") {
+            const animatedWater = animationManager.create("water", {
+              x: objectX,
+              y: objectY,
+              width: tileSize,
+              height: tileSize,
+            });
+
+            app?.stage.addChild(animatedWater);
+            return;
+          }
+
+          const objectFrame = mapObjectTextureFrames[object.type];
 
           const objectSprite = createTileSprite(
             objectFrame.x,
@@ -577,15 +830,26 @@ export function PixiGameBoard({
 
         app.stage.addChild(directionLayer);
         app.stage.addChild(playerLayer);
+        app.stage.addChild(attackPreviewLayer);
+        app.stage.addChild(attackAnimationLayer);
+        app.stage.addChild(attackCooldownLayer);
+        app.stage.addChild(portalLayer);
         app.stage.addChild(spawnHighlightLayer);
         app.stage.addChild(fovLayer);
         app.stage.addChild(winnerHighlightLayer);
+
+        layout = {
+          offsetX,
+          offsetY,
+          tileSize,
+        };
 
         layout = { offsetX, offsetY, tileSize };
         renderPlayers();
         renderSpawnHighlight();
         renderFov();
         renderWinnerHighlight();
+        playSpawnPortalAnimation();
       }
 
       renderMapRef.current = renderMap;
@@ -599,6 +863,7 @@ export function PixiGameBoard({
 
       return () => {
         resizeObserver.disconnect();
+        socket.off("game:attack", playAttackAnimation);
       };
     }
 
@@ -610,8 +875,6 @@ export function PixiGameBoard({
 
     return () => {
       isDestroyed = true;
-      // Wait for setupPixi's in-flight init/asset loading to settle before
-      // destroying, since app.init() must resolve before destroy() is safe.
       setupDone.then(() => {
         cleanupResizeObserver?.();
         destroyApp();

@@ -1,14 +1,23 @@
 import type { ClientId } from '../../shared/types';
 import { calculateNextPosition } from '../movement/server-movement';
-import type { GameState } from '../types';
+import type { GameState, Position } from '../types';
 
-export function attack(gameState: GameState, playerId: ClientId): boolean {
+export type AttackResult = {
+  attackerId: ClientId;
+  targetId: ClientId | null;
+  targetPosition: Position;
+};
+
+export function attack(
+  gameState: GameState,
+  playerId: ClientId,
+): AttackResult | null {
   const player = gameState.players.find(
-    (player) => player.clientId === playerId,
+    (currentPlayer) => currentPlayer.clientId === playerId,
   );
 
   if (!player || player.isHandlingAction() || !player.canAttack()) {
-    return false;
+    return null;
   }
 
   player.setActiveAction('attack');
@@ -22,11 +31,15 @@ export function attack(gameState: GameState, playerId: ClientId): boolean {
     attackRange,
   );
 
-  const targetPlayer = gameState.players.find(
-    (player) =>
-      player.getPosition().x === targetPosition.x &&
-      player.getPosition().y === targetPosition.y,
-  );
+  const targetPlayer = gameState.players.find((currentPlayer) => {
+    const position = currentPlayer.getPosition();
+
+    return (
+      currentPlayer.clientId !== playerId &&
+      position.x === targetPosition.x &&
+      position.y === targetPosition.y
+    );
+  });
 
   if (targetPlayer) {
     targetPlayer.takeDamage(attackValue);
@@ -39,5 +52,9 @@ export function attack(gameState: GameState, playerId: ClientId): boolean {
 
   player.setActiveAction(null);
 
-  return true;
+  return {
+    attackerId: playerId,
+    targetId: targetPlayer?.clientId ?? null,
+    targetPosition,
+  };
 }

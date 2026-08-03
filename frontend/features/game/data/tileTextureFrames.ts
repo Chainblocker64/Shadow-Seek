@@ -53,7 +53,7 @@ export const mapObjectTextureFrames: Record<
     y: 384,
   },
   spawn: {
-    x: 960,
+    x: 1120,
     y: 480,
   },
   bush: {

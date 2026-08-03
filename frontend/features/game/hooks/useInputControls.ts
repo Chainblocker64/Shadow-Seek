@@ -39,6 +39,8 @@ export function useInputControls(enabled: boolean) {
           break;
         case "attack":
           handleAttackInput(event);
+          break;
+
         default:
           return;
       }

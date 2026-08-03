@@ -144,14 +144,18 @@ export class GameGateway {
   }
 
   @SubscribeMessage('playerAttack')
-  handlePlayerAttack({ id: clientId }: Socket) {
-    const room = this.lobbyService.getPlayerRoom(clientId);
-
+  handlePlayerAttack(@ConnectedSocket() client: Socket) {
+    const room = this.lobbyService.getPlayerRoom(client.id);
     if (!room) {
       return;
     }
 
-    this.gameService.playerAttack(room.id, clientId);
+    const attackResult = this.gameService.playerAttack(room.id, client.id);
+    if (!attackResult) {
+      return;
+    }
+
+    this.server.to(room.id).emit('game:attack', attackResult);
   }
 
   private endGame(roomId: RoomId) {

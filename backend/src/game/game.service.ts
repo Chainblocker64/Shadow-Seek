@@ -10,8 +10,8 @@ import {
 import type { GameMap, GameState, MovementDirection, Position } from './types';
 import type { ClientId, RoomId } from '../shared/types';
 import { handlePlayerMovement } from './movement/server-movement';
+import { attack, type AttackResult } from './combat/attack';
 import { filterGameStateForPlayer } from './utils/filter-state';
-import { attack } from './combat/attack';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
 @Injectable()
@@ -135,24 +135,26 @@ export class GameService {
     return game;
   }
 
-  playerAttack(roomId: RoomId, playerId: ClientId) {
+  playerAttack(roomId: RoomId, playerId: ClientId): AttackResult | null {
     const game = this.games.get(roomId);
     if (!game || game.status !== RUNNING) {
-      return;
+      return null;
     }
 
-    const couldAttack = attack(game, playerId);
-    if (!couldAttack) {
-      return;
+    const attackResult = attack(game, playerId);
+
+    if (!attackResult) {
+      return null;
     }
 
     if (this.hasEnoughPlayersAlive(game)) {
       this.triggerGamestateBroadcast(roomId);
-      return;
+    } else {
+      this.endGame(roomId);
+      this.eventEmitter.emit('game.ended', game);
     }
 
-    this.endGame(roomId);
-    this.eventEmitter.emit('game.ended', game);
+    return attackResult;
   }
 
   startGame(roomId: RoomId): GameState | undefined {
