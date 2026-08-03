@@ -60,12 +60,6 @@
   text-transform: uppercase;
 }
 
-.playerHealth {
-  font-weight: 700;
-  margin-top: 0.25rem;
-  color: rgb(74 222 128);
-}
-
 .controls {
   display: flex;
   flex-direction: column;
