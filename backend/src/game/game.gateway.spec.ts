@@ -8,7 +8,7 @@ import { MapsService } from '../maps/maps.service';
 import type { Room } from '../lobby/types';
 import type { GameState } from './types';
 import { Player } from './player/player';
-import { DEFAULT_COMBAT_STATS } from './consts';
+import { DEFAULT_COMBAT_STATS, PLAYER_STATUS_ALIVE } from './consts';
 
 function createAlice() {
   return new Player({
@@ -25,6 +25,7 @@ const publicGameInformationOfAlice = {
       name: 'Alice',
       health: DEFAULT_COMBAT_STATS.maxHealth,
       maxHealth: DEFAULT_COMBAT_STATS.maxHealth,
+      status: PLAYER_STATUS_ALIVE,
     },
   ],
 };

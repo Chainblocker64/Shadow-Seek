@@ -18,6 +18,7 @@ import type { GameState } from "../types/game";
 import type { Player, PlayerDirection, PlayerPosition } from "../types/player";
 import {
   baseTileTextureFrames,
+  defeatedPlayerTextureFrame,
   mapObjectTextureFrames,
   playerTextureFrames,
   TILE_TEXTURE_SIZE,
@@ -298,6 +299,10 @@ export function PixiGameBoard({
           (player) => player.id === socket.id,
         );
 
+        if (localPlayer?.status === "defeated") {
+          return;
+        }
+
         const fogFrameX = 768;
         const fogFrameY = 608;
 
@@ -359,11 +364,22 @@ export function PixiGameBoard({
         directionLayer.removeChildren();
         playerLayer.removeChildren();
 
-        playersRef.current.forEach((player) => {
+        const defeatedPlayers = playersRef.current.filter(
+          (player) => player.status === "defeated",
+        );
+        const alivePlayers = playersRef.current.filter(
+          (player) => player.status !== "defeated",
+        );
+
+        // Render defeated players first so alive players draw on top when
+        // they share a tile.
+        [...defeatedPlayers, ...alivePlayers].forEach((player) => {
           const frame =
-            playerTextureFrames[
-              player.spriteIndex % playerTextureFrames.length
-            ];
+            player.status === "defeated"
+              ? defeatedPlayerTextureFrame
+              : playerTextureFrames[
+                  player.spriteIndex % playerTextureFrames.length
+                ];
 
           playerLayer.addChild(
             createTileSprite(

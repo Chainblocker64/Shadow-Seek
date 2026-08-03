@@ -40,6 +40,7 @@ export type PublicPlayerState = {
   name: string;
   health: number;
   maxHealth: number;
+  status: PlayerStatus;
 };
 
 export type PublicGameInformation = {

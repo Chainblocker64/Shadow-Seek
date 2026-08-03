@@ -2,6 +2,7 @@ import { GameState } from '../types';
 import { hasLineOfSight } from './line-of-sight';
 import { isWithinVisionRange } from './distance';
 import { Player } from '../player/player';
+import { PLAYER_STATUS_DEFEATED } from '../consts';
 
 export function filterGameStateForPlayer(
   gameState: GameState,
@@ -11,7 +12,10 @@ export function filterGameStateForPlayer(
   const mapObjects = gameState.map.objects;
 
   const visiblePlayers: Player[] = gameState.players.filter((otherPlayer) => {
-    if (otherPlayer.clientId === viewer.clientId) {
+    if (
+      otherPlayer.clientId === viewer.clientId ||
+      viewer.getStatus() === PLAYER_STATUS_DEFEATED
+    ) {
       return true;
     }
 
