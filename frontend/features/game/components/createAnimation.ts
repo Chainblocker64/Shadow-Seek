@@ -1,32 +1,33 @@
 import { AnimatedSprite, Texture } from "pixi.js";
 
-type CreateAnimatedTileProps = {
+type CreateAnimatedSpriteProps = {
   textures: Texture[];
   x: number;
   y: number;
-  tileSize: number;
+  width: number;
+  height: number;
   speed: number;
-  loop: boolean;
+  loop?: boolean;
 };
 
-export function createAnimatedTile({
+export function createAnimatedSprite({
   textures,
   x,
   y,
-  tileSize,
+  width,
+  height,
   speed,
-  loop,
-}: CreateAnimatedTileProps) {
+  loop = true,
+}: CreateAnimatedSpriteProps) {
   const sprite = new AnimatedSprite(textures);
 
   sprite.x = x;
   sprite.y = y;
 
-  sprite.width = tileSize;
-  sprite.height = tileSize;
+  sprite.width = width;
+  sprite.height = height;
 
   sprite.animationSpeed = speed;
-
   sprite.loop = loop;
 
   sprite.play();
