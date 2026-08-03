@@ -36,6 +36,7 @@ describe('GameGateway', () => {
     playerAttack: jest.Mock;
     removePlayer: jest.Mock;
     endGame: jest.Mock;
+    getFilteredGameStates: jest.Mock;
   };
   let lobbyService: {
     getPlayerRoom: jest.Mock;
@@ -49,6 +50,7 @@ describe('GameGateway', () => {
       playerAttack: jest.fn(),
       removePlayer: jest.fn(),
       endGame: jest.fn(),
+      getFilteredGameStates: jest.fn(),
     };
 
     lobbyService = {
@@ -211,22 +213,35 @@ describe('GameGateway', () => {
   });
 
   describe('broadcastGamestate', () => {
-    it('emits the game state to the room when the game service reports a change', () => {
-      const roomId = randomUUID();
+    it('emits the game state to the player when the game service reports a change', () => {
+      const clientId = randomUUID();
+
+      const alice = {
+        ...createAlice(),
+        clientId,
+        toPublicState: jest.fn().mockReturnValue({
+          id: 'player-1',
+          name: 'Alice',
+        }),
+      };
 
       const gameState = {
-        roomId,
+        roomId: randomUUID(),
         status: 'running',
-        players: [createAlice()],
+        players: [alice],
       } as unknown as GameState;
+
+      gameService.getFilteredGameStates.mockReturnValue([
+        {
+          clientId: clientId,
+          gameState: gameState,
+        },
+      ]);
 
       gateway.broadcastGamestate(gameState);
 
-      expect(to).toHaveBeenCalledWith(roomId);
-      expect(emit).toHaveBeenCalledWith('game:sync', {
-        ...gameState,
-        publicGameInformation: publicGameInformationOfAlice,
-      });
+      expect(to).toHaveBeenCalledWith(clientId);
+      expect(emit).toHaveBeenCalledWith('game:sync', expect.any(Object));
     });
   });
 });

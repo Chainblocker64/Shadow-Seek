@@ -191,6 +191,7 @@ export class GameGateway {
 
       if (game) {
         this.broadcastGamestate(game);
+
         this.scheduleGameEnd(roomId);
       }
     }, GAME_START_DELAY_MS);
@@ -218,8 +219,16 @@ export class GameGateway {
 
   @OnEvent('game.broadcast')
   broadcastGamestate(gameState: GameState) {
-    this.server
-      .to(gameState.roomId)
-      .emit('game:sync', toGameStatePayload(gameState));
+    const gameStatePayload = toGameStatePayload(gameState);
+    const personalizedStates =
+      this.gameService.getFilteredGameStates(gameStatePayload);
+
+    if (!personalizedStates) {
+      return;
+    }
+
+    for (const { clientId, gameState: filteredState } of personalizedStates) {
+      this.server.to(clientId).emit('game:sync', filteredState);
+    }
   }
 }

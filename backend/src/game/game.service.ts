@@ -4,6 +4,7 @@ import { ENDED, GAME_DURATION_MS, RUNNING, WAITING } from './consts';
 import type { GameMap, GameState, MovementDirection, Position } from './types';
 import type { ClientId, RoomId } from '../shared/types';
 import { handlePlayerMovement } from './movement/server-movement';
+import { filterGameStateForPlayer } from './utils/filter-state';
 import { attack } from './combat/attack';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 
@@ -212,6 +213,15 @@ export class GameService {
     return map.objects
       .filter((object) => object.type === 'spawn')
       .map(({ x, y }) => ({ x, y }));
+  }
+
+  getFilteredGameStates(
+    gameState: GameState,
+  ): Array<{ clientId: ClientId; gameState: GameState }> {
+    return gameState.players.map((player) => ({
+      clientId: player.clientId,
+      gameState: filterGameStateForPlayer(gameState, player),
+    }));
   }
 
   private triggerGamestateBroadcast(roomId: RoomId) {
