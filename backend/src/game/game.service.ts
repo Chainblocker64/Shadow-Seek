@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Player } from './player/player';
-import { ENDED, GAME_DURATION_MS, RUNNING, WAITING } from './consts';
+import {
+  ENDED,
+  GAME_DURATION_MS,
+  MIN_PLAYERS_TO_START,
+  RUNNING,
+  WAITING,
+} from './consts';
 import type { GameMap, GameState, MovementDirection, Position } from './types';
 import type { ClientId, RoomId } from '../shared/types';
 import { handlePlayerMovement } from './movement/server-movement';
@@ -136,11 +142,17 @@ export class GameService {
     }
 
     const attackResult = attack(game, playerId);
+
     if (!attackResult) {
       return null;
     }
 
-    this.triggerGamestateBroadcast(roomId);
+    if (this.hasEnoughPlayersAlive(game)) {
+      this.triggerGamestateBroadcast(roomId);
+    } else {
+      this.endGame(roomId);
+      this.eventEmitter.emit('game.ended', game);
+    }
 
     return attackResult;
   }
@@ -170,6 +182,12 @@ export class GameService {
     game.winner = this.determineWinner(game.players);
 
     return game;
+  }
+
+  private hasEnoughPlayersAlive(game: GameState): boolean {
+    const alivePlayers = game.players.filter((player) => player.isAlive());
+
+    return alivePlayers.length >= MIN_PLAYERS_TO_START;
   }
 
   private determineWinner(players: Player[]): ClientId | null {
