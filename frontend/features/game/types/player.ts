@@ -19,4 +19,5 @@ export type Player = PublicPlayer & {
   spriteIndex: number;
   position: PlayerPosition;
   facingDirection: PlayerDirection;
+  visionRange: number;
 };
