@@ -146,11 +146,6 @@ export default function GameBoard() {
         <aside className={styles.sidebar}>
           <div>
             <p className={styles.gameLabel}>Shadow Seek</p>
-            {currentPlayer && (
-              <p className={styles.playerHealth}>
-                Health Points: {currentPlayer.health}/{currentPlayer.maxHealth}
-              </p>
-            )}
           </div>
 
           <PlayerList players={listedPlayers} />
