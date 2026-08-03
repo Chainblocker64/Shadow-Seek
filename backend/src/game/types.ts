@@ -1,5 +1,11 @@
-import { WAITING, RUNNING, ENDED } from './consts';
-import type { RoomId } from '../shared/types';
+import {
+  WAITING,
+  RUNNING,
+  ENDED,
+  PLAYER_STATUS_ALIVE,
+  PLAYER_STATUS_DEFEATED,
+} from './consts';
+import type { ClientId, RoomId } from '../shared/types';
 import type { Player } from './player/player';
 
 export type Status = typeof WAITING | typeof RUNNING | typeof ENDED;
@@ -26,6 +32,22 @@ export type GameState = {
   map: GameMap;
   players: Player[];
   endsAt: number | null;
+  winner: ClientId | null;
+};
+
+export type PublicPlayerState = {
+  id: ClientId;
+  name: string;
+  health: number;
+  maxHealth: number;
+};
+
+export type PublicGameInformation = {
+  players: PublicPlayerState[];
+};
+
+export type GameStatePayload = GameState & {
+  publicGameInformation: PublicGameInformation;
 };
 
 export const BASE_TILE_TYPES = [
@@ -60,3 +82,6 @@ export type MapObject = Position & {
 export const MOVEMENT_DIRECTIONS = ['up', 'down', 'left', 'right'] as const;
 
 export type MovementDirection = (typeof MOVEMENT_DIRECTIONS)[number];
+
+export type PlayerStatus =
+  typeof PLAYER_STATUS_ALIVE | typeof PLAYER_STATUS_DEFEATED;

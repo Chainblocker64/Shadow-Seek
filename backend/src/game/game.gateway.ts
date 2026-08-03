@@ -13,6 +13,7 @@ import {
   GAME_DURATION_MS,
   GAME_START_DELAY_MS,
   MIN_PLAYERS_TO_START,
+  RUNNING,
 } from './consts';
 import { GameService } from './game.service';
 import { UsePipes, ValidationPipe } from '@nestjs/common';
@@ -20,6 +21,7 @@ import { MovePlayerDto } from './dto/move-player.dto';
 import { OnEvent } from '@nestjs/event-emitter';
 import { RoomUpdatedEvent } from '../lobby/events/room-updated.event';
 import type { GameState } from './types';
+import { toGameStatePayload } from './game-state-payload';
 
 @WebSocketGateway({ cors: { origin: process.env.FRONTEND_URL } })
 @UsePipes(
@@ -68,8 +70,9 @@ export class GameGateway {
     const map = await this.mapsService.findOneByName(room.map);
     const game = this.gameService.createGame(room.id, room.players, map);
 
+    this.lobbyService.setRunning(room.id);
     this.server.to(room.id).emit('game:opened');
-    this.server.to(room.id).emit('game:sync', game);
+    this.server.to(room.id).emit('game:sync', toGameStatePayload(game));
     this.scheduleGameStart(room.id);
   }
 
@@ -91,7 +94,7 @@ export class GameGateway {
     }
 
     this.server.to(clientId).emit('game:opened');
-    this.server.to(room.id).emit('game:sync', game);
+    this.server.to(room.id).emit('game:sync', toGameStatePayload(game));
   }
 
   @SubscribeMessage('leaveGame')
@@ -118,7 +121,12 @@ export class GameGateway {
       return;
     }
 
-    this.server.to(game.roomId).emit('game:sync', game);
+    if (game.status === RUNNING && game.players.length === 1) {
+      this.endGameEarly(game.roomId);
+      return;
+    }
+
+    this.server.to(game.roomId).emit('game:sync', toGameStatePayload(game));
   }
 
   @SubscribeMessage('movePlayer')
@@ -144,6 +152,16 @@ export class GameGateway {
     }
 
     this.gameService.playerAttack(room.id, clientId);
+  }
+
+  private endGameEarly(roomId: RoomId) {
+    this.clearTimers(roomId);
+
+    const game = this.gameService.endGame(roomId);
+
+    if (game) {
+      this.server.to(roomId).emit('game:ended', toGameStatePayload(game));
+    }
   }
 
   private clearTimers(roomId: RoomId) {
@@ -192,28 +210,25 @@ export class GameGateway {
       const game = this.gameService.endGame(roomId);
 
       if (game) {
-        this.server.to(roomId).emit('game:ended', game);
+        this.server.to(roomId).emit('game:ended', toGameStatePayload(game));
       }
     }, GAME_DURATION_MS);
 
     this.gameEndTimers.set(roomId, timer);
   }
 
-  private broadcastFilteredGame(event: string, gameState: GameState) {
+  @OnEvent('game.broadcast')
+  broadcastGamestate(gameState: GameState) {
+    const gameStatePayload = toGameStatePayload(gameState);
     const personalizedStates =
-      this.gameService.getFilteredGameStates(gameState);
+      this.gameService.getFilteredGameStates(gameStatePayload);
 
     if (!personalizedStates) {
       return;
     }
 
     for (const { clientId, gameState: filteredState } of personalizedStates) {
-      this.server.to(clientId).emit(event, filteredState);
+      this.server.to(clientId).emit('game:sync', filteredState);
     }
-  }
-
-  @OnEvent('game.broadcast')
-  broadcastGamestate(gameState: GameState) {
-    this.broadcastFilteredGame('game:sync', gameState);
   }
 }

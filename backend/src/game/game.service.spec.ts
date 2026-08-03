@@ -2,7 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { randomUUID } from 'node:crypto';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { GameService } from './game.service';
-import { ENDED, GAME_DURATION_MS, RUNNING, WAITING } from './consts';
+import {
+  DEFAULT_COMBAT_STATS,
+  ENDED,
+  GAME_DURATION_MS,
+  RUNNING,
+  WAITING,
+} from './consts';
 import type { GameMap } from './types';
 
 describe('GameService', () => {
@@ -50,31 +56,32 @@ describe('GameService', () => {
       map,
     );
 
-    expect({
-      ...game,
-      players: game.players.map((player) => player.toJSON()),
-    }).toEqual({
+    expect(game).toMatchObject({
       roomId,
       status: WAITING,
       map,
-      players: [
-        {
-          id: 'player-1',
-          name: 'Alice',
-          spriteIndex: 0,
-          position: { x: 0, y: 0 },
-          facingDirection: 'down',
-        },
-        {
-          id: 'player-2',
-          name: 'Bob',
-          spriteIndex: 1,
-          position: { x: 3, y: 3 },
-          facingDirection: 'down',
-        },
-      ],
       endsAt: null,
     });
+    expect(game.players.map((player) => player.toJSON())).toMatchObject([
+      {
+        id: 'player-1',
+        name: 'Alice',
+        spriteIndex: 0,
+        position: { x: 0, y: 0 },
+        facingDirection: 'down',
+        health: DEFAULT_COMBAT_STATS.maxHealth,
+        maxHealth: DEFAULT_COMBAT_STATS.maxHealth,
+      },
+      {
+        id: 'player-2',
+        name: 'Bob',
+        spriteIndex: 1,
+        position: { x: 3, y: 3 },
+        facingDirection: 'down',
+        health: DEFAULT_COMBAT_STATS.maxHealth,
+        maxHealth: DEFAULT_COMBAT_STATS.maxHealth,
+      },
+    ]);
     expect(game.players).toMatchObject([
       { clientId: 'player-1', name: 'Alice', position: { x: 0, y: 0 } },
       { clientId: 'player-2', name: 'Bob', position: { x: 3, y: 3 } },
@@ -143,6 +150,61 @@ describe('GameService', () => {
 
     expect(game).toMatchObject({ roomId, status: ENDED, endsAt: null });
     expect(service.getGame(roomId)).toBe(game);
+  });
+
+  describe('endGame winner', () => {
+    function createEndableGame() {
+      const roomId = randomUUID();
+      const map: GameMap = {
+        name: 'Test map',
+        width: 4,
+        height: 4,
+        baseTile: 'floor',
+        baseOverrides: [],
+        objects: [
+          { x: 0, y: 0, type: 'spawn' },
+          { x: 3, y: 3, type: 'spawn' },
+        ],
+      };
+
+      const game = service.createGame(
+        roomId,
+        [
+          { id: 'player-1', name: 'Alice' },
+          { id: 'player-2', name: 'Bob' },
+        ],
+        map,
+      );
+
+      service.startGame(roomId);
+
+      return { roomId, game };
+    }
+
+    it('declares the player with the most health the winner', () => {
+      const { roomId, game } = createEndableGame();
+
+      game.players[1].takeDamage(10);
+
+      expect(service.endGame(roomId)?.winner).toBe('player-1');
+    });
+
+    it('declares no winner when the highest health is tied', () => {
+      const { roomId, game } = createEndableGame();
+
+      game.players[0].takeDamage(10);
+      game.players[1].takeDamage(10);
+
+      expect(service.endGame(roomId)?.winner).toBeNull();
+    });
+
+    it('declares no winner when the game has no players left', () => {
+      const { roomId, game } = createEndableGame();
+
+      game.players.length = 0;
+
+      expect(service.endGame(roomId)?.winner).toBeNull();
+    });
   });
 
   describe('movePlayer', () => {

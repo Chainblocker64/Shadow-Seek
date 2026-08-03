@@ -7,12 +7,36 @@ import { LobbyService } from '../lobby/lobby.service';
 import { MapsService } from '../maps/maps.service';
 import type { Room } from '../lobby/types';
 import type { GameState } from './types';
+import { Player } from './player/player';
+import { DEFAULT_COMBAT_STATS } from './consts';
+
+function createAlice() {
+  return new Player({
+    clientId: 'player-1',
+    name: 'Alice',
+    position: { x: 0, y: 0 },
+  });
+}
+
+const publicGameInformationOfAlice = {
+  players: [
+    {
+      id: 'player-1',
+      name: 'Alice',
+      health: DEFAULT_COMBAT_STATS.maxHealth,
+      maxHealth: DEFAULT_COMBAT_STATS.maxHealth,
+    },
+  ],
+};
 
 describe('GameGateway', () => {
   let gateway: GameGateway;
   let gameService: {
     movePlayer: jest.Mock;
     playerAttack: jest.Mock;
+    removePlayer: jest.Mock;
+    endGame: jest.Mock;
+    getFilteredGameStates: jest.Mock;
   };
   let lobbyService: {
     getPlayerRoom: jest.Mock;
@@ -24,6 +48,9 @@ describe('GameGateway', () => {
     gameService = {
       movePlayer: jest.fn(),
       playerAttack: jest.fn(),
+      removePlayer: jest.fn(),
+      endGame: jest.fn(),
+      getFilteredGameStates: jest.fn(),
     };
 
     lobbyService = {
@@ -138,19 +165,83 @@ describe('GameGateway', () => {
     });
   });
 
-  describe('broadcastGamestate', () => {
-    it('emits the game state to the room when the game service reports a change', () => {
+  describe('handleDisconnect', () => {
+    function createRemainingGame(status: GameState['status']) {
       const roomId = randomUUID();
 
-      const gameState = {
+      const game = {
         roomId,
-        status: 'running',
+        status,
+        players: [createAlice()],
       } as unknown as GameState;
+
+      gameService.removePlayer.mockReturnValue(game);
+
+      return { roomId, game };
+    }
+
+    it('ends a running game when only one player remains', () => {
+      const { roomId, game } = createRemainingGame('running');
+
+      const endedGame = { ...game, status: 'ended', winner: 'player-1' };
+
+      gameService.endGame.mockReturnValue(endedGame);
+
+      gateway.handleDisconnect({ id: 'player-2' } as Socket);
+
+      expect(gameService.endGame).toHaveBeenCalledWith(roomId);
+      expect(to).toHaveBeenCalledWith(roomId);
+      expect(emit).toHaveBeenCalledWith('game:ended', {
+        ...endedGame,
+        publicGameInformation: publicGameInformationOfAlice,
+      });
+      expect(emit).not.toHaveBeenCalledWith('game:sync', expect.anything());
+    });
+
+    it('keeps a waiting game running when only one player remains', () => {
+      const { roomId, game } = createRemainingGame('waiting');
+
+      gateway.handleDisconnect({ id: 'player-2' } as Socket);
+
+      expect(gameService.endGame).not.toHaveBeenCalled();
+      expect(to).toHaveBeenCalledWith(roomId);
+      expect(emit).toHaveBeenCalledWith('game:sync', {
+        ...game,
+        publicGameInformation: publicGameInformationOfAlice,
+      });
+    });
+  });
+
+  describe('broadcastGamestate', () => {
+    it('emits the game state to the player when the game service reports a change', () => {
+      const clientId = randomUUID();
+
+      const alice = {
+        ...createAlice(),
+        clientId,
+        toPublicState: jest.fn().mockReturnValue({
+          id: 'player-1',
+          name: 'Alice',
+        }),
+      };
+
+      const gameState = {
+        roomId: randomUUID(),
+        status: 'running',
+        players: [alice],
+      } as unknown as GameState;
+
+      gameService.getFilteredGameStates.mockReturnValue([
+        {
+          clientId: clientId,
+          gameState: gameState,
+        },
+      ]);
 
       gateway.broadcastGamestate(gameState);
 
-      expect(to).toHaveBeenCalledWith(roomId);
-      expect(emit).toHaveBeenCalledWith('game:sync', gameState);
+      expect(to).toHaveBeenCalledWith(clientId);
+      expect(emit).toHaveBeenCalledWith('game:sync', expect.any(Object));
     });
   });
 });

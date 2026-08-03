@@ -25,6 +25,7 @@ import {
 import { socket } from "@/lib/socket";
 import { useInputControls } from "../hooks/useInputControls";
 import { calculateBoardLayout, type BoardLayout } from "./boardLayout";
+import { createTileHighlight } from "./tileHighlight";
 
 type GamePlayer = Player & {
   label: string;
@@ -35,6 +36,7 @@ type PixiGameBoardProps = {
   players: GamePlayer[];
   status: GameState["status"];
   currentPlayerSpawnPosition: PlayerPosition | null;
+  winnerPosition: PlayerPosition | null;
 };
 
 function getFacingTile(
@@ -76,11 +78,40 @@ const DIRECTION_CIRCLE_RADIUS = DIRECTION_CIRCLE_SIZE / 2;
 const OWN_PLAYER_DIRECTION_COLOR = 0x22c55e;
 const OTHER_PLAYER_DIRECTION_COLOR = 0xef4444;
 
+const HEALTH_BAR_WIDTH_RATIO = 0.9;
+const HEALTH_BAR_HEIGHT_RATIO = 0.12;
+const HEALTH_BAR_MIN_HEIGHT = 3;
+const HEALTH_FONT_SIZE_RATIO = 0.3;
+const HEALTH_MIN_FONT_SIZE = 9;
+// Vertical breathing room between the name label, the health value and the bar.
+const HEALTH_ELEMENT_GAP = 2;
+
+const HEALTH_HIGH_COLOR = 0x22c55e;
+const HEALTH_MEDIUM_COLOR = 0xfacc15;
+const HEALTH_LOW_COLOR = 0xef4444;
+const HEALTH_MEDIUM_RATIO = 0.5;
+const HEALTH_LOW_RATIO = 0.25;
+
+// Colour reinforces the bar length, it never carries the value on its own — the
+// number above the bar states it outright.
+function getHealthBarColor(ratio: number): number {
+  if (ratio > HEALTH_MEDIUM_RATIO) {
+    return HEALTH_HIGH_COLOR;
+  }
+
+  if (ratio > HEALTH_LOW_RATIO) {
+    return HEALTH_MEDIUM_COLOR;
+  }
+
+  return HEALTH_LOW_COLOR;
+}
+
 export function PixiGameBoard({
   map,
   players,
   status,
   currentPlayerSpawnPosition,
+  winnerPosition,
 }: PixiGameBoardProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const playersRef = useRef(players);
@@ -88,6 +119,8 @@ export function PixiGameBoard({
   const renderPlayersRef = useRef<(() => void) | null>(null);
   const spawnHighlightRef = useRef(currentPlayerSpawnPosition);
   const renderSpawnHighlightRef = useRef<(() => void) | null>(null);
+  const winnerHighlightRef = useRef(winnerPosition);
+  const renderWinnerHighlightRef = useRef<(() => void) | null>(null);
   const renderMapRef = useRef<(() => void) | null>(null);
   const renderFovRef = useRef<(() => void) | null>(null);
 
@@ -97,6 +130,11 @@ export function PixiGameBoard({
     spawnHighlightRef.current = currentPlayerSpawnPosition;
     renderSpawnHighlightRef.current?.();
   }, [currentPlayerSpawnPosition]);
+
+  useEffect(() => {
+    winnerHighlightRef.current = winnerPosition;
+    renderWinnerHighlightRef.current?.();
+  }, [winnerPosition]);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -182,6 +220,7 @@ export function PixiGameBoard({
       const playerLayer = new Container();
       const spawnHighlightLayer = new Container();
       const fovLayer = new Container();
+      const winnerHighlightLayer = new Container();
 
       let layout: BoardLayout | null = null;
 
@@ -200,8 +239,6 @@ export function PixiGameBoard({
           return;
         }
 
-        const { offsetX, offsetY, tileSize } = layout;
-
         spawnHighlightLayer.removeChildren();
 
         const spawn = spawnHighlightRef.current;
@@ -210,38 +247,44 @@ export function PixiGameBoard({
           return;
         }
 
-        const x = offsetX + spawn.x * tileSize;
-        const y = offsetY + spawn.y * tileSize;
-
-        // The dark outer stroke keeps the marker readable on every tile type.
-        const border = new Graphics()
-          .rect(x + 1, y + 1, tileSize - 2, tileSize - 2)
-          .stroke({ width: 4, color: 0x000000, alpha: 0.7 })
-          .rect(x + 1, y + 1, tileSize - 2, tileSize - 2)
-          .stroke({ width: 2, color: 0xfacc15 });
-
-        const caption = new Text({
-          text: "You",
-          style: {
-            fontSize: Math.max(10, Math.round(tileSize * 0.45)),
-            fontWeight: "bold",
-            fill: 0xfacc15,
-            stroke: { color: 0x000000, width: 3 },
-          },
-        });
-
-        // Caption sits below the tile, except on the last row where it would be
-        // clipped by the canvas edge.
-        const isLastRow = spawn.y === map.height - 1;
-
-        caption.anchor.set(0.5, isLastRow ? 1 : 0);
-        caption.x = x + tileSize / 2;
-        caption.y = isLastRow ? y - 2 : y + tileSize + 2;
-
-        spawnHighlightLayer.addChild(border, caption);
+        spawnHighlightLayer.addChild(
+          createTileHighlight({
+            position: spawn,
+            caption: "You",
+            layout,
+            mapHeight: mapRef.current.height,
+          }),
+        );
       }
 
       renderSpawnHighlightRef.current = renderSpawnHighlight;
+
+      // Marks the winner once the game has ended, using the same highlight as
+      // the spawn marker so both read as the same kind of annotation.
+      function renderWinnerHighlight() {
+        if (!layout) {
+          return;
+        }
+
+        winnerHighlightLayer.removeChildren();
+
+        const winner = winnerHighlightRef.current;
+
+        if (!winner) {
+          return;
+        }
+
+        winnerHighlightLayer.addChild(
+          createTileHighlight({
+            position: winner,
+            caption: "Winner",
+            layout,
+            mapHeight: mapRef.current.height,
+          }),
+        );
+      }
+
+      renderWinnerHighlightRef.current = renderWinnerHighlight;
 
       function renderFov() {
         if (!layout) {
@@ -360,6 +403,62 @@ export function PixiGameBoard({
 
           directionLayer.addChild(directionCircle);
 
+          const centerX = offsetX + (player.position.x + 0.5) * tileSize;
+          const tileTopY = offsetY + player.position.y * tileSize;
+
+          // Stacked upwards from the tile so nothing covers the sprite:
+          // name label, then the health value, then the bar sitting closest to
+          // the character it belongs to.
+          const barWidth = tileSize * HEALTH_BAR_WIDTH_RATIO;
+          const barHeight = Math.max(
+            HEALTH_BAR_MIN_HEIGHT,
+            Math.round(tileSize * HEALTH_BAR_HEIGHT_RATIO),
+          );
+          const barX = centerX - barWidth / 2;
+          const barY = tileTopY - HEALTH_ELEMENT_GAP - barHeight;
+
+          // The server keeps health within 0…maxHealth, so only the division
+          // itself needs guarding.
+          const healthRatio =
+            player.maxHealth > 0 ? player.health / player.maxHealth : 0;
+
+          const healthBar = new Graphics()
+            .rect(barX, barY, barWidth, barHeight)
+            .fill({ color: 0x000000, alpha: 0.65 });
+
+          // A zero-width fill would still paint a hairline, so a dead player
+          // only gets the empty track.
+          if (healthRatio > 0) {
+            healthBar
+              .rect(barX, barY, barWidth * healthRatio, barHeight)
+              .fill({ color: getHealthBarColor(healthRatio) });
+          }
+
+          // The dark outline keeps the bar readable on every tile type.
+          healthBar
+            .rect(barX, barY, barWidth, barHeight)
+            .stroke({ width: 1, color: 0x000000, alpha: 0.9 });
+
+          const healthLabel = new Text({
+            text: `${player.health}/${player.maxHealth}`,
+            style: {
+              fontSize: Math.max(
+                HEALTH_MIN_FONT_SIZE,
+                Math.round(tileSize * HEALTH_FONT_SIZE_RATIO),
+              ),
+              fontWeight: "bold",
+              fill: 0xffffff,
+              stroke: {
+                color: 0x000000,
+                width: 2,
+              },
+            },
+          });
+
+          healthLabel.anchor.set(0.5, 1);
+          healthLabel.x = centerX;
+          healthLabel.y = barY - HEALTH_ELEMENT_GAP;
+
           const playerLabel = new Text({
             text: player.label,
             style: {
@@ -375,10 +474,10 @@ export function PixiGameBoard({
 
           playerLabel.anchor.set(0.5, 1);
           playerLabel.alpha = 0.5;
-          playerLabel.x = offsetX + (player.position.x + 0.5) * tileSize;
-          playerLabel.y = offsetY + player.position.y * tileSize;
+          playerLabel.x = centerX;
+          playerLabel.y = healthLabel.y - healthLabel.height;
 
-          playerLayer.addChild(playerLabel);
+          playerLayer.addChild(playerLabel, healthLabel, healthBar);
         });
       }
 
@@ -464,11 +563,13 @@ export function PixiGameBoard({
         app.stage.addChild(playerLayer);
         app.stage.addChild(spawnHighlightLayer);
         app.stage.addChild(fovLayer);
+        app.stage.addChild(winnerHighlightLayer);
 
         layout = { offsetX, offsetY, tileSize };
         renderPlayers();
         renderSpawnHighlight();
         renderFov();
+        renderWinnerHighlight();
       }
 
       renderMapRef.current = renderMap;

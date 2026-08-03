@@ -41,22 +41,35 @@ export default function GameBoard() {
   const isEnded = game?.status === "ended";
   const remainingMs =
     game?.endsAt != null ? Math.max(0, game.endsAt - now) : null;
-  const currentPlayerSpawnPosition =
-    game?.players.find((player) => player.id === socket.id)?.position ?? null;
+  const currentPlayer =
+    game?.players.find((player) => player.id === socket.id) ?? null;
+  const currentPlayerSpawnPosition = currentPlayer?.position ?? null;
+  const winner =
+    isEnded && game.winner
+      ? (game.players.find((player) => player.id === game.winner) ?? null)
+      : null;
+
+  const publicPlayers = game?.publicGameInformation?.players;
 
   const labeledPlayers = useMemo(
     () =>
       (game?.players ?? []).map((player) => ({
-        id: player.id,
-        name: player.name,
+        ...player,
         label: player.name,
         isSelf: player.id === socket.id,
-        spriteIndex: player.spriteIndex,
-        position: player.position,
-        facingDirection: player.facingDirection,
-        visionRange: player.visionRange,
       })),
     [game?.players],
+  );
+
+  // The board only renders players the field of view exposes, while the
+  // sidebar lists everyone in the room.
+  const listedPlayers = useMemo(
+    () =>
+      (publicPlayers ?? []).map((player) => ({
+        ...player,
+        isSelf: player.id === socket.id,
+      })),
+    [publicPlayers],
   );
 
   useEffect(() => {
@@ -133,11 +146,9 @@ export default function GameBoard() {
         <aside className={styles.sidebar}>
           <div>
             <p className={styles.gameLabel}>Shadow Seek</p>
-            {/* TODO: Fill in the actual health once the game state carries it */}
-            <p className={styles.playerHealth}>Health Points: 80/100</p>
           </div>
 
-          <PlayerList players={labeledPlayers} />
+          <PlayerList players={listedPlayers} />
 
           <div className={styles.controls}>
             <p>Move: WASD</p>
@@ -152,6 +163,7 @@ export default function GameBoard() {
             currentPlayerSpawnPosition={
               isWaiting ? currentPlayerSpawnPosition : null
             }
+            winnerPosition={winner?.position ?? null}
             status={game.status}
           />
 
@@ -169,6 +181,9 @@ export default function GameBoard() {
               <p className="text-3xl leading-none font-extrabold text-red-400">
                 Game over
               </p>
+              <p className="font-semibold text-zinc-200">
+                {winner ? `${winner.name} wins` : "Draw"}
+              </p>
             </div>
           )}
         </div>
@@ -183,7 +198,7 @@ export default function GameBoard() {
                   : "--:--"}
             </p>
             <p className={styles.playersRemaining}>
-              Players: {game.players.length}
+              Players: {listedPlayers.length}
             </p>
           </div>
 
