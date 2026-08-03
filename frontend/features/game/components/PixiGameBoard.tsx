@@ -25,6 +25,10 @@ import { socket } from "@/lib/socket";
 import { useInputControls } from "../hooks/useInputControls";
 import { calculateBoardLayout, type BoardLayout } from "./boardLayout";
 import { createTileHighlight } from "./tileHighlight";
+import { AnimatedSprite } from "pixi.js";
+import { tileAnimations } from "../data/tileAnimations";
+import { createAnimatedTextures } from "./createAnimatedTextures";
+import { createAnimatedTile } from "./createAnimatedTile";
 
 type GamePlayer = Player & {
   label: string;
@@ -174,6 +178,13 @@ export function PixiGameBoard({
       container.appendChild(app.canvas);
 
       const tilesetTexture = await Assets.load<Texture>(TILESET_PATH);
+
+      const animationTextures = {
+        water: createAnimatedTextures(
+          tilesetTexture,
+          tileAnimations.water.frames,
+        ),
+      };
 
       if (isDestroyed || !app) {
         destroyApp();
@@ -478,15 +489,28 @@ export function PixiGameBoard({
           const objectX = offsetX + object.x * tileSize;
           const objectY = offsetY + object.y * tileSize;
 
-          const objectSprite = createTileSprite(
-            objectFrame.x,
-            objectFrame.y,
-            objectX,
-            objectY,
-            tileSize,
-          );
+          if (object.type === "water") {
+            const animatedWater = createAnimatedTile({
+              textures: animationTextures.water,
+              x: objectX,
+              y: objectY,
+              tileSize,
+              speed: tileAnimations.water.speed,
+              loop: tileAnimations.water.loop,
+            });
 
-          app?.stage.addChild(objectSprite);
+            app?.stage.addChild(animatedWater);
+          } else {
+            const objectSprite = createTileSprite(
+              objectFrame.x,
+              objectFrame.y,
+              objectX,
+              objectY,
+              tileSize,
+            );
+
+            app.stage.addChild(objectSprite);
+          }
         });
 
         app.stage.addChild(directionLayer);
