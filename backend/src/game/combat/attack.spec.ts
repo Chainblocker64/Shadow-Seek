@@ -31,30 +31,41 @@ function createTestGameState(): GameState {
 }
 
 describe('attack', () => {
-  it('returns false when the player does not exist', () => {
+  it('returns null when the player does not exist', () => {
     const gameState = createTestGameState();
 
-    expect(attack(gameState, 'unknown-player')).toBe(false);
+    expect(attack(gameState, 'unknown-player')).toBeNull();
   });
 
-  it("returns false when the player's health is 0", () => {
+  it("returns null when the player's health is 0", () => {
     const gameState = createTestGameState();
     const player = gameState.players[0];
 
     player.takeDamage(player.getCombatStats().maxHealth);
 
     expect(player.isAlive()).toBe(false);
-    expect(attack(gameState, 'player-1')).toBe(false);
+    expect(attack(gameState, 'player-1')).toBeNull();
   });
 
-  it('returns false when the attack is still on cooldown', () => {
+  it('returns null when the attack is still on cooldown', () => {
     const gameState = createTestGameState();
 
-    expect(attack(gameState, 'player-1')).toBe(true);
-    expect(attack(gameState, 'player-1')).toBe(false);
+    const firstAttack = attack(gameState, 'player-1');
+    const secondAttack = attack(gameState, 'player-1');
+
+    expect(firstAttack).toEqual({
+      attackerId: 'player-1',
+      targetId: null,
+      targetPosition: {
+        x: 2,
+        y: 3,
+      },
+    });
+
+    expect(secondAttack).toBeNull();
   });
 
-  it('returns true and damages the target when a player is in range', () => {
+  it('returns attack result and damages the target when a player is in range', () => {
     const gameState = createTestGameState();
     const { attackValue } = gameState.players[0].getCombatStats();
 
@@ -75,11 +86,21 @@ describe('attack', () => {
 
     const target = gameState.players[1];
 
-    expect(attack(gameState, 'player-1')).toBe(true);
+    const result = attack(gameState, 'player-1');
+
+    expect(result).toEqual({
+      attackerId: 'player-1',
+      targetId: 'player-2',
+      targetPosition: {
+        x: 2,
+        y: 3,
+      },
+    });
+
     expect(target.isAlive()).toBe(false);
   });
 
-  it('does not damage other players when no one is in range', () => {
+  it('returns attack result without damaging a player when no target is in range', () => {
     const gameState = createTestGameState();
     const { attackValue } = gameState.players[0].getCombatStats();
 
@@ -100,7 +121,17 @@ describe('attack', () => {
 
     const target = gameState.players[1];
 
-    expect(attack(gameState, 'player-1')).toBe(true);
+    const result = attack(gameState, 'player-1');
+
+    expect(result).toEqual({
+      attackerId: 'player-1',
+      targetId: null,
+      targetPosition: {
+        x: 2,
+        y: 3,
+      },
+    });
+
     expect(target.isAlive()).toBe(true);
   });
 
