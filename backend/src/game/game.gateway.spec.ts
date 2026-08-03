@@ -192,7 +192,7 @@ describe('GameGateway', () => {
       const gameState = {
         clientId,
         status: 'running',
-        players: [{ clientId: clientId }],
+        players: [{ clientId }],
       } as unknown as GameState;
 
       gameService.getFilteredGameStates.mockReturnValue([
