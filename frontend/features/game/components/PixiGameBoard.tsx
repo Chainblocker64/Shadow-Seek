@@ -86,6 +86,15 @@ const ATTACK_PREVIEW_FRAME = {
   y: 864,
 };
 
+const ATTACK_COOLDOWN_MS = 1_000;
+
+const COOLDOWN_BAR_WIDTH_RATIO = 0.9;
+const COOLDOWN_BAR_HEIGHT = 4;
+const COOLDOWN_BAR_OFFSET_Y = 34;
+
+const COOLDOWN_READY_COLOR = 0x22c55e;
+const COOLDOWN_BACKGROUND_COLOR = 0x18181b;
+
 const OWN_PLAYER_DIRECTION_COLOR = 0x22c55e;
 const OTHER_PLAYER_DIRECTION_COLOR = 0xef4444;
 
@@ -135,6 +144,7 @@ export function PixiGameBoard({
   const renderMapRef = useRef<(() => void) | null>(null);
   const hiddenAttackPreviewPlayerIdsRef = useRef<Set<string>>(new Set());
   const portalPlayedRef = useRef(false);
+  const attackCooldownsRef = useRef<Map<string, number>>(new Map());
 
   useInputControls(status === "running");
 
@@ -165,6 +175,7 @@ export function PixiGameBoard({
       app?.destroy(true);
       app = null;
       portalPlayedRef.current = false;
+      attackCooldownsRef.current.clear();
       renderPlayersRef.current = null;
       renderSpawnHighlightRef.current = null;
       renderWinnerHighlightRef.current = null;
@@ -233,11 +244,90 @@ export function PixiGameBoard({
       const playerLayer = new Container();
       const attackPreviewLayer = new Container();
       const attackAnimationLayer = new Container();
+      const attackCooldownLayer = new Container();
       const portalLayer = new Container();
       const spawnHighlightLayer = new Container();
       const winnerHighlightLayer = new Container();
 
       let layout: BoardLayout | null = null;
+
+      function renderAttackCooldowns() {
+        if (!layout) {
+          return;
+        }
+
+        attackCooldownLayer.removeChildren();
+
+        const currentTime = Date.now();
+        const { offsetX, offsetY, tileSize } = layout;
+
+        attackCooldownsRef.current.forEach((cooldownEndsAt, playerId) => {
+          const remainingTime = cooldownEndsAt - currentTime;
+
+          if (remainingTime <= 0) {
+            attackCooldownsRef.current.delete(playerId);
+            return;
+          }
+
+          const player = playersRef.current.find(
+            (currentPlayer) => currentPlayer.id === playerId,
+          );
+
+          if (!player) {
+            attackCooldownsRef.current.delete(playerId);
+            return;
+          }
+
+          const remainingRatio = remainingTime / ATTACK_COOLDOWN_MS;
+
+          const barWidth = tileSize * COOLDOWN_BAR_WIDTH_RATIO;
+          const barX =
+            offsetX + player.position.x * tileSize + (tileSize - barWidth) / 2;
+
+          const barY =
+            offsetY + player.position.y * tileSize - COOLDOWN_BAR_OFFSET_Y;
+
+          const cooldownBar = new Graphics()
+            .rect(barX, barY, barWidth, COOLDOWN_BAR_HEIGHT)
+            .fill({
+              color: COOLDOWN_BACKGROUND_COLOR,
+              alpha: 0.9,
+            });
+
+          cooldownBar
+            .rect(barX, barY, barWidth * remainingRatio, COOLDOWN_BAR_HEIGHT)
+            .fill({
+              color: COOLDOWN_READY_COLOR,
+              alpha: 1,
+            });
+
+          cooldownBar.rect(barX, barY, barWidth, COOLDOWN_BAR_HEIGHT).stroke({
+            width: 1,
+            color: 0x000000,
+            alpha: 0.9,
+          });
+
+          const cooldownLabel = new Text({
+            text: `${(remainingTime / 1_000).toFixed(1)}s`,
+            style: {
+              fontSize: 9,
+              fontWeight: "bold",
+              fill: 0xffffff,
+              stroke: {
+                color: 0x000000,
+                width: 2,
+              },
+            },
+          });
+
+          cooldownLabel.anchor.set(0.5, 1);
+          cooldownLabel.x = offsetX + (player.position.x + 0.5) * tileSize;
+
+          cooldownLabel.y = barY - 2;
+
+          attackCooldownLayer.addChild(cooldownBar, cooldownLabel);
+        });
+      }
 
       function playSpawnPortalAnimation() {
         if (!layout || portalPlayedRef.current) {
@@ -298,6 +388,13 @@ export function PixiGameBoard({
           return;
         }
 
+        attackCooldownsRef.current.set(
+          attackerId,
+          Date.now() + ATTACK_COOLDOWN_MS,
+        );
+
+        renderAttackCooldowns();
+
         if (!targetId) {
           return;
         }
@@ -335,9 +432,12 @@ export function PixiGameBoard({
         const blinkSpeed = 0.005;
 
         const blinkAlpha =
-          0.6 + ((Math.sin(Date.now() * blinkSpeed) + 1) / 2) * 0.9;
+          0.4 + ((Math.sin(Date.now() * blinkSpeed) + 1) / 2) * 0.6;
+
         directionLayer.alpha = blinkAlpha;
         attackPreviewLayer.alpha = blinkAlpha;
+
+        renderAttackCooldowns();
       });
 
       function renderSpawnHighlight() {
@@ -648,6 +748,7 @@ export function PixiGameBoard({
         app.stage.addChild(playerLayer);
         app.stage.addChild(attackPreviewLayer);
         app.stage.addChild(attackAnimationLayer);
+        app.stage.addChild(attackCooldownLayer);
         app.stage.addChild(portalLayer);
         app.stage.addChild(spawnHighlightLayer);
         app.stage.addChild(winnerHighlightLayer);
