@@ -57,6 +57,7 @@ describe('canMoveToPosition', () => {
       map: testMap,
       players,
       endsAt: null,
+      winner: null,
     };
   }
 

@@ -40,3 +40,6 @@ export const DEFAULT_ACTION_TIMESTAMPS: ActionTimestamps = {
  * e.g. a vision range of 3 defines a visible square of 7x7 tiles with the player in the center
  */
 export const DEFAULT_VISION_RANGE = 3;
+
+export const PLAYER_STATUS_ALIVE = 'alive';
+export const PLAYER_STATUS_DEFEATED = 'defeated';

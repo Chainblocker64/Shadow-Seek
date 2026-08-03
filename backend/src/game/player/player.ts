@@ -1,10 +1,12 @@
 import type { ClientId } from '../../shared/types';
 import type { ActionTimestamps, CombatStats } from '../combat/types';
-import type { FacingDirection, Position } from '../types';
+import type { FacingDirection, PlayerStatus, Position } from '../types';
 import {
   DEFAULT_COMBAT_STATS,
   DEFAULT_VISION_RANGE,
   DEFAULT_ACTION_TIMESTAMPS,
+  PLAYER_STATUS_ALIVE,
+  PLAYER_STATUS_DEFEATED,
 } from '../consts';
 import { canAttack } from '../combat/combat-validation';
 
@@ -19,6 +21,7 @@ export class Player {
   private facingDirection: FacingDirection;
   private activeAction: string | null = null;
   private actionTimestamps: ActionTimestamps = DEFAULT_ACTION_TIMESTAMPS;
+  private status: PlayerStatus = PLAYER_STATUS_ALIVE;
 
   constructor({
     clientId,
@@ -48,15 +51,27 @@ export class Player {
   }
 
   canAct() {
-    return this.isAlive();
+    return this.isAlive() && this.status !== PLAYER_STATUS_DEFEATED;
   }
 
   takeDamage(amount: number) {
-    this.health -= amount;
+    if (amount > this.health) {
+      this.health = 0;
+    } else {
+      this.health -= amount;
+    }
+
+    if (this.health === 0) {
+      this.status = PLAYER_STATUS_DEFEATED;
+    }
   }
 
   isAlive(): boolean {
     return this.health > 0;
+  }
+
+  getHealth(): number {
+    return this.health;
   }
 
   isHandlingAction(): boolean {
@@ -117,7 +132,10 @@ export class Player {
       name: this.name,
       spriteIndex: this.spriteIndex,
       position: this.position,
+      health: this.health,
+      maxHealth: this.combatStats.maxHealth,
       facingDirection: this.facingDirection,
+      status: this.status,
     };
   }
 }

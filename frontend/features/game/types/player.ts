@@ -10,13 +10,7 @@ export type Player = {
   name: string;
   spriteIndex: number;
   position: PlayerPosition;
-  facingDirection: PlayerDirection;
-};
-
-export type PlayerGameState = {
-  id: string;
-  name: string;
-  position: PlayerPosition;
-  direction: PlayerDirection;
   health: number;
+  maxHealth: number;
+  facingDirection: PlayerDirection;
 };

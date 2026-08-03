@@ -100,6 +100,7 @@ describe('handlePlayerMovement', () => {
         }),
       ],
       endsAt: null,
+      winner: null,
     };
   }
 

@@ -3,12 +3,22 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "../store/useAuthStore";
+import { useJoinedRoom, useLeaveRoom } from "../lobby/RoomProvider";
 
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, setUser } = useAuthStore();
+  const joinedRoom = useJoinedRoom();
+  const leaveRoom = useLeaveRoom();
   const isActive = (path: string) => pathname === path;
+
+  const handleLobbyClick = (e: React.MouseEvent) => {
+    if (joinedRoom) {
+      e.preventDefault();
+      leaveRoom();
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -37,6 +47,7 @@ export function Header() {
         <nav className="flex items-center gap-6">
           <Link
             href="/lobby"
+            onClick={handleLobbyClick}
             className={`text-sm font-medium transition-colors ${
               isActive("/lobby")
                 ? "text-emerald-400 font-semibold"
