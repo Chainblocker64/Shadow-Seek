@@ -4,6 +4,7 @@ import styles from "./PixiGameBoard.module.css";
 import {
   Application,
   Assets,
+  ColorMatrixFilter,
   Container,
   Graphics,
   Rectangle,
@@ -145,6 +146,7 @@ export function PixiGameBoard({
   const hiddenAttackPreviewPlayerIdsRef = useRef<Set<string>>(new Set());
   const portalPlayedRef = useRef(false);
   const attackCooldownsRef = useRef<Map<string, number>>(new Map());
+  const renderFovRef = useRef<(() => void) | null>(null);
 
   useInputControls(status === "running");
 
@@ -180,6 +182,7 @@ export function PixiGameBoard({
       renderSpawnHighlightRef.current = null;
       renderWinnerHighlightRef.current = null;
       renderMapRef.current = null;
+      renderFovRef.current = null;
     }
 
     async function setupPixi() {
@@ -201,6 +204,9 @@ export function PixiGameBoard({
       container.appendChild(app.canvas);
 
       const tilesetTexture = await Assets.load<Texture>(TILESET_PATH);
+
+      // remove "gaps" between tiles
+      tilesetTexture.source.scaleMode = "nearest";
 
       if (isDestroyed || !app) {
         destroyApp();
@@ -247,6 +253,7 @@ export function PixiGameBoard({
       const attackCooldownLayer = new Container();
       const portalLayer = new Container();
       const spawnHighlightLayer = new Container();
+      const fovLayer = new Container();
       const winnerHighlightLayer = new Container();
 
       let layout: BoardLayout | null = null;
@@ -491,6 +498,69 @@ export function PixiGameBoard({
       }
 
       renderWinnerHighlightRef.current = renderWinnerHighlight;
+
+      function renderFov() {
+        if (!layout) {
+          return;
+        }
+
+        const { offsetX, offsetY, tileSize } = layout;
+        fovLayer.removeChildren();
+
+        const localPlayer = playersRef.current.find(
+          (player) => player.id === socket.id,
+        );
+
+        const fogFrameX = 768;
+        const fogFrameY = 608;
+
+        const fogContainer = new Container();
+
+        const playerX = localPlayer ? localPlayer.position.x : -999;
+        const playerY = localPlayer ? localPlayer.position.y : -999;
+        const visionRange = localPlayer?.visionRange ?? 3;
+
+        for (let y = 0; y < map.height; y++) {
+          for (let x = 0; x < map.width; x++) {
+            const dx = Math.abs(x - playerX);
+            const dy = Math.abs(y - playerY);
+            const distance = Math.max(dx, dy);
+
+            if (localPlayer && distance <= visionRange - 1) {
+              continue;
+            }
+
+            const fogSprite = createTileSprite(
+              fogFrameX,
+              fogFrameY,
+              x * tileSize,
+              y * tileSize,
+              tileSize,
+            );
+
+            // add some alpha to the edges of the vision range to make it look more blurry
+            if (localPlayer && distance === visionRange) {
+              fogSprite.alpha = 0.4;
+            }
+
+            fogContainer.addChild(fogSprite);
+          }
+        }
+
+        const colorMatrix = new ColorMatrixFilter();
+        colorMatrix.desaturate();
+
+        fogContainer.filters = [colorMatrix];
+        fogContainer.tint = 0x222222; // darkness
+        fogContainer.alpha = 0.9; // opacity
+
+        fogContainer.x = offsetX;
+        fogContainer.y = offsetY;
+
+        fovLayer.addChild(fogContainer);
+      }
+
+      renderFovRef.current = renderFov;
 
       function renderPlayers() {
         if (!layout) {
@@ -751,6 +821,7 @@ export function PixiGameBoard({
         app.stage.addChild(attackCooldownLayer);
         app.stage.addChild(portalLayer);
         app.stage.addChild(spawnHighlightLayer);
+        app.stage.addChild(fovLayer);
         app.stage.addChild(winnerHighlightLayer);
 
         layout = {
@@ -759,8 +830,10 @@ export function PixiGameBoard({
           tileSize,
         };
 
+        layout = { offsetX, offsetY, tileSize };
         renderPlayers();
         renderSpawnHighlight();
+        renderFov();
         renderWinnerHighlight();
         playSpawnPortalAnimation();
       }
@@ -793,7 +866,7 @@ export function PixiGameBoard({
         destroyApp();
       });
     };
-  }, []);
+  }, [map.height, map.width]);
 
   useEffect(() => {
     mapRef.current = map;
@@ -803,6 +876,7 @@ export function PixiGameBoard({
   useEffect(() => {
     playersRef.current = players;
     renderPlayersRef.current?.();
+    renderFovRef.current?.();
   }, [players]);
 
   return <div className={styles.canvasHost} ref={containerRef} />;

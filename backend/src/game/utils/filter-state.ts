@@ -10,7 +10,7 @@ export function filterGameStateForPlayer(
   const viewerPosition = viewer.getPosition();
   const mapObjects = gameState.map.objects;
 
-  const visiblePlayers = gameState.players.filter((otherPlayer) => {
+  const visiblePlayers: Player[] = gameState.players.filter((otherPlayer) => {
     if (otherPlayer.clientId === viewer.clientId) {
       return true;
     }
