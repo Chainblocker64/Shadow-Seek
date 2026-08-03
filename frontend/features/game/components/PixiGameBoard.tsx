@@ -91,9 +91,8 @@ const ATTACK_COOLDOWN_MS = 1_000;
 
 const COOLDOWN_BAR_WIDTH_RATIO = 0.9;
 const COOLDOWN_BAR_HEIGHT = 4;
-const COOLDOWN_BAR_OFFSET_Y = 34;
 
-const COOLDOWN_READY_COLOR = 0x22c55e;
+const COOLDOWN_READY_COLOR = 0x3b82f6;
 const COOLDOWN_BACKGROUND_COLOR = 0x18181b;
 
 const OWN_PLAYER_DIRECTION_COLOR = 0x22c55e;
@@ -291,8 +290,7 @@ export function PixiGameBoard({
           const barX =
             offsetX + player.position.x * tileSize + (tileSize - barWidth) / 2;
 
-          const barY =
-            offsetY + player.position.y * tileSize - COOLDOWN_BAR_OFFSET_Y;
+          const barY = offsetY + (player.position.y + 1) * tileSize + 4;
 
           const cooldownBar = new Graphics()
             .rect(barX, barY, barWidth, COOLDOWN_BAR_HEIGHT)
@@ -330,7 +328,7 @@ export function PixiGameBoard({
           cooldownLabel.anchor.set(0.5, 1);
           cooldownLabel.x = offsetX + (player.position.x + 0.5) * tileSize;
 
-          cooldownLabel.y = barY - 2;
+          cooldownLabel.y = barY + COOLDOWN_BAR_HEIGHT + 12;
 
           attackCooldownLayer.addChild(cooldownBar, cooldownLabel);
         });
