@@ -146,6 +146,7 @@ export class Player {
       spriteIndex: this.spriteIndex,
       position: this.position,
       facingDirection: this.facingDirection,
+      visionRange: this.visionRange,
       status: this.status,
     };
   }
