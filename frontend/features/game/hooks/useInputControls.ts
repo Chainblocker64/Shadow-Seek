@@ -5,16 +5,24 @@ import type { MovementDirection } from "../types/movement";
 const KEY_TO_ACTION_TYPE: Record<string, string> = {
   space: "attack",
   keyw: "movement",
+  arrowup: "movement",
   keya: "movement",
+  arrowleft: "movement",
   keys: "movement",
+  arrowdown: "movement",
   keyd: "movement",
+  arrowright: "movement",
 };
 
 const KEY_TO_DIRECTION: Record<string, MovementDirection> = {
   keyw: "up",
+  arrowup: "up",
   keya: "left",
+  arrowleft: "left",
   keys: "down",
+  arrowdown: "down",
   keyd: "right",
+  arrowright: "right",
 };
 
 export function useInputControls(enabled: boolean) {
