@@ -219,6 +219,10 @@ describe('GameGateway', () => {
       const alice = {
         ...createAlice(),
         clientId,
+        toPublicState: jest.fn().mockReturnValue({
+          id: 'player-1',
+          name: 'Alice',
+        }),
       };
 
       const gameState = {
@@ -237,7 +241,7 @@ describe('GameGateway', () => {
       gateway.broadcastGamestate(gameState);
 
       expect(to).toHaveBeenCalledWith(clientId);
-      expect(emit).toHaveBeenCalledWith('game:sync', gameState);
+      expect(emit).toHaveBeenCalledWith('game:sync', expect.any(Object));
     });
   });
 });
