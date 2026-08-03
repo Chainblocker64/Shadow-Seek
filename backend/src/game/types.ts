@@ -35,6 +35,21 @@ export type GameState = {
   winner: ClientId | null;
 };
 
+export type PublicPlayerState = {
+  id: ClientId;
+  name: string;
+  health: number;
+  maxHealth: number;
+};
+
+export type PublicGameInformation = {
+  players: PublicPlayerState[];
+};
+
+export type GameStatePayload = GameState & {
+  publicGameInformation: PublicGameInformation;
+};
+
 export const BASE_TILE_TYPES = [
   'floor',
   'grass',

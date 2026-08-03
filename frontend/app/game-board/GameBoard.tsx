@@ -49,6 +49,8 @@ export default function GameBoard() {
       ? (game.players.find((player) => player.id === game.winner) ?? null)
       : null;
 
+  const publicPlayers = game?.publicGameInformation?.players;
+
   const labeledPlayers = useMemo(
     () =>
       (game?.players ?? []).map((player) => ({
@@ -57,6 +59,17 @@ export default function GameBoard() {
         isSelf: player.id === socket.id,
       })),
     [game?.players],
+  );
+
+  // The board only renders players the field of view exposes, while the
+  // sidebar lists everyone in the room.
+  const listedPlayers = useMemo(
+    () =>
+      (publicPlayers ?? []).map((player) => ({
+        ...player,
+        isSelf: player.id === socket.id,
+      })),
+    [publicPlayers],
   );
 
   useEffect(() => {
@@ -133,14 +146,9 @@ export default function GameBoard() {
         <aside className={styles.sidebar}>
           <div>
             <p className={styles.gameLabel}>Shadow Seek</p>
-            {currentPlayer && (
-              <p className={styles.playerHealth}>
-                Health Points: {currentPlayer.health}/{currentPlayer.maxHealth}
-              </p>
-            )}
           </div>
 
-          <PlayerList players={labeledPlayers} />
+          <PlayerList players={listedPlayers} />
 
           <div className={styles.controls}>
             <p>Move: WASD</p>
@@ -190,7 +198,7 @@ export default function GameBoard() {
                   : "--:--"}
             </p>
             <p className={styles.playersRemaining}>
-              Players: {game.players.length}
+              Players: {listedPlayers.length}
             </p>
           </div>
 
