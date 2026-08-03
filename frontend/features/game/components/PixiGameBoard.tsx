@@ -25,12 +25,16 @@ import { socket } from "@/lib/socket";
 import { useInputControls } from "../hooks/useInputControls";
 import { calculateBoardLayout, type BoardLayout } from "./boardLayout";
 import { createTileHighlight } from "./tileHighlight";
-import { tileAnimations } from "../data/tileAnimations";
-import { createAnimatedTextures } from "./createAnimatedTextures";
-import { createAnimatedTile } from "./createAnimatedTile";
+import { createAnimationManager } from "../animations/createAnimationManager";
 
 type GamePlayer = Player & {
   label: string;
+};
+
+type AttackEvent = {
+  attackerId: string;
+  targetId: string | null;
+  targetPosition: PlayerPosition;
 };
 
 type PixiGameBoardProps = {
@@ -42,9 +46,9 @@ type PixiGameBoardProps = {
 };
 
 function getFacingTile(
-  position: { x: number; y: number },
+  position: PlayerPosition,
   direction: PlayerDirection,
-) {
+): PlayerPosition {
   switch (direction) {
     case "up":
       return {
@@ -129,6 +133,7 @@ export function PixiGameBoard({
   const winnerHighlightRef = useRef(winnerPosition);
   const renderWinnerHighlightRef = useRef<(() => void) | null>(null);
   const renderMapRef = useRef<(() => void) | null>(null);
+  const hiddenAttackPreviewPlayerIdsRef = useRef<Set<string>>(new Set());
 
   useInputControls(status === "running");
 
@@ -160,6 +165,7 @@ export function PixiGameBoard({
       app = null;
       renderPlayersRef.current = null;
       renderSpawnHighlightRef.current = null;
+      renderWinnerHighlightRef.current = null;
       renderMapRef.current = null;
     }
 
@@ -183,17 +189,13 @@ export function PixiGameBoard({
 
       const tilesetTexture = await Assets.load<Texture>(TILESET_PATH);
 
-      const animationTextures = {
-        water: createAnimatedTextures(
-          tilesetTexture,
-          tileAnimations.water.frames,
-        ),
-      };
-
       if (isDestroyed || !app) {
         destroyApp();
         return;
       }
+
+      // Hier wird der gemeinsame Manager für alle Animationen einmal erstellt.
+      const animationManager = createAnimationManager(tilesetTexture);
 
       function createTileTexture(frameX: number, frameY: number) {
         return new Texture({
@@ -228,10 +230,53 @@ export function PixiGameBoard({
       const directionLayer = new Container();
       const playerLayer = new Container();
       const attackPreviewLayer = new Container();
+      const attackAnimationLayer = new Container();
       const spawnHighlightLayer = new Container();
       const winnerHighlightLayer = new Container();
 
       let layout: BoardLayout | null = null;
+
+      function playAttackAnimation({
+        attackerId,
+        targetId,
+        targetPosition,
+      }: AttackEvent) {
+        if (!layout) {
+          return;
+        }
+
+        if (!targetId) {
+          return;
+        }
+
+        const { offsetX, offsetY, tileSize } = layout;
+
+        hiddenAttackPreviewPlayerIdsRef.current.add(attackerId);
+
+        renderPlayers();
+
+        const attackAnimation = animationManager.create("attack", {
+          x: offsetX + targetPosition.x * tileSize,
+          y: offsetY + targetPosition.y * tileSize,
+          width: tileSize,
+          height: tileSize,
+          autoPlay: false,
+        });
+
+        attackAnimation.onComplete = () => {
+          attackAnimationLayer.removeChild(attackAnimation);
+          attackAnimation.destroy();
+
+          hiddenAttackPreviewPlayerIdsRef.current.delete(attackerId);
+
+          renderPlayers();
+        };
+
+        attackAnimationLayer.addChild(attackAnimation);
+        attackAnimation.play();
+      }
+
+      socket.on("game:attack", playAttackAnimation);
 
       app.ticker.add(() => {
         const blinkSpeed = 0.005;
@@ -242,9 +287,6 @@ export function PixiGameBoard({
         attackPreviewLayer.alpha = blinkAlpha;
       });
 
-      // Marks where this client's own character will start while the game is
-      // still waiting. Uses a border plus a "You" caption so it never relies on
-      // colour alone and can't be mistaken for an active player.
       function renderSpawnHighlight() {
         if (!layout) {
           return;
@@ -314,15 +356,15 @@ export function PixiGameBoard({
               player.spriteIndex % playerTextureFrames.length
             ];
 
-          playerLayer.addChild(
-            createTileSprite(
-              frame.x,
-              frame.y,
-              offsetX + player.position.x * tileSize,
-              offsetY + player.position.y * tileSize,
-              tileSize,
-            ),
+          const playerSprite = createTileSprite(
+            frame.x,
+            frame.y,
+            offsetX + player.position.x * tileSize,
+            offsetY + player.position.y * tileSize,
+            tileSize,
           );
+
+          playerLayer.addChild(playerSprite);
 
           const facingTile = getFacingTile(
             player.position,
@@ -339,7 +381,10 @@ export function PixiGameBoard({
 
           const isOwnPlayer = player.id === socket.id;
 
-          if (targetPlayer) {
+          const attackPreviewIsHidden =
+            hiddenAttackPreviewPlayerIdsRef.current.has(player.id);
+
+          if (targetPlayer && !attackPreviewIsHidden) {
             const attackPreviewSprite = createTileSprite(
               ATTACK_PREVIEW_FRAME.x,
               ATTACK_PREVIEW_FRAME.y,
@@ -375,16 +420,16 @@ export function PixiGameBoard({
           }
 
           const centerX = offsetX + (player.position.x + 0.5) * tileSize;
+
           const tileTopY = offsetY + player.position.y * tileSize;
 
-          // Stacked upwards from the tile so nothing covers the sprite:
-          // name label, then the health value, then the bar sitting closest to
-          // the character it belongs to.
           const barWidth = tileSize * HEALTH_BAR_WIDTH_RATIO;
+
           const barHeight = Math.max(
             HEALTH_BAR_MIN_HEIGHT,
             Math.round(tileSize * HEALTH_BAR_HEIGHT_RATIO),
           );
+
           const barX = centerX - barWidth / 2;
           const barY = tileTopY - HEALTH_ELEMENT_GAP - barHeight;
 
@@ -395,20 +440,24 @@ export function PixiGameBoard({
 
           const healthBar = new Graphics()
             .rect(barX, barY, barWidth, barHeight)
-            .fill({ color: 0x000000, alpha: 0.65 });
+            .fill({
+              color: 0x000000,
+              alpha: 0.65,
+            });
 
           // A zero-width fill would still paint a hairline, so a dead player
           // only gets the empty track.
           if (healthRatio > 0) {
-            healthBar
-              .rect(barX, barY, barWidth * healthRatio, barHeight)
-              .fill({ color: getHealthBarColor(healthRatio) });
+            healthBar.rect(barX, barY, barWidth * healthRatio, barHeight).fill({
+              color: getHealthBarColor(healthRatio),
+            });
           }
 
-          // The dark outline keeps the bar readable on every tile type.
-          healthBar
-            .rect(barX, barY, barWidth, barHeight)
-            .stroke({ width: 1, color: 0x000000, alpha: 0.9 });
+          healthBar.rect(barX, barY, barWidth, barHeight).stroke({
+            width: 1,
+            color: 0x000000,
+            alpha: 0.9,
+          });
 
           const healthLabel = new Text({
             text: `${player.health}/${player.maxHealth}`,
@@ -514,41 +563,47 @@ export function PixiGameBoard({
         });
 
         map.objects.forEach((object) => {
-          const objectFrame = mapObjectTextureFrames[object.type];
-
           const objectX = offsetX + object.x * tileSize;
           const objectY = offsetY + object.y * tileSize;
-
+          // Wasser wird vollständig über den gemeinsamen Manager erstellt.
           if (object.type === "water") {
-            const animatedWater = createAnimatedTile({
-              textures: animationTextures.water,
+            const animatedWater = animationManager.create("water", {
               x: objectX,
               y: objectY,
-              tileSize,
-              speed: tileAnimations.water.speed,
-              loop: tileAnimations.water.loop,
+              width: tileSize,
+              height: tileSize,
             });
 
             app?.stage.addChild(animatedWater);
-          } else {
-            const objectSprite = createTileSprite(
-              objectFrame.x,
-              objectFrame.y,
-              objectX,
-              objectY,
-              tileSize,
-            );
-
-            app?.stage.addChild(objectSprite);
+            return;
           }
+
+          const objectFrame = mapObjectTextureFrames[object.type];
+
+          const objectSprite = createTileSprite(
+            objectFrame.x,
+            objectFrame.y,
+            objectX,
+            objectY,
+            tileSize,
+          );
+
+          app?.stage.addChild(objectSprite);
         });
 
         app.stage.addChild(directionLayer);
         app.stage.addChild(playerLayer);
         app.stage.addChild(attackPreviewLayer);
+        app.stage.addChild(attackAnimationLayer);
         app.stage.addChild(spawnHighlightLayer);
         app.stage.addChild(winnerHighlightLayer);
-        layout = { offsetX, offsetY, tileSize };
+
+        layout = {
+          offsetX,
+          offsetY,
+          tileSize,
+        };
+
         renderPlayers();
         renderSpawnHighlight();
         renderWinnerHighlight();
@@ -565,6 +620,7 @@ export function PixiGameBoard({
 
       return () => {
         resizeObserver.disconnect();
+        socket.off("game:attack", playAttackAnimation);
       };
     }
 
@@ -576,8 +632,6 @@ export function PixiGameBoard({
 
     return () => {
       isDestroyed = true;
-      // Wait for setupPixi's in-flight init/asset loading to settle before
-      // destroying, since app.init() must resolve before destroy() is safe.
       setupDone.then(() => {
         cleanupResizeObserver?.();
         destroyApp();

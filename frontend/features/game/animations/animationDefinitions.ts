@@ -3,13 +3,13 @@ export type AnimationFrame = {
   y: number;
 };
 
-export type TileAnimation = {
+export type AnimationDefinition = {
   frames: AnimationFrame[];
   speed: number;
   loop: boolean;
 };
 
-export const tileAnimations = {
+export const animationDefinitions = {
   water: {
     frames: [
       { x: 864, y: 608 },
@@ -25,4 +25,18 @@ export const tileAnimations = {
     speed: 0.12,
     loop: true,
   },
-} satisfies Record<string, TileAnimation>;
+
+  attack: {
+    frames: [
+      { x: 96, y: 0 },
+      { x: 128, y: 0 },
+      { x: 160, y: 0 },
+      { x: 192, y: 0 },
+      { x: 224, y: 0 },
+    ],
+    speed: 0.22,
+    loop: false,
+  },
+} satisfies Record<string, AnimationDefinition>;
+
+export type AnimationName = keyof typeof animationDefinitions;

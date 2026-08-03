@@ -1,6 +1,6 @@
 import { Rectangle, Texture } from "pixi.js";
 import { TILE_TEXTURE_SIZE } from "../data/tileTextureFrames";
-import type { AnimationFrame } from "../data/tileAnimations";
+import type { AnimationFrame } from "./animationDefinitions";
 
 export function createAnimatedTextures(
   tilesetTexture: Texture,
