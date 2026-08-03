@@ -1,5 +1,9 @@
 import { GameMap, GameState, Position } from '../types';
-import { WALKABLE_OBJECT_TYPES, BLOCKING_OBJECT_TYPES } from '../consts';
+import {
+  WALKABLE_OBJECT_TYPES,
+  BLOCKING_OBJECT_TYPES,
+  PLAYER_STATUS_DEFEATED,
+} from '../consts';
 
 export function canMoveToPosition(
   gameState: GameState,
@@ -21,6 +25,7 @@ function tileIsWalkable(map: GameMap, targetPosition: Position): boolean {
 function isOccupied(gameState: GameState, targetPosition: Position): boolean {
   return gameState.players.some(
     (currentPlayer) =>
+      currentPlayer.getStatus() !== PLAYER_STATUS_DEFEATED &&
       currentPlayer.getPosition().x === targetPosition.x &&
       currentPlayer.getPosition().y === targetPosition.y,
   );
