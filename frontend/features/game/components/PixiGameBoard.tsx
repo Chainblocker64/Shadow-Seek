@@ -25,7 +25,6 @@ import { socket } from "@/lib/socket";
 import { useInputControls } from "../hooks/useInputControls";
 import { calculateBoardLayout, type BoardLayout } from "./boardLayout";
 import { createTileHighlight } from "./tileHighlight";
-import { AnimatedSprite } from "pixi.js";
 import { tileAnimations } from "../data/tileAnimations";
 import { createAnimatedTextures } from "./createAnimatedTextures";
 import { createAnimatedTile } from "./createAnimatedTile";
@@ -77,6 +76,11 @@ const TILESET_PATH = "/assets/tiles/dungeon-crawl.png";
 
 const DIRECTION_CIRCLE_SIZE = 12;
 const DIRECTION_CIRCLE_RADIUS = DIRECTION_CIRCLE_SIZE / 2;
+
+const ATTACK_PREVIEW_FRAME = {
+  x: 1696,
+  y: 864,
+};
 
 const OWN_PLAYER_DIRECTION_COLOR = 0x22c55e;
 const OTHER_PLAYER_DIRECTION_COLOR = 0xef4444;
@@ -223,6 +227,7 @@ export function PixiGameBoard({
 
       const directionLayer = new Container();
       const playerLayer = new Container();
+      const attackPreviewLayer = new Container();
       const spawnHighlightLayer = new Container();
       const winnerHighlightLayer = new Container();
 
@@ -231,8 +236,10 @@ export function PixiGameBoard({
       app.ticker.add(() => {
         const blinkSpeed = 0.005;
 
-        directionLayer.alpha =
-          0.55 + ((Math.sin(Date.now() * blinkSpeed) + 1) / 2) * 0.95;
+        const blinkAlpha =
+          0.6 + ((Math.sin(Date.now() * blinkSpeed) + 1) / 2) * 0.9;
+        directionLayer.alpha = blinkAlpha;
+        attackPreviewLayer.alpha = blinkAlpha;
       });
 
       // Marks where this client's own character will start while the game is
@@ -299,6 +306,7 @@ export function PixiGameBoard({
 
         directionLayer.removeChildren();
         playerLayer.removeChildren();
+        attackPreviewLayer.removeChildren();
 
         playersRef.current.forEach((player) => {
           const frame =
@@ -321,28 +329,50 @@ export function PixiGameBoard({
             player.facingDirection,
           );
 
+          const targetPlayer = playersRef.current.find((otherPlayer) => {
+            return (
+              otherPlayer.id !== player.id &&
+              otherPlayer.position.x === facingTile.x &&
+              otherPlayer.position.y === facingTile.y
+            );
+          });
+
           const isOwnPlayer = player.id === socket.id;
 
-          const circleColor = isOwnPlayer
-            ? OWN_PLAYER_DIRECTION_COLOR
-            : OTHER_PLAYER_DIRECTION_COLOR;
+          if (targetPlayer) {
+            const attackPreviewSprite = createTileSprite(
+              ATTACK_PREVIEW_FRAME.x,
+              ATTACK_PREVIEW_FRAME.y,
+              offsetX + targetPlayer.position.x * tileSize,
+              offsetY + targetPlayer.position.y * tileSize,
+              tileSize,
+            );
 
-          const circleCenterX =
-            offsetX + facingTile.x * tileSize + tileSize / 2;
+            attackPreviewSprite.alpha = 0.85;
 
-          const circleCenterY =
-            offsetY + facingTile.y * tileSize + tileSize / 2;
+            attackPreviewLayer.addChild(attackPreviewSprite);
+          } else {
+            const circleColor = isOwnPlayer
+              ? OWN_PLAYER_DIRECTION_COLOR
+              : OTHER_PLAYER_DIRECTION_COLOR;
 
-          const directionCircle = new Graphics();
+            const circleCenterX =
+              offsetX + facingTile.x * tileSize + tileSize / 2;
 
-          directionCircle
-            .circle(circleCenterX, circleCenterY, DIRECTION_CIRCLE_RADIUS)
-            .fill({
-              color: circleColor,
-              alpha: 0.9,
-            });
+            const circleCenterY =
+              offsetY + facingTile.y * tileSize + tileSize / 2;
 
-          directionLayer.addChild(directionCircle);
+            const directionCircle = new Graphics();
+
+            directionCircle
+              .circle(circleCenterX, circleCenterY, DIRECTION_CIRCLE_RADIUS)
+              .fill({
+                color: circleColor,
+                alpha: 0.9,
+              });
+
+            directionLayer.addChild(directionCircle);
+          }
 
           const centerX = offsetX + (player.position.x + 0.5) * tileSize;
           const tileTopY = offsetY + player.position.y * tileSize;
@@ -509,12 +539,13 @@ export function PixiGameBoard({
               tileSize,
             );
 
-            app.stage.addChild(objectSprite);
+            app?.stage.addChild(objectSprite);
           }
         });
 
         app.stage.addChild(directionLayer);
         app.stage.addChild(playerLayer);
+        app.stage.addChild(attackPreviewLayer);
         app.stage.addChild(spawnHighlightLayer);
         app.stage.addChild(winnerHighlightLayer);
         layout = { offsetX, offsetY, tileSize };
