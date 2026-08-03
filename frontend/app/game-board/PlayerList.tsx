@@ -38,7 +38,13 @@ export default function PlayerList({ players }: { players: ListedPlayer[] }) {
               className="flex flex-col gap-1 rounded-lg border border-zinc-800 p-2"
             >
               <div className="flex items-center gap-2">
-                <span className="overflow-hidden text-sm font-semibold text-ellipsis whitespace-nowrap">
+                <span
+                  className={`overflow-hidden text-sm font-semibold text-ellipsis whitespace-nowrap ${
+                    player.status === "defeated"
+                      ? "text-zinc-500 line-through"
+                      : ""
+                  }`}
+                >
                   {player.name}
                 </span>
                 {player.isSelf && (

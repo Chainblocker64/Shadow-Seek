@@ -137,6 +137,7 @@ export class Player {
       name: this.name,
       health: this.health,
       maxHealth: this.combatStats.maxHealth,
+      status: this.status,
     };
   }
 
@@ -146,7 +147,6 @@ export class Player {
       spriteIndex: this.spriteIndex,
       position: this.position,
       facingDirection: this.facingDirection,
-      status: this.status,
     };
   }
 }
