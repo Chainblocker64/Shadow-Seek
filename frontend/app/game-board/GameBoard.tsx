@@ -44,6 +44,9 @@ export default function GameBoard() {
   const currentPlayer =
     game?.players.find((player) => player.id === socket.id) ?? null;
   const currentPlayerSpawnPosition = currentPlayer?.position ?? null;
+  // The winner's name is frozen server-side at game end, so it stays correct
+  // even after the winner disconnects and drops out of `game.players`.
+  const winnerName = isEnded ? game.winnerName : null;
   const winner =
     isEnded && game.winner
       ? (game.players.find((player) => player.id === game.winner) ?? null)
@@ -182,7 +185,7 @@ export default function GameBoard() {
                 Game over
               </p>
               <p className="font-semibold text-zinc-200">
-                {winner ? `${winner.name} wins` : "Draw"}
+                {winnerName ? `${winnerName} wins` : "Draw"}
               </p>
             </div>
           )}
