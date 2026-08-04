@@ -2,7 +2,7 @@ import type { UUID } from "node:crypto";
 
 export type ClientId = string;
 export type RoomId = UUID;
-export type RoomStatus = "waiting" | "full";
+export type RoomStatus = "waiting" | "full" | "running";
 
 export interface RoomPlayer {
   id: ClientId;

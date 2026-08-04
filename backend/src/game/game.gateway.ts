@@ -18,6 +18,7 @@ import {
 import { GameService } from './game.service';
 import { UsePipes, ValidationPipe } from '@nestjs/common';
 import { MovePlayerDto } from './dto/move-player.dto';
+import { SpectateGameDto } from './dto/spectate-game.dto';
 import { OnEvent } from '@nestjs/event-emitter';
 import { RoomUpdatedEvent } from '../lobby/events/room-updated.event';
 import type { GameState } from './types';
@@ -50,6 +51,10 @@ export class GameGateway {
     private readonly lobbyService: LobbyService,
     private readonly mapsService: MapsService,
   ) {}
+
+  private spectatorRoomId(roomId: RoomId) {
+    return `spectators:${roomId}`;
+  }
 
   @SubscribeMessage('initializeGame')
   async handleInitializeGame(@ConnectedSocket() client: Socket) {
@@ -101,6 +106,43 @@ export class GameGateway {
   handleLeaveGame(@ConnectedSocket() client: Socket) {
     this.removePlayerFromGame(client.id);
     this.lobbyService.removePlayer(client.id);
+  }
+
+  @SubscribeMessage('spectateGame')
+  handleSpectateGame(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() { roomId }: SpectateGameDto,
+  ) {
+    if (this.lobbyService.getPlayerRoom(client.id)) {
+      return;
+    }
+
+    const room = this.lobbyService.getRoom(roomId);
+    const game = this.gameService.getGame(roomId);
+
+    if (
+      !room ||
+      room.status !== 'running' ||
+      !game ||
+      game.status === 'ended'
+    ) {
+      return;
+    }
+
+    this.server.in(client.id).socketsJoin(this.spectatorRoomId(roomId));
+    this.server.to(client.id).emit('game:spectator:opened');
+    this.server
+      .to(client.id)
+      .emit('game:spectator:sync', toGameStatePayload(game));
+  }
+
+  @SubscribeMessage('leaveSpectatorGame')
+  handleLeaveSpectatorGame(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() { roomId }: SpectateGameDto,
+  ) {
+    this.server.in(client.id).socketsLeave(this.spectatorRoomId(roomId));
+    this.server.to(client.id).emit('game:left');
   }
 
   handleDisconnect({ id: clientId }: Socket) {
@@ -222,6 +264,9 @@ export class GameGateway {
     this.server
       .to(gameState.roomId)
       .emit('game:ended', toGameStatePayload(gameState));
+    this.server
+      .to(this.spectatorRoomId(gameState.roomId))
+      .emit('game:ended', toGameStatePayload(gameState));
   }
 
   @OnEvent('game.broadcast')
@@ -237,5 +282,9 @@ export class GameGateway {
     for (const { clientId, gameState: filteredState } of personalizedStates) {
       this.server.to(clientId).emit('game:sync', filteredState);
     }
+
+    this.server
+      .to(this.spectatorRoomId(gameState.roomId))
+      .emit('game:spectator:sync', gameStatePayload);
   }
 }

@@ -30,6 +30,7 @@ export function PixiGameBoard({
   status,
   currentPlayerSpawnPosition,
   winnerPosition,
+  isSpectating = false,
 }: PixiGameBoardProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const playersRef = useRef(players);
@@ -44,8 +45,14 @@ export function PixiGameBoard({
   const hiddenAttackPreviewPlayerIdsRef = useRef<Set<string>>(new Set());
   const attackCooldownsRef = useRef<Map<string, number>>(new Map());
   const portalPlayedRef = useRef(false);
+  const isSpectatingRef = useRef(isSpectating);
 
-  useInputControls(status === "running");
+  useInputControls(status === "running" && !isSpectating);
+
+  useEffect(() => {
+    isSpectatingRef.current = isSpectating;
+    renderFovRef.current?.();
+  }, [isSpectating]);
 
   useEffect(() => {
     spawnHighlightRef.current = currentPlayerSpawnPosition;
@@ -164,6 +171,7 @@ export function PixiGameBoard({
           localPlayerId: socket.id,
           layout,
           createTileSprite,
+          isSpectating: isSpectatingRef.current,
         });
       }
 
