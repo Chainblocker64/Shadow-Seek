@@ -100,6 +100,7 @@ export class GameGateway {
 
     this.server.to(clientId).emit('game:opened');
     this.server.to(room.id).emit('game:sync', toGameStatePayload(game));
+    this.syncSpectators(game);
   }
 
   @SubscribeMessage('leaveGame')
@@ -160,6 +161,8 @@ export class GameGateway {
 
     if (game.players.length === 0) {
       this.clearTimers(game.roomId);
+      // The game is gone, so no further state ever reaches the spectators.
+      this.evictSpectators(game.roomId);
       return;
     }
 
@@ -169,6 +172,22 @@ export class GameGateway {
     }
 
     this.server.to(game.roomId).emit('game:sync', toGameStatePayload(game));
+    this.syncSpectators(game);
+  }
+
+  // Spectators sit outside the room, so room-wide `game:sync` emits never reach
+  // them; without this they keep showing players that already left.
+  private syncSpectators(game: GameState) {
+    this.server
+      .to(this.spectatorRoomId(game.roomId))
+      .emit('game:spectator:sync', toGameStatePayload(game));
+  }
+
+  private evictSpectators(roomId: RoomId) {
+    const spectatorRoom = this.spectatorRoomId(roomId);
+
+    this.server.to(spectatorRoom).emit('game:left');
+    this.server.in(spectatorRoom).socketsLeave(spectatorRoom);
   }
 
   @SubscribeMessage('movePlayer')
@@ -260,6 +279,8 @@ export class GameGateway {
   @OnEvent('game.ended')
   handleGameEnded(gameState: GameState) {
     this.clearTimers(gameState.roomId);
+    // Drops the room out of `running` so the lobby stops offering "View".
+    this.lobbyService.setFinished(gameState.roomId);
 
     this.server
       .to(gameState.roomId)

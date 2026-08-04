@@ -43,6 +43,7 @@ describe('GameGateway', () => {
   let lobbyService: {
     getPlayerRoom: jest.Mock;
     getRoom: jest.Mock;
+    setFinished: jest.Mock;
   };
   let emit: jest.Mock;
   let to: jest.Mock;
@@ -63,6 +64,7 @@ describe('GameGateway', () => {
     lobbyService = {
       getPlayerRoom: jest.fn(),
       getRoom: jest.fn(),
+      setFinished: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -266,6 +268,39 @@ describe('GameGateway', () => {
         publicGameInformation: publicGameInformationOfAlice,
       });
     });
+
+    it('syncs the spectators so the leaving player disappears for them too', () => {
+      const { roomId, game } = createRemainingGame('waiting');
+
+      gateway.handleDisconnect({ id: 'player-2' } as Socket);
+
+      expect(to).toHaveBeenCalledWith(`spectators:${roomId}`);
+      expect(emit).toHaveBeenCalledWith('game:spectator:sync', {
+        ...game,
+        publicGameInformation: publicGameInformationOfAlice,
+      });
+    });
+
+    it('sends the spectators back to the lobby when the last player leaves', () => {
+      const roomId = randomUUID();
+
+      gameService.removePlayer.mockReturnValue({
+        roomId,
+        status: 'waiting',
+        players: [],
+      } as unknown as GameState);
+
+      gateway.handleDisconnect({ id: 'player-1' } as Socket);
+
+      expect(to).toHaveBeenCalledWith(`spectators:${roomId}`);
+      expect(emit).toHaveBeenCalledWith('game:left');
+      expect(inRoom).toHaveBeenCalledWith(`spectators:${roomId}`);
+      expect(socketsLeave).toHaveBeenCalledWith(`spectators:${roomId}`);
+      expect(emit).not.toHaveBeenCalledWith(
+        'game:spectator:sync',
+        expect.anything(),
+      );
+    });
   });
 
   describe('handleGameEnded', () => {
@@ -286,6 +321,19 @@ describe('GameGateway', () => {
         ...game,
         publicGameInformation: publicGameInformationOfAlice,
       });
+    });
+
+    it('marks the lobby room as finished so it can no longer be spectated', () => {
+      const roomId = randomUUID();
+
+      gateway.handleGameEnded({
+        roomId,
+        status: 'ended',
+        winner: 'player-1',
+        players: [createAlice()],
+      } as unknown as GameState);
+
+      expect(lobbyService.setFinished).toHaveBeenCalledWith(roomId);
     });
   });
 
