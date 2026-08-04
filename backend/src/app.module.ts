@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { LobbyModule } from './lobby/lobby.module';
 import { GameModule } from './game/game.module';
+import { LeaderboardModule } from './leaderboard/leaderboard.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { GameModule } from './game/game.module';
     UserModule,
     LobbyModule,
     GameModule,
+    LeaderboardModule,
     TypeOrmModule.forRoot({
       type: 'postgres',
       url: process.env.DATABASE_URL,

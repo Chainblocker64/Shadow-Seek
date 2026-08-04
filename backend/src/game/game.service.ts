@@ -48,6 +48,7 @@ export class GameService {
       ),
       endsAt: null,
       winner: null,
+      winnerName: null,
     };
 
     this.games.set(roomId, game);
@@ -179,7 +180,10 @@ export class GameService {
 
     game.status = ENDED;
     game.endsAt = null;
-    game.winner = this.determineWinner(game.players);
+
+    const winner = this.determineWinner(game.players);
+    game.winner = winner?.clientId ?? null;
+    game.winnerName = winner?.name ?? null;
 
     return game;
   }
@@ -190,7 +194,7 @@ export class GameService {
     return alivePlayers.length >= MIN_PLAYERS_TO_START;
   }
 
-  private determineWinner(players: Player[]): ClientId | null {
+  private determineWinner(players: Player[]): Player | null {
     const highestHealth = Math.max(
       ...players.map((player) => player.getHealth()),
     );
@@ -203,7 +207,7 @@ export class GameService {
       return null;
     }
 
-    return healthiestPlayers[0].clientId;
+    return healthiestPlayers[0];
   }
 
   private getFreeSpawnPosition(game: GameState): Position | undefined {

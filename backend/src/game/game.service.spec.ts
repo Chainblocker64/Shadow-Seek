@@ -186,7 +186,9 @@ describe('GameService', () => {
 
       game.players[1].takeDamage(10);
 
-      expect(service.endGame(roomId)?.winner).toBe('player-1');
+      const endedGame = service.endGame(roomId);
+      expect(endedGame?.winner).toBe('player-1');
+      expect(endedGame?.winnerName).toBe('Alice');
     });
 
     it('declares no winner when the highest health is tied', () => {
@@ -195,7 +197,9 @@ describe('GameService', () => {
       game.players[0].takeDamage(10);
       game.players[1].takeDamage(10);
 
-      expect(service.endGame(roomId)?.winner).toBeNull();
+      const endedGame = service.endGame(roomId);
+      expect(endedGame?.winner).toBeNull();
+      expect(endedGame?.winnerName).toBeNull();
     });
 
     it('declares no winner when the game has no players left', () => {
@@ -267,6 +271,7 @@ describe('GameService', () => {
         status: ENDED,
         endsAt: null,
         winner: 'player-1',
+        winnerName: 'Alice',
       });
       expect(eventEmitter.emit).toHaveBeenCalledWith('game.ended', game);
       expect(eventEmitter.emit).not.toHaveBeenCalledWith(

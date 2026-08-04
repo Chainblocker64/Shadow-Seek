@@ -49,6 +49,8 @@ describe('filterGameStateForPlayer', () => {
       roomId: '123e4567-e89b-12d3-a456-426614174000',
       status: 'running',
       endsAt: null,
+      winner: null,
+      winnerName: null,
       map: {
         name: 'test-map',
         width: 20,
