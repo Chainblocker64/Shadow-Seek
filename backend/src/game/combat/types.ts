@@ -7,4 +7,5 @@ export type CombatStats = {
 
 export type ActionTimestamps = {
   attack: number;
+  movement: number;
 };

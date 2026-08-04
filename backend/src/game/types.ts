@@ -33,6 +33,7 @@ export type GameState = {
   players: Player[];
   endsAt: number | null;
   winner: ClientId | null;
+  winnerName: string | null;
 };
 
 export type PublicPlayerState = {

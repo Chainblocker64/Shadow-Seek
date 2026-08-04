@@ -2,7 +2,7 @@ import { calculateNextPosition, handlePlayerMovement } from './server-movement';
 import { describe, expect, it } from '@jest/globals';
 import { randomUUID } from 'node:crypto';
 import type { GameState, MovementDirection, Position } from '../types';
-import { WAITING } from '../consts';
+import { SWIMMING_MOVEMENT_COOLDOWN_MS, WAITING } from '../consts';
 import { Player } from '../player/player';
 
 describe('calculateNextPosition', () => {
@@ -175,6 +175,25 @@ describe('handlePlayerMovement', () => {
       x: 1,
       y: 2,
     });
+  });
+
+  it('slows movement after entering water', () => {
+    const gameState = createTestGameState();
+    const now = jest.spyOn(Date, 'now').mockReturnValue(1_000);
+
+    gameState.map.objects = [{ x: 2, y: 1, type: 'water' }];
+
+    handlePlayerMovement(gameState, 'player-1', 'up');
+    expect(gameState.players[0].getPosition()).toEqual({ x: 2, y: 1 });
+
+    handlePlayerMovement(gameState, 'player-1', 'left');
+    expect(gameState.players[0].getPosition()).toEqual({ x: 2, y: 1 });
+
+    now.mockReturnValue(1_000 + SWIMMING_MOVEMENT_COOLDOWN_MS);
+    handlePlayerMovement(gameState, 'player-1', 'left');
+    expect(gameState.players[0].getPosition()).toEqual({ x: 1, y: 1 });
+
+    now.mockRestore();
   });
 
   it('returns false when the player does not exist', () => {
