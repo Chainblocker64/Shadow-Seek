@@ -1,5 +1,6 @@
+import { SWIMMING_MOVEMENT_COOLDOWN_MS } from '../consts';
 import { GameState, MovementDirection, Position } from '../types';
-import { canMoveToPosition } from './movement-validation';
+import { canMoveToPosition, isWaterAtPosition } from './movement-validation';
 
 export function calculateNextPosition(
   currentPosition: Position,
@@ -48,10 +49,24 @@ export function handlePlayerMovement(
 
   const nextPosition = calculateNextPosition(player.getPosition(), direction);
 
-  if (canMoveToPosition(gameState, nextPosition)) {
+  if (
+    canMoveToPosition(gameState, nextPosition) &&
+    !isMovementOnCooldown(player.getActionTimestamps().movement)
+  ) {
     player.setPosition(nextPosition);
+
+    if (isWaterAtPosition(gameState.map, nextPosition)) {
+      player.setActionTimestamps({
+        ...player.getActionTimestamps(),
+        movement: Date.now(),
+      });
+    }
   }
 
   player.setActiveAction(null);
   return true;
+}
+
+function isMovementOnCooldown(lastMovementTimestamp: number): boolean {
+  return lastMovementTimestamp + SWIMMING_MOVEMENT_COOLDOWN_MS > Date.now();
 }

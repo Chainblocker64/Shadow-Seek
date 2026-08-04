@@ -7,15 +7,15 @@ export const ENDED = 'ended';
 export const GAME_START_DELAY_MS: number = 5_000;
 export const GAME_DURATION_MS: number = 5 * 60_000;
 export const MIN_PLAYERS_TO_START: number = 2;
+export const SWIMMING_MOVEMENT_COOLDOWN_MS = 500;
 
-export const WALKABLE_OBJECT_TYPES: ObjectType[] = ['spawn', 'bush'];
+export const WALKABLE_OBJECT_TYPES: ObjectType[] = ['spawn', 'bush', 'water'];
 
 export const BLOCKING_OBJECT_TYPES: ObjectType[] = [
   'wall',
   'tree',
   'rock',
   'chest',
-  'water',
 ];
 
 export const VIEW_BLOCKING_OBJECT_TYPES: ObjectType[] = [
@@ -33,6 +33,7 @@ export const DEFAULT_COMBAT_STATS: CombatStats = {
 
 export const DEFAULT_ACTION_TIMESTAMPS: ActionTimestamps = {
   attack: 0,
+  movement: 0,
 };
 
 /**

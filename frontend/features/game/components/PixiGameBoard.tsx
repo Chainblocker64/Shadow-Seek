@@ -111,6 +111,7 @@ export function PixiGameBoard({
       const animationManager = createAnimationManager(tilesetTexture);
       const { createTileSprite } = createTileFactory(tilesetTexture);
       const directionLayer = new Container();
+      const swimmingOverlayLayer = new Container();
       const playerLayer = new Container();
       const attackPreviewLayer = new Container();
       const attackAnimationLayer = new Container();
@@ -204,13 +205,15 @@ export function PixiGameBoard({
 
         renderPlayersContent({
           layout,
+          map: mapRef.current,
           layer: playerLayer,
+          swimmingOverlayLayer,
           directionLayer,
           attackPreviewLayer,
-          map: mapRef.current,
           players: playersRef.current,
           localPlayerId: socket.id,
           hiddenAttackPreviewPlayerIds: hiddenAttackPreviewPlayerIdsRef.current,
+          animationManager,
           createTileSprite,
         });
       }
@@ -263,6 +266,7 @@ export function PixiGameBoard({
           layers: {
             directionLayer,
             playerLayer,
+            swimmingOverlayLayer,
             attackPreviewLayer,
             attackAnimationLayer,
             attackCooldownLayer,

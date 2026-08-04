@@ -13,6 +13,7 @@ type AnimationManager = ReturnType<typeof createAnimationManager>;
 type PixiBoardLayers = {
   directionLayer: Container;
   playerLayer: Container;
+  swimmingOverlayLayer: Container;
   attackPreviewLayer: Container;
   attackAnimationLayer: Container;
   attackCooldownLayer: Container;
@@ -130,6 +131,7 @@ export function renderMap({
   // Die Reihenfolge bestimmt, welche Ebenen über anderen Ebenen liegen.
   app.stage.addChild(layers.directionLayer);
   app.stage.addChild(layers.playerLayer);
+  app.stage.addChild(layers.swimmingOverlayLayer);
   app.stage.addChild(layers.attackPreviewLayer);
   app.stage.addChild(layers.attackAnimationLayer);
   app.stage.addChild(layers.attackCooldownLayer);

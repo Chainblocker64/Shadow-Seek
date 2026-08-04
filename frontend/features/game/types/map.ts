@@ -109,9 +109,9 @@ export const MAP_OBJECT_PROPERTIES: Record<
     concealsPlayers: false,
   },
   water: {
-    walkable: false,
+    walkable: true,
     blocksVision: false,
-    concealsPlayers: false,
+    concealsPlayers: true,
   },
 };
 
