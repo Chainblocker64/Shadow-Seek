@@ -6,7 +6,10 @@ import { PixiGameBoard } from "../../features/game/components/PixiGameBoard";
 import type { GameState } from "../../features/game/types/game";
 import type { GameMap } from "../../features/game/types/map";
 import { socket } from "@/lib/socket";
-import { getLatestGame } from "../../features/game/gameSync";
+import {
+  getLatestGame,
+  getLatestGameIsSpectator,
+} from "../../features/game/gameSync";
 import PlayerList from "./PlayerList";
 import styles from "./GameBoardPage.module.css";
 
@@ -32,6 +35,9 @@ function formatRemainingTime(ms: number): string {
 export default function GameBoard() {
   const router = useRouter();
   const [game, setGame] = useState<GameState | null>(() => getLatestGame());
+  const [isSpectating, setIsSpectating] = useState(() =>
+    getLatestGameIsSpectator(),
+  );
   const [countdown, setCountdown] = useState(GAME_START_COUNTDOWN_SECONDS);
   // Ticks once a second so the remaining-time display counts down.
   const [now, setNow] = useState(() => Date.now());
@@ -84,7 +90,7 @@ export default function GameBoard() {
   useEffect(() => {
     socket.connect();
 
-    const onGameSync = (game: GameState) => {
+    const updateGame = (game: GameState) => {
       const previousMap = previousMapRef.current;
       const map =
         previousMap && areMapsEqual(previousMap, game.map)
@@ -95,14 +101,28 @@ export default function GameBoard() {
       setGame({ ...game, map });
     };
 
+    const onGameSync = (game: GameState) => {
+      updateGame(game);
+      setIsSpectating(false);
+    };
+
+    const onSpectatorGameSync = (game: GameState) => {
+      updateGame(game);
+      setIsSpectating(true);
+    };
+
+    const onGameEnded = (game: GameState) => updateGame(game);
+
     const onGameLeft = () => {
       previousMapRef.current = null;
       setGame(null);
+      setIsSpectating(false);
       router.push("/lobby");
     };
 
     socket.on("game:sync", onGameSync);
-    socket.on("game:ended", onGameSync);
+    socket.on("game:spectator:sync", onSpectatorGameSync);
+    socket.on("game:ended", onGameEnded);
     socket.on("game:left", onGameLeft);
     // The game-open event triggers navigation from the lobby. Ask the server
     // for the current snapshot after this page has installed its listeners so
@@ -111,13 +131,16 @@ export default function GameBoard() {
 
     return () => {
       socket.off("game:sync", onGameSync);
-      socket.off("game:ended", onGameSync);
+      socket.off("game:spectator:sync", onSpectatorGameSync);
+      socket.off("game:ended", onGameEnded);
       socket.off("game:left", onGameLeft);
     };
   }, [router]);
 
   const handleLeaveGame = () => {
-    socket.emit("leaveGame");
+    socket.emit(isSpectating ? "leaveSpectatorGame" : "leaveGame", {
+      roomId: game?.roomId,
+    });
   };
 
   useEffect(() => {
@@ -158,8 +181,14 @@ export default function GameBoard() {
           <PlayerList players={listedPlayers} />
 
           <div className={styles.controls}>
-            <p>Move: WASD</p>
-            <p>Attack: Space</p>
+            {isSpectating ? (
+              <p>Observing game</p>
+            ) : (
+              <>
+                <p>Move: WASD</p>
+                <p>Attack: Space</p>
+              </>
+            )}
           </div>
         </aside>
 
@@ -172,6 +201,7 @@ export default function GameBoard() {
             }
             winnerPosition={winner?.position ?? null}
             status={game.status}
+            isSpectating={isSpectating}
           />
 
           {isWaiting && (
@@ -214,7 +244,7 @@ export default function GameBoard() {
             type="button"
             onClick={handleLeaveGame}
           >
-            Leave game
+            {isSpectating ? "Stop observing" : "Leave game"}
           </button>
         </aside>
       </section>

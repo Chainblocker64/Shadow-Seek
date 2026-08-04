@@ -16,6 +16,7 @@ type RenderFovOptions = {
     y: number,
     tileSize: number,
   ) => Sprite;
+  isSpectating?: boolean;
 };
 
 const FOG_FRAME = {
@@ -33,13 +34,14 @@ export function renderFov({
   localPlayerId,
   layout,
   createTileSprite,
+  isSpectating,
 }: RenderFovOptions) {
   layer.removeChildren();
 
   const localPlayer = players.find((player) => player.id === localPlayerId);
 
   // Besiegte Spieler sehen die komplette Karte ohne Nebel.
-  if (localPlayer?.status === "defeated") {
+  if (isSpectating || localPlayer?.status === "defeated") {
     return;
   }
 

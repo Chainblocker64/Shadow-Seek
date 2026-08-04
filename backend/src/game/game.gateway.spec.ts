@@ -39,12 +39,18 @@ describe('GameGateway', () => {
     endGame: jest.Mock;
     getPlayerGame: jest.Mock;
     getFilteredGameStates: jest.Mock;
+    getGame: jest.Mock;
   };
   let lobbyService: {
     getPlayerRoom: jest.Mock;
+    getRoom: jest.Mock;
+    setFinished: jest.Mock;
   };
   let emit: jest.Mock;
   let to: jest.Mock;
+  let inRoom: jest.Mock;
+  let socketsJoin: jest.Mock;
+  let socketsLeave: jest.Mock;
 
   beforeEach(async () => {
     gameService = {
@@ -54,10 +60,13 @@ describe('GameGateway', () => {
       endGame: jest.fn(),
       getPlayerGame: jest.fn(),
       getFilteredGameStates: jest.fn(),
+      getGame: jest.fn(),
     };
 
     lobbyService = {
       getPlayerRoom: jest.fn(),
+      getRoom: jest.fn(),
+      setFinished: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -84,10 +93,58 @@ describe('GameGateway', () => {
     to = jest.fn().mockReturnValue({
       emit,
     });
+    socketsJoin = jest.fn();
+    socketsLeave = jest.fn();
+    inRoom = jest.fn().mockReturnValue({ socketsJoin, socketsLeave });
 
     gateway.server = {
       to,
+      in: inRoom,
     } as unknown as Server;
+  });
+
+  describe('handleSpectateGame', () => {
+    it('adds an external viewer to the dedicated spectator room and sends the full game state', () => {
+      const roomId = randomUUID();
+      const room = {
+        id: roomId,
+        players: [{ id: 'player-1', name: 'Alice' }],
+        owner: 'player-1',
+        status: 'running',
+        maxPlayers: 4,
+        map: 'Test map',
+      } satisfies Room;
+      const game = {
+        roomId,
+        status: 'running',
+        players: [createAlice()],
+      } as unknown as GameState;
+
+      lobbyService.getPlayerRoom.mockReturnValue(undefined);
+      lobbyService.getRoom.mockReturnValue(room);
+      gameService.getGame.mockReturnValue(game);
+
+      gateway.handleSpectateGame({ id: 'viewer-1' } as Socket, { roomId });
+
+      expect(inRoom).toHaveBeenCalledWith('viewer-1');
+      expect(socketsJoin).toHaveBeenCalledWith(`spectators:${roomId}`);
+      expect(to).toHaveBeenCalledWith('viewer-1');
+      expect(emit).toHaveBeenCalledWith('game:spectator:opened');
+      expect(emit).toHaveBeenCalledWith('game:spectator:sync', {
+        ...game,
+        publicGameInformation: publicGameInformationOfAlice,
+      });
+    });
+
+    it('does not let a room player become a spectator', () => {
+      const roomId = randomUUID();
+      lobbyService.getPlayerRoom.mockReturnValue({ id: roomId } as Room);
+
+      gateway.handleSpectateGame({ id: 'player-1' } as Socket, { roomId });
+
+      expect(lobbyService.getRoom).not.toHaveBeenCalled();
+      expect(socketsJoin).not.toHaveBeenCalled();
+    });
   });
 
   describe('handleMovePlayer', () => {
@@ -281,6 +338,39 @@ describe('GameGateway', () => {
         publicGameInformation: publicGameInformationOfAlice,
       });
     });
+
+    it('syncs the spectators so the leaving player disappears for them too', () => {
+      const { roomId, game } = createRemainingGame('waiting');
+
+      gateway.handleDisconnect({ id: 'player-2' } as Socket);
+
+      expect(to).toHaveBeenCalledWith(`spectators:${roomId}`);
+      expect(emit).toHaveBeenCalledWith('game:spectator:sync', {
+        ...game,
+        publicGameInformation: publicGameInformationOfAlice,
+      });
+    });
+
+    it('sends the spectators back to the lobby when the last player leaves', () => {
+      const roomId = randomUUID();
+
+      gameService.removePlayer.mockReturnValue({
+        roomId,
+        status: 'waiting',
+        players: [],
+      } as unknown as GameState);
+
+      gateway.handleDisconnect({ id: 'player-1' } as Socket);
+
+      expect(to).toHaveBeenCalledWith(`spectators:${roomId}`);
+      expect(emit).toHaveBeenCalledWith('game:left');
+      expect(inRoom).toHaveBeenCalledWith(`spectators:${roomId}`);
+      expect(socketsLeave).toHaveBeenCalledWith(`spectators:${roomId}`);
+      expect(emit).not.toHaveBeenCalledWith(
+        'game:spectator:sync',
+        expect.anything(),
+      );
+    });
   });
 
   describe('handleGameEnded', () => {
@@ -301,6 +391,19 @@ describe('GameGateway', () => {
         ...game,
         publicGameInformation: publicGameInformationOfAlice,
       });
+    });
+
+    it('marks the lobby room as finished so it can no longer be spectated', () => {
+      const roomId = randomUUID();
+
+      gateway.handleGameEnded({
+        roomId,
+        status: 'ended',
+        winner: 'player-1',
+        players: [createAlice()],
+      } as unknown as GameState);
+
+      expect(lobbyService.setFinished).toHaveBeenCalledWith(roomId);
     });
   });
 

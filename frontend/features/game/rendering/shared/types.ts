@@ -18,4 +18,5 @@ export type PixiGameBoardProps = {
   status: GameState["status"];
   currentPlayerSpawnPosition: PlayerPosition | null;
   winnerPosition: PlayerPosition | null;
+  isSpectating?: boolean;
 };
