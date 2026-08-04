@@ -175,7 +175,9 @@ export function PixiGameBoard({
 
         renderAttackCooldowns({
           layer: attackCooldownLayer,
+          map: mapRef.current,
           players: playersRef.current,
+          localPlayerId: socket.id,
           cooldowns: attackCooldownsRef.current,
           layout,
         });
@@ -205,7 +207,9 @@ export function PixiGameBoard({
           layer: playerLayer,
           directionLayer,
           attackPreviewLayer,
+          map: mapRef.current,
           players: playersRef.current,
+          localPlayerId: socket.id,
           hiddenAttackPreviewPlayerIds: hiddenAttackPreviewPlayerIdsRef.current,
           createTileSprite,
         });

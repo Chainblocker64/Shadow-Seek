@@ -1,22 +1,27 @@
 import { Container, Graphics, type Sprite } from "pixi.js";
-import { socket } from "@/lib/socket";
 
 import {
   ATTACK_PREVIEW_FRAME,
+  CONCEALED_OWN_PLAYER_ALPHA,
+  CONCEALED_PLAYER_ALPHA,
+  CONCEALING_OBJECT_ALPHA,
   DIRECTION_CIRCLE_RADIUS,
   OTHER_PLAYER_DIRECTION_COLOR,
   OWN_PLAYER_DIRECTION_COLOR,
 } from "../shared/constants";
 
+import { findCoverFor } from "./concealment";
 import { getFacingTile } from "./playerUtils";
 import { renderHealthBar } from "./renderHealthBar";
 
 import {
   defeatedPlayerTextureFrame,
+  mapObjectTextureFrames,
   playerTextureFrames,
 } from "../../data/tileTextureFrames";
 
 import type { BoardLayout } from "../../components/boardLayout";
+import type { GameMap } from "../../types/map";
 import type { GamePlayer } from "../shared/types";
 
 type RenderPlayersOptions = {
@@ -24,7 +29,9 @@ type RenderPlayersOptions = {
   layer: Container;
   directionLayer: Container;
   attackPreviewLayer: Container;
+  map: GameMap;
   players: GamePlayer[];
+  localPlayerId: string | undefined;
   hiddenAttackPreviewPlayerIds: Set<string>;
 
   createTileSprite: (
@@ -41,7 +48,9 @@ export function renderPlayers({
   layer,
   directionLayer,
   attackPreviewLayer,
+  map,
   players,
+  localPlayerId,
   hiddenAttackPreviewPlayerIds,
   createTileSprite,
 }: RenderPlayersOptions) {
@@ -63,15 +72,47 @@ export function renderPlayers({
         ? defeatedPlayerTextureFrame
         : playerTextureFrames[player.spriteIndex % playerTextureFrames.length];
 
+    const isOwnPlayer = player.id === localPlayerId;
+    const cover = findCoverFor({ map, player, players, localPlayerId });
+    const playerIsConcealed = cover !== null && !isOwnPlayer;
+
+    const playerX = offsetX + player.position.x * tileSize;
+    const playerY = offsetY + player.position.y * tileSize;
+
     const playerSprite = createTileSprite(
       frame.x,
       frame.y,
-      offsetX + player.position.x * tileSize,
-      offsetY + player.position.y * tileSize,
+      playerX,
+      playerY,
       tileSize,
     );
 
+    if (cover) {
+      playerSprite.alpha = isOwnPlayer
+        ? CONCEALED_OWN_PLAYER_ALPHA
+        : CONCEALED_PLAYER_ALPHA;
+    }
+
     layer.addChild(playerSprite);
+
+    // The map already drew the cover below the player, so draw it a second
+    // time on top: the sprite then reads as standing inside the bush instead
+    // of on it.
+    if (cover) {
+      const coverFrame = mapObjectTextureFrames[cover.type];
+
+      const coverSprite = createTileSprite(
+        coverFrame.x,
+        coverFrame.y,
+        playerX,
+        playerY,
+        tileSize,
+      );
+
+      coverSprite.alpha = CONCEALING_OBJECT_ALPHA;
+
+      layer.addChild(coverSprite);
+    }
 
     const facingTile = getFacingTile(player.position, player.facingDirection);
 
@@ -82,8 +123,6 @@ export function renderPlayers({
         otherPlayer.position.y === facingTile.y
       );
     });
-
-    const isOwnPlayer = player.id === socket.id;
 
     const attackPreviewIsHidden = hiddenAttackPreviewPlayerIds.has(player.id);
 
@@ -99,7 +138,7 @@ export function renderPlayers({
       attackPreviewSprite.alpha = 0.85;
 
       attackPreviewLayer.addChild(attackPreviewSprite);
-    } else {
+    } else if (!playerIsConcealed) {
       const circleColor = isOwnPlayer
         ? OWN_PLAYER_DIRECTION_COLOR
         : OTHER_PLAYER_DIRECTION_COLOR;
@@ -120,10 +159,20 @@ export function renderPlayers({
       directionLayer.addChild(directionCircle);
     }
 
+    // Name, health value and health bar are what make a player jump out of
+    // the board. Cover takes them away and leaves the silhouette.
+    if (playerIsConcealed) {
+      return;
+    }
+
     renderHealthBar({
       layer,
       player,
       layout,
+      // Only ever true for your own player, since concealed enemies returned
+      // above: the dimmed sprite alone is easy to miss, so say outright that
+      // the cover is working.
+      showsHiddenHint: cover !== null,
     });
   });
 }
