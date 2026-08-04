@@ -124,13 +124,13 @@ describe('canMoveToPosition', () => {
     expect(result).toBe(false);
   });
 
-  it('rejects movement into a water tile', () => {
+  it('allows movement into a water tile', () => {
     const result = canMoveToPosition(createGameState(), {
       x: 4,
       y: 2,
     });
 
-    expect(result).toBe(false);
+    expect(result).toBe(true);
   });
 
   it('rejects movement outside the left map boundary', () => {

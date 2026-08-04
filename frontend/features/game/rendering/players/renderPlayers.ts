@@ -13,6 +13,7 @@ import {
 import { findCoverFor } from "./concealment";
 import { getFacingTile } from "./playerUtils";
 import { renderHealthBar } from "./renderHealthBar";
+import { renderSwimmingEffect } from "./renderSwimmingEffects";
 
 import {
   defeatedPlayerTextureFrame,
@@ -21,18 +22,24 @@ import {
 } from "../../data/tileTextureFrames";
 
 import type { BoardLayout } from "../../components/boardLayout";
-import type { GameMap } from "../../types/map";
+import {
+  findConcealingObjectAt,
+  type GameMap,
+} from "../../types/map";
+import type { createAnimationManager } from "../../animations/createAnimationManager";
 import type { GamePlayer } from "../shared/types";
 
 type RenderPlayersOptions = {
   layout: BoardLayout;
   layer: Container;
+  swimmingOverlayLayer: Container;
   directionLayer: Container;
   attackPreviewLayer: Container;
   map: GameMap;
   players: GamePlayer[];
   localPlayerId: string | undefined;
   hiddenAttackPreviewPlayerIds: Set<string>;
+  animationManager: ReturnType<typeof createAnimationManager>;
 
   createTileSprite: (
     frameX: number,
@@ -46,17 +53,20 @@ type RenderPlayersOptions = {
 export function renderPlayers({
   layout,
   layer,
+  swimmingOverlayLayer,
   directionLayer,
   attackPreviewLayer,
   map,
   players,
   localPlayerId,
   hiddenAttackPreviewPlayerIds,
+  animationManager,
   createTileSprite,
 }: RenderPlayersOptions) {
   const { offsetX, offsetY, tileSize } = layout;
 
   directionLayer.removeChildren();
+  swimmingOverlayLayer.removeChildren();
   layer.removeChildren();
   attackPreviewLayer.removeChildren();
 
@@ -73,6 +83,7 @@ export function renderPlayers({
         : playerTextureFrames[player.spriteIndex % playerTextureFrames.length];
 
     const isOwnPlayer = player.id === localPlayerId;
+    const concealingObject = findConcealingObjectAt(map, player.position);
     const cover = findCoverFor({ map, player, players, localPlayerId });
     const playerIsConcealed = cover !== null && !isOwnPlayer;
 
@@ -95,10 +106,17 @@ export function renderPlayers({
 
     layer.addChild(playerSprite);
 
+    renderSwimmingEffect({
+      layer: swimmingOverlayLayer,
+      cover: concealingObject,
+      layout,
+      animationManager,
+    });
+
     // The map already drew the cover below the player, so draw it a second
     // time on top: the sprite then reads as standing inside the bush instead
     // of on it.
-    if (cover) {
+    if (cover && cover.type !== "water") {
       const coverFrame = mapObjectTextureFrames[cover.type];
 
       const coverSprite = createTileSprite(
