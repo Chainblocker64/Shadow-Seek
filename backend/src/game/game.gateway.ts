@@ -146,6 +146,28 @@ export class GameGateway {
     this.server.to(client.id).emit('game:left');
   }
 
+  @SubscribeMessage('requestGameState')
+  handleRequestGameState(@ConnectedSocket() client: Socket) {
+    const game = this.gameService.getPlayerGame(client.id);
+
+    if (!game) {
+      return;
+    }
+
+    const personalizedStates = this.gameService.getFilteredGameStates(
+      toGameStatePayload(game),
+    );
+    const personalizedState = personalizedStates?.find(
+      ({ clientId }) => clientId === client.id,
+    );
+
+    if (!personalizedState) {
+      return;
+    }
+
+    this.server.to(client.id).emit('game:sync', personalizedState.gameState);
+  }
+
   handleDisconnect({ id: clientId }: Socket) {
     this.removePlayerFromGame(clientId);
   }

@@ -37,6 +37,7 @@ describe('GameGateway', () => {
     playerAttack: jest.Mock;
     removePlayer: jest.Mock;
     endGame: jest.Mock;
+    getPlayerGame: jest.Mock;
     getFilteredGameStates: jest.Mock;
     getGame: jest.Mock;
   };
@@ -57,6 +58,7 @@ describe('GameGateway', () => {
       playerAttack: jest.fn(),
       removePlayer: jest.fn(),
       endGame: jest.fn(),
+      getPlayerGame: jest.fn(),
       getFilteredGameStates: jest.fn(),
       getGame: jest.fn(),
     };
@@ -220,6 +222,74 @@ describe('GameGateway', () => {
       gateway.handlePlayerAttack({ id: 'player-1' } as Socket);
 
       expect(gameService.playerAttack).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('handleRequestGameState', () => {
+    it('re-sends the current game state to a player after navigation', () => {
+      const game = {
+        roomId: randomUUID(),
+        status: 'waiting',
+        players: [createAlice()],
+      } as unknown as GameState;
+
+      gameService.getPlayerGame.mockReturnValue(game);
+      gameService.getFilteredGameStates.mockImplementation(
+        (gameState: GameState) => [{ clientId: 'player-1', gameState }],
+      );
+
+      gateway.handleRequestGameState({ id: 'player-1' } as Socket);
+
+      expect(gameService.getPlayerGame).toHaveBeenCalledWith('player-1');
+      expect(to).toHaveBeenCalledWith('player-1');
+      expect(emit).toHaveBeenCalledWith('game:sync', {
+        ...game,
+        publicGameInformation: publicGameInformationOfAlice,
+      });
+    });
+
+    it('emits the state filtered for the requesting player instead of the full state', () => {
+      const alice = createAlice();
+      const bob = new Player({
+        clientId: 'player-2',
+        name: 'Bob',
+        position: { x: 10, y: 10 },
+      });
+
+      const game = {
+        roomId: randomUUID(),
+        status: 'running',
+        players: [alice, bob],
+      } as unknown as GameState;
+
+      const filteredForAlice: GameState = {
+        ...game,
+        players: [alice],
+      };
+
+      gameService.getPlayerGame.mockReturnValue(game);
+      gameService.getFilteredGameStates.mockReturnValue([
+        { clientId: 'player-1', gameState: filteredForAlice },
+        { clientId: 'player-2', gameState: game },
+      ]);
+
+      gateway.handleRequestGameState({ id: 'player-1' } as Socket);
+
+      expect(to).toHaveBeenCalledWith('player-1');
+      expect(emit).toHaveBeenCalledWith('game:sync', filteredForAlice);
+      expect(emit).not.toHaveBeenCalledWith(
+        'game:sync',
+        expect.objectContaining({ players: [alice, bob] }),
+      );
+    });
+
+    it('does not emit a game state when the player has no game', () => {
+      gameService.getPlayerGame.mockReturnValue(undefined);
+
+      gateway.handleRequestGameState({ id: 'player-1' } as Socket);
+
+      expect(gameService.getFilteredGameStates).not.toHaveBeenCalled();
+      expect(to).not.toHaveBeenCalled();
     });
   });
 

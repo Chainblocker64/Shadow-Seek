@@ -124,6 +124,10 @@ export default function GameBoard() {
     socket.on("game:spectator:sync", onSpectatorGameSync);
     socket.on("game:ended", onGameEnded);
     socket.on("game:left", onGameLeft);
+    // The game-open event triggers navigation from the lobby. Ask the server
+    // for the current snapshot after this page has installed its listeners so
+    // a sync emitted during that route transition cannot leave us waiting.
+    socket.emit("requestGameState");
 
     return () => {
       socket.off("game:sync", onGameSync);
