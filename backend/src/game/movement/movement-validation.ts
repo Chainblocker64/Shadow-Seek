@@ -15,6 +15,15 @@ export function canMoveToPosition(
   );
 }
 
+export function isWaterAtPosition(map: GameMap, position: Position): boolean {
+  return map.objects.some(
+    (object) =>
+      object.x === position.x &&
+      object.y === position.y &&
+      object.type === 'water',
+  );
+}
+
 function tileIsWalkable(map: GameMap, targetPosition: Position): boolean {
   return (
     !isOutsideMap(map, targetPosition) &&
