@@ -103,6 +103,15 @@ export class GameGateway {
     this.lobbyService.removePlayer(client.id);
   }
 
+  @SubscribeMessage('requestGameState')
+  handleRequestGameState(@ConnectedSocket() client: Socket) {
+    const game = this.gameService.getPlayerGame(client.id);
+
+    if (game) {
+      this.server.to(client.id).emit('game:sync', toGameStatePayload(game));
+    }
+  }
+
   handleDisconnect({ id: clientId }: Socket) {
     this.removePlayerFromGame(clientId);
   }

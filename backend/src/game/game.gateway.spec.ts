@@ -37,6 +37,7 @@ describe('GameGateway', () => {
     playerAttack: jest.Mock;
     removePlayer: jest.Mock;
     endGame: jest.Mock;
+    getPlayerGame: jest.Mock;
     getFilteredGameStates: jest.Mock;
   };
   let lobbyService: {
@@ -51,6 +52,7 @@ describe('GameGateway', () => {
       playerAttack: jest.fn(),
       removePlayer: jest.fn(),
       endGame: jest.fn(),
+      getPlayerGame: jest.fn(),
       getFilteredGameStates: jest.fn(),
     };
 
@@ -163,6 +165,35 @@ describe('GameGateway', () => {
       gateway.handlePlayerAttack({ id: 'player-1' } as Socket);
 
       expect(gameService.playerAttack).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('handleRequestGameState', () => {
+    it('re-sends the current game state to a player after navigation', () => {
+      const game = {
+        roomId: randomUUID(),
+        status: 'waiting',
+        players: [createAlice()],
+      } as unknown as GameState;
+
+      gameService.getPlayerGame.mockReturnValue(game);
+
+      gateway.handleRequestGameState({ id: 'player-1' } as Socket);
+
+      expect(gameService.getPlayerGame).toHaveBeenCalledWith('player-1');
+      expect(to).toHaveBeenCalledWith('player-1');
+      expect(emit).toHaveBeenCalledWith('game:sync', {
+        ...game,
+        publicGameInformation: publicGameInformationOfAlice,
+      });
+    });
+
+    it('does not emit a game state when the player has no game', () => {
+      gameService.getPlayerGame.mockReturnValue(undefined);
+
+      gateway.handleRequestGameState({ id: 'player-1' } as Socket);
+
+      expect(to).not.toHaveBeenCalled();
     });
   });
 
