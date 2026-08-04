@@ -31,3 +31,16 @@ export const HEALTH_LOW_COLOR = 0xef4444;
 
 export const HEALTH_MEDIUM_RATIO = 0.5;
 export const HEALTH_LOW_RATIO = 0.25;
+
+// Hiding never removes a player from the board — it only takes away the loud
+// parts. The sprite stays, dimmed and drawn behind the cover it stands in, so
+// an enemy who looks at the tile still recognises somebody in there.
+export const CONCEALED_PLAYER_ALPHA = 0.4;
+// Your own hiding spot has to stay readable to you, so you can tell at a
+// glance that the cover is working.
+export const CONCEALED_OWN_PLAYER_ALPHA = 0.7;
+export const CONCEALING_OBJECT_ALPHA = 0.85;
+export const CONCEALED_HINT_COLOR = 0xfacc15;
+// Cover is a distance effect: whoever stands right next to you sees you
+// plainly, which also keeps melee range readable for both sides.
+export const CONCEALMENT_REVEAL_DISTANCE = 1;

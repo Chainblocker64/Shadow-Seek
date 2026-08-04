@@ -38,6 +38,10 @@ export function getFacingTile(
   }
 }
 
+export function getTileDistance(a: PlayerPosition, b: PlayerPosition): number {
+  return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y));
+}
+
 export function getHealthBarColor(healthRatio: number): number {
   if (healthRatio > HEALTH_MEDIUM_RATIO) {
     return HEALTH_HIGH_COLOR;

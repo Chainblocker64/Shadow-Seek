@@ -1,6 +1,8 @@
 import { Graphics, Text, type Container } from "pixi.js";
 import type { BoardLayout } from "../../components/boardLayout";
+import type { GameMap } from "../../types/map";
 import type { GamePlayer } from "../shared/types";
+import { isPlayerConcealed } from "../players/concealment";
 import {
   ATTACK_COOLDOWN_MS,
   COOLDOWN_BACKGROUND_COLOR,
@@ -11,14 +13,18 @@ import {
 
 type RenderAttackCooldownsOptions = {
   layer: Container;
+  map: GameMap;
   players: GamePlayer[];
+  localPlayerId: string | undefined;
   cooldowns: Map<string, number>;
   layout: BoardLayout;
 };
 
 export function renderAttackCooldowns({
   layer,
+  map,
   players,
+  localPlayerId,
   cooldowns,
   layout,
 }: RenderAttackCooldownsOptions) {
@@ -41,6 +47,12 @@ export function renderAttackCooldowns({
 
     if (!player) {
       cooldowns.delete(playerId);
+      return;
+    }
+
+    // A cooldown bar over a bush would point straight at whoever is hiding in
+    // it, so attacking from cover stays quiet as well.
+    if (isPlayerConcealed({ map, player, players, localPlayerId })) {
       return;
     }
 

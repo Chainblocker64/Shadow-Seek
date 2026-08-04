@@ -2,6 +2,7 @@ import { Graphics, Text, type Container } from "pixi.js";
 import type { GamePlayer } from "../shared/types";
 import type { BoardLayout } from "../../components/boardLayout";
 import {
+  CONCEALED_HINT_COLOR,
   HEALTH_BAR_HEIGHT_RATIO,
   HEALTH_BAR_MIN_HEIGHT,
   HEALTH_BAR_WIDTH_RATIO,
@@ -15,12 +16,14 @@ type RenderHealthBarOptions = {
   layer: Container;
   player: GamePlayer;
   layout: BoardLayout;
+  showsHiddenHint?: boolean;
 };
 
 export function renderHealthBar({
   layer,
   player,
   layout,
+  showsHiddenHint = false,
 }: RenderHealthBarOptions) {
   const { offsetX, offsetY, tileSize } = layout;
 
@@ -99,4 +102,27 @@ export function renderHealthBar({
   playerLabel.y = healthLabel.y - healthLabel.height;
 
   layer.addChild(playerLabel, healthLabel, healthBar);
+
+  if (!showsHiddenHint) {
+    return;
+  }
+
+  const hiddenLabel = new Text({
+    text: "Hidden",
+    style: {
+      fontSize: 11,
+      fontWeight: "bold",
+      fill: CONCEALED_HINT_COLOR,
+      stroke: {
+        color: 0x000000,
+        width: 2,
+      },
+    },
+  });
+
+  hiddenLabel.anchor.set(0.5, 1);
+  hiddenLabel.x = centerX;
+  hiddenLabel.y = playerLabel.y - playerLabel.height;
+
+  layer.addChild(hiddenLabel);
 }

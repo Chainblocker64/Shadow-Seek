@@ -71,35 +71,64 @@ export const MAP_OBJECT_PROPERTIES: Record<
   {
     walkable: boolean;
     blocksVision: boolean;
+    // A concealing object hides the player standing on it: the board still
+    // draws them, just faint and behind the object, so an enemy has to look
+    // instead of merely glance.
+    concealsPlayers: boolean;
   }
 > = {
   wall: {
     walkable: false,
     blocksVision: true,
+    concealsPlayers: false,
   },
   tree: {
     walkable: false,
     blocksVision: true,
+    concealsPlayers: false,
   },
   rock: {
     walkable: false,
     blocksVision: true,
+    concealsPlayers: false,
   },
 
   spawn: {
     walkable: true,
     blocksVision: false,
+    concealsPlayers: false,
   },
   bush: {
     walkable: true,
     blocksVision: true,
+    concealsPlayers: true,
   },
   chest: {
     walkable: false,
     blocksVision: false,
+    concealsPlayers: false,
   },
   water: {
     walkable: false,
     blocksVision: false,
+    concealsPlayers: false,
   },
 };
+
+/**
+ * Returns the object a player at `position` can hide in, or `null` when the
+ * tile offers no cover.
+ */
+export function findConcealingObjectAt(
+  map: GameMap,
+  position: { x: number; y: number },
+): MapObject | null {
+  return (
+    map.objects.find(
+      (object) =>
+        object.x === position.x &&
+        object.y === position.y &&
+        MAP_OBJECT_PROPERTIES[object.type].concealsPlayers,
+    ) ?? null
+  );
+}
