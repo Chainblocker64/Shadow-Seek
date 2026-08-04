@@ -177,6 +177,9 @@ describe('GameGateway', () => {
       } as unknown as GameState;
 
       gameService.getPlayerGame.mockReturnValue(game);
+      gameService.getFilteredGameStates.mockImplementation(
+        (gameState: GameState) => [{ clientId: 'player-1', gameState }],
+      );
 
       gateway.handleRequestGameState({ id: 'player-1' } as Socket);
 
@@ -188,11 +191,47 @@ describe('GameGateway', () => {
       });
     });
 
+    it('emits the state filtered for the requesting player instead of the full state', () => {
+      const alice = createAlice();
+      const bob = new Player({
+        clientId: 'player-2',
+        name: 'Bob',
+        position: { x: 10, y: 10 },
+      });
+
+      const game = {
+        roomId: randomUUID(),
+        status: 'running',
+        players: [alice, bob],
+      } as unknown as GameState;
+
+      const filteredForAlice: GameState = {
+        ...game,
+        players: [alice],
+      };
+
+      gameService.getPlayerGame.mockReturnValue(game);
+      gameService.getFilteredGameStates.mockReturnValue([
+        { clientId: 'player-1', gameState: filteredForAlice },
+        { clientId: 'player-2', gameState: game },
+      ]);
+
+      gateway.handleRequestGameState({ id: 'player-1' } as Socket);
+
+      expect(to).toHaveBeenCalledWith('player-1');
+      expect(emit).toHaveBeenCalledWith('game:sync', filteredForAlice);
+      expect(emit).not.toHaveBeenCalledWith(
+        'game:sync',
+        expect.objectContaining({ players: [alice, bob] }),
+      );
+    });
+
     it('does not emit a game state when the player has no game', () => {
       gameService.getPlayerGame.mockReturnValue(undefined);
 
       gateway.handleRequestGameState({ id: 'player-1' } as Socket);
 
+      expect(gameService.getFilteredGameStates).not.toHaveBeenCalled();
       expect(to).not.toHaveBeenCalled();
     });
   });
