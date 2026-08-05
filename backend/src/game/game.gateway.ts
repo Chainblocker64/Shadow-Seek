@@ -18,6 +18,7 @@ import {
 import { GameService } from './game.service';
 import { UsePipes, ValidationPipe } from '@nestjs/common';
 import { MovePlayerDto } from './dto/move-player.dto';
+import { SpectateGameDto } from './dto/spectate-game.dto';
 import { OnEvent } from '@nestjs/event-emitter';
 import { RoomUpdatedEvent } from '../lobby/events/room-updated.event';
 import type { GameState } from './types';
@@ -50,6 +51,10 @@ export class GameGateway {
     private readonly lobbyService: LobbyService,
     private readonly mapsService: MapsService,
   ) {}
+
+  private spectatorRoomId(roomId: RoomId) {
+    return `spectators:${roomId}`;
+  }
 
   @SubscribeMessage('initializeGame')
   async handleInitializeGame(@ConnectedSocket() client: Socket) {
@@ -95,12 +100,72 @@ export class GameGateway {
 
     this.server.to(clientId).emit('game:opened');
     this.server.to(room.id).emit('game:sync', toGameStatePayload(game));
+    this.syncSpectators(game);
   }
 
   @SubscribeMessage('leaveGame')
   handleLeaveGame(@ConnectedSocket() client: Socket) {
     this.removePlayerFromGame(client.id);
     this.lobbyService.removePlayer(client.id);
+  }
+
+  @SubscribeMessage('spectateGame')
+  handleSpectateGame(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() { roomId }: SpectateGameDto,
+  ) {
+    if (this.lobbyService.getPlayerRoom(client.id)) {
+      return;
+    }
+
+    const room = this.lobbyService.getRoom(roomId);
+    const game = this.gameService.getGame(roomId);
+
+    if (
+      !room ||
+      room.status !== 'running' ||
+      !game ||
+      game.status === 'ended'
+    ) {
+      return;
+    }
+
+    this.server.in(client.id).socketsJoin(this.spectatorRoomId(roomId));
+    this.server.to(client.id).emit('game:spectator:opened');
+    this.server
+      .to(client.id)
+      .emit('game:spectator:sync', toGameStatePayload(game));
+  }
+
+  @SubscribeMessage('leaveSpectatorGame')
+  handleLeaveSpectatorGame(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() { roomId }: SpectateGameDto,
+  ) {
+    this.server.in(client.id).socketsLeave(this.spectatorRoomId(roomId));
+    this.server.to(client.id).emit('game:left');
+  }
+
+  @SubscribeMessage('requestGameState')
+  handleRequestGameState(@ConnectedSocket() client: Socket) {
+    const game = this.gameService.getPlayerGame(client.id);
+
+    if (!game) {
+      return;
+    }
+
+    const personalizedStates = this.gameService.getFilteredGameStates(
+      toGameStatePayload(game),
+    );
+    const personalizedState = personalizedStates?.find(
+      ({ clientId }) => clientId === client.id,
+    );
+
+    if (!personalizedState) {
+      return;
+    }
+
+    this.server.to(client.id).emit('game:sync', personalizedState.gameState);
   }
 
   handleDisconnect({ id: clientId }: Socket) {
@@ -118,6 +183,8 @@ export class GameGateway {
 
     if (game.players.length === 0) {
       this.clearTimers(game.roomId);
+      // The game is gone, so no further state ever reaches the spectators.
+      this.evictSpectators(game.roomId);
       return;
     }
 
@@ -127,6 +194,22 @@ export class GameGateway {
     }
 
     this.server.to(game.roomId).emit('game:sync', toGameStatePayload(game));
+    this.syncSpectators(game);
+  }
+
+  // Spectators sit outside the room, so room-wide `game:sync` emits never reach
+  // them; without this they keep showing players that already left.
+  private syncSpectators(game: GameState) {
+    this.server
+      .to(this.spectatorRoomId(game.roomId))
+      .emit('game:spectator:sync', toGameStatePayload(game));
+  }
+
+  private evictSpectators(roomId: RoomId) {
+    const spectatorRoom = this.spectatorRoomId(roomId);
+
+    this.server.to(spectatorRoom).emit('game:left');
+    this.server.in(spectatorRoom).socketsLeave(spectatorRoom);
   }
 
   @SubscribeMessage('movePlayer')
@@ -218,9 +301,14 @@ export class GameGateway {
   @OnEvent('game.ended')
   handleGameEnded(gameState: GameState) {
     this.clearTimers(gameState.roomId);
+    // Drops the room out of `running` so the lobby stops offering "View".
+    this.lobbyService.setFinished(gameState.roomId);
 
     this.server
       .to(gameState.roomId)
+      .emit('game:ended', toGameStatePayload(gameState));
+    this.server
+      .to(this.spectatorRoomId(gameState.roomId))
       .emit('game:ended', toGameStatePayload(gameState));
   }
 
@@ -237,5 +325,9 @@ export class GameGateway {
     for (const { clientId, gameState: filteredState } of personalizedStates) {
       this.server.to(clientId).emit('game:sync', filteredState);
     }
+
+    this.server
+      .to(this.spectatorRoomId(gameState.roomId))
+      .emit('game:spectator:sync', gameStatePayload);
   }
 }

@@ -6,6 +6,7 @@ import {
   STATUS_WAITING,
   STATUS_FULL,
   STATUS_RUNNING,
+  STATUS_FINISHED,
   RoomStatus,
 } from './types';
 import { randomUUID } from 'node:crypto';
@@ -136,6 +137,20 @@ export class LobbyService {
     this.triggerRoomBroadcast();
   }
 
+  setFinished(roomId: RoomId) {
+    const room = this.rooms.get(roomId);
+
+    if (!room || room.status === STATUS_FINISHED) {
+      return;
+    }
+
+    this.rooms.set(roomId, {
+      ...room,
+      status: STATUS_FINISHED,
+    });
+    this.triggerRoomBroadcast();
+  }
+
   getPlayerRoom(clientId: ClientId): Room | undefined {
     for (const room of this.rooms.values()) {
       if (this.roomHasPlayer(room, clientId)) {
@@ -157,8 +172,10 @@ export class LobbyService {
   }
 
   private newRoomStatus(room: Room): RoomStatus {
-    if (room.status === STATUS_RUNNING) {
-      return STATUS_RUNNING;
+    // A room that started or finished a game never falls back to a joinable
+    // status, no matter how many players come and go.
+    if (room.status === STATUS_RUNNING || room.status === STATUS_FINISHED) {
+      return room.status;
     }
     return this.roomIsFull(room) ? STATUS_FULL : STATUS_WAITING;
   }

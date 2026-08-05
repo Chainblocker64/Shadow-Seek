@@ -3,10 +3,13 @@ import RoomListItem from "./RoomListItem";
 
 type RoomListItemsProps = {
   rooms: Room[];
-  clientId?: string;
+  handleSpectateGame: (roomId: Room["id"]) => void;
 };
 
-export default function RoomListItems({ rooms }: RoomListItemsProps) {
+export default function RoomListItems({
+  rooms,
+  handleSpectateGame,
+}: RoomListItemsProps) {
   return (
     <ul className="flex flex-col gap-3">
       {rooms.length === 0 ? (
@@ -16,7 +19,7 @@ export default function RoomListItems({ rooms }: RoomListItemsProps) {
       ) : (
         rooms.map((room) => (
           <li key={room.id}>
-            <RoomListItem room={room} />
+            <RoomListItem room={room} handleSpectateGame={handleSpectateGame} />
           </li>
         ))
       )}

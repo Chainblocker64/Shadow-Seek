@@ -4,10 +4,12 @@ import RoomListItems from "./RoomListItems";
 export default function RoomList({
   rooms,
   handleCreateRoom,
+  handleSpectateGame,
   canCreateRoom,
 }: {
   rooms: Room[];
   handleCreateRoom: () => void;
+  handleSpectateGame: (roomId: Room["id"]) => void;
   canCreateRoom: boolean;
 }) {
   return (
@@ -23,7 +25,7 @@ export default function RoomList({
           Create Game
         </button>
       </div>
-      <RoomListItems rooms={rooms} />
+      <RoomListItems rooms={rooms} handleSpectateGame={handleSpectateGame} />
       {/* "Create game" button for large screens, outside of the room list window */}
       <button
         className="primary-button absolute left-full top-0 ml-4 hidden whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50 lg:block"
