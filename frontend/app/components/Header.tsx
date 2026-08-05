@@ -3,24 +3,28 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuthStore } from "../store/useAuthStore";
-import { useJoinedRoom, useLeaveRoom } from "../lobby/RoomProvider";
+import {
+  useJoinedRoom,
+  useLeaveRoomForNavigation,
+} from "../lobby/RoomProvider";
 
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
   const { user, setUser } = useAuthStore();
   const joinedRoom = useJoinedRoom();
-  const leaveRoom = useLeaveRoom();
+  const leaveRoomForNavigation = useLeaveRoomForNavigation();
   const isActive = (path: string) => pathname === path;
 
-  const handleLobbyClick = (e: React.MouseEvent) => {
+  const handleNavigate = () => {
     if (joinedRoom) {
-      e.preventDefault();
-      leaveRoom();
+      leaveRoomForNavigation();
     }
   };
 
   const handleLogout = async () => {
+    handleNavigate();
+
     try {
       await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`, {
         method: "POST",
@@ -39,6 +43,7 @@ export function Header() {
       <div className="max-w-7xl mx-auto px-6 py-4 md:py-0 md:h-16 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0">
         <Link
           href="/"
+          onClick={handleNavigate}
           className="text-xl font-extrabold tracking-wider text-white transition-colors cursor-pointer"
         >
           Shadow Seek
@@ -47,7 +52,7 @@ export function Header() {
         <nav className="flex items-center gap-6">
           <Link
             href="/lobby"
-            onClick={handleLobbyClick}
+            onClick={handleNavigate}
             className={`text-sm font-medium transition-colors ${
               isActive("/lobby")
                 ? "text-emerald-400 font-semibold"
@@ -58,6 +63,7 @@ export function Header() {
           </Link>
           <Link
             href="/profile"
+            onClick={handleNavigate}
             className={`text-sm font-medium transition-colors ${
               isActive("/profile")
                 ? "text-emerald-400 font-semibold"
@@ -68,6 +74,7 @@ export function Header() {
           </Link>
           <Link
             href="/leaderboard"
+            onClick={handleNavigate}
             className={`text-sm font-medium transition-colors ${
               isActive("/leaderboard")
                 ? "text-emerald-400 font-semibold"

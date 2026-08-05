@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useRef, useState } from "react";
 import { Room } from "./types";
 import { socket } from "@/lib/socket";
 import { usePathname, useRouter } from "next/navigation";
@@ -8,6 +8,7 @@ import { usePathname, useRouter } from "next/navigation";
 const RoomsContext = createContext<Room[] | undefined>(undefined);
 const JoinedRoomContext = createContext<Room | undefined>(undefined);
 const LeaveRoomContext = createContext<() => void>(() => {});
+const LeaveRoomForNavigationContext = createContext<() => void>(() => {});
 
 export function RoomProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -17,6 +18,11 @@ export function RoomProvider({ children }: { children: React.ReactNode }) {
   const [isInGame, setIsInGame] = useState(false);
   const roomId = joinedRoom?.id;
 
+  // Set right before a header nav link leaves the room as a side effect of
+  // navigating elsewhere, so the room:left confirmation below doesn't bounce
+  // that navigation back to /lobby.
+  const skipNextLeaveRedirect = useRef(false);
+
   useEffect(() => {
     socket.connect();
 
@@ -24,7 +30,11 @@ export function RoomProvider({ children }: { children: React.ReactNode }) {
     const onRoomUpdated = (room: Room) => setJoinedRoom(room);
     const onRoomJoinFailed = () => setJoinedRoom(undefined);
     const onRoomLeft = () => {
-      router.push("/lobby");
+      if (skipNextLeaveRedirect.current) {
+        skipNextLeaveRedirect.current = false;
+      } else {
+        router.push("/lobby");
+      }
       setJoinedRoom(undefined);
     };
     const requestRooms = () => socket.emit("requestRooms");
@@ -67,11 +77,24 @@ export function RoomProvider({ children }: { children: React.ReactNode }) {
     router.push("/lobby");
   };
 
+  // Leaves the room without redirecting to /lobby, for use when leaving is a
+  // side effect of navigating elsewhere (e.g. a header nav link) rather than
+  // the destination itself.
+  const leaveRoomForNavigation = () => {
+    skipNextLeaveRedirect.current = true;
+    socket.emit("leaveRoom");
+    setJoinedRoom(undefined);
+  };
+
   return (
     <RoomsContext.Provider value={rooms}>
       <JoinedRoomContext.Provider value={joinedRoom}>
         <LeaveRoomContext.Provider value={leaveRoom}>
-          {children}
+          <LeaveRoomForNavigationContext.Provider
+            value={leaveRoomForNavigation}
+          >
+            {children}
+          </LeaveRoomForNavigationContext.Provider>
         </LeaveRoomContext.Provider>
       </JoinedRoomContext.Provider>
     </RoomsContext.Provider>
@@ -90,5 +113,10 @@ export function useJoinedRoom() {
 
 export function useLeaveRoom() {
   const context = useContext(LeaveRoomContext);
+  return context;
+}
+
+export function useLeaveRoomForNavigation() {
+  const context = useContext(LeaveRoomForNavigationContext);
   return context;
 }
