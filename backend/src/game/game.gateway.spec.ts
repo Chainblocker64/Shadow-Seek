@@ -308,22 +308,20 @@ describe('GameGateway', () => {
       return { roomId, game };
     }
 
-    it('ends a running game when only one player remains', () => {
-      const { roomId, game } = createRemainingGame('running');
-
-      const endedGame = { ...game, status: 'ended', winner: 'player-1' };
-
-      gameService.endGame.mockReturnValue(endedGame);
+    it('syncs the remaining player after a running game ends because of a disconnect', () => {
+      // GameService.removePlayer now decides whether the departure ends the
+      // game (and emits 'game.ended' itself), so the gateway just relays
+      // whatever state it gets back rather than re-triggering endGame.
+      const { roomId, game } = createRemainingGame('ended');
 
       gateway.handleDisconnect({ id: 'player-2' } as Socket);
 
-      expect(gameService.endGame).toHaveBeenCalledWith(roomId);
+      expect(gameService.endGame).not.toHaveBeenCalled();
       expect(to).toHaveBeenCalledWith(roomId);
-      expect(emit).toHaveBeenCalledWith('game:ended', {
-        ...endedGame,
+      expect(emit).toHaveBeenCalledWith('game:sync', {
+        ...game,
         publicGameInformation: publicGameInformationOfAlice,
       });
-      expect(emit).not.toHaveBeenCalledWith('game:sync', expect.anything());
     });
 
     it('keeps a waiting game running when only one player remains', () => {

@@ -131,6 +131,16 @@ export class GameService {
 
     if (game.players.length === 0) {
       this.games.delete(game.roomId);
+      return game;
+    }
+
+    // A player who leaves forfeits: the winner is decided among whoever is
+    // still in the game, never the player who just left. If that leaves a
+    // single player, they win outright, regardless of any tie with someone
+    // who left.
+    if (game.status === RUNNING && !this.hasEnoughPlayersAlive(game)) {
+      this.finalizeGameEnd(game);
+      this.eventEmitter.emit('game.ended', game);
     }
 
     return game;
@@ -152,7 +162,6 @@ export class GameService {
       this.triggerGamestateBroadcast(roomId);
     } else {
       this.endGame(roomId);
-      this.eventEmitter.emit('game.ended', game);
     }
 
     return attackResult;
@@ -178,14 +187,19 @@ export class GameService {
       return game;
     }
 
+    this.finalizeGameEnd(game);
+    this.eventEmitter.emit('game.ended', game);
+
+    return game;
+  }
+
+  private finalizeGameEnd(game: GameState): void {
     game.status = ENDED;
     game.endsAt = null;
 
     const winner = this.determineWinner(game.players);
     game.winner = winner?.clientId ?? null;
     game.winnerName = winner?.name ?? null;
-
-    return game;
   }
 
   private hasEnoughPlayersAlive(game: GameState): boolean {

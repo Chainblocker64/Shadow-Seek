@@ -13,7 +13,6 @@ import {
   GAME_DURATION_MS,
   GAME_START_DELAY_MS,
   MIN_PLAYERS_TO_START,
-  RUNNING,
 } from './consts';
 import { GameService } from './game.service';
 import { UsePipes, ValidationPipe } from '@nestjs/common';
@@ -188,11 +187,6 @@ export class GameGateway {
       return;
     }
 
-    if (game.status === RUNNING && game.players.length === 1) {
-      this.endGame(game.roomId);
-      return;
-    }
-
     this.server.to(game.roomId).emit('game:sync', toGameStatePayload(game));
     this.syncSpectators(game);
   }
@@ -241,14 +235,6 @@ export class GameGateway {
     this.server.to(room.id).emit('game:attack', attackResult);
   }
 
-  private endGame(roomId: RoomId) {
-    const game = this.gameService.endGame(roomId);
-
-    if (game) {
-      this.handleGameEnded(game);
-    }
-  }
-
   private clearTimers(roomId: RoomId) {
     const startTimer = this.gameStartTimers.get(roomId);
     const endTimer = this.gameEndTimers.get(roomId);
@@ -292,7 +278,7 @@ export class GameGateway {
     const timer = setTimeout(() => {
       this.gameEndTimers.delete(roomId);
 
-      this.endGame(roomId);
+      this.gameService.endGame(roomId);
     }, GAME_DURATION_MS);
 
     this.gameEndTimers.set(roomId, timer);
