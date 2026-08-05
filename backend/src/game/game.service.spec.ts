@@ -150,6 +150,27 @@ describe('GameService', () => {
 
     expect(game).toMatchObject({ roomId, status: ENDED, endsAt: null });
     expect(service.getGame(roomId)).toBe(game);
+    expect(eventEmitter.emit).toHaveBeenCalledWith('game.ended', game);
+  });
+
+  it('does not emit game.ended when the game is not running', () => {
+    const roomId = randomUUID();
+    const map: GameMap = {
+      name: 'Test map',
+      width: 2,
+      height: 2,
+      baseTile: 'floor',
+      baseOverrides: [],
+      objects: [{ x: 0, y: 0, type: 'spawn' }],
+    };
+    service.createGame(roomId, [{ id: 'player-1', name: 'Alice' }], map);
+
+    service.endGame(roomId);
+
+    expect(eventEmitter.emit).not.toHaveBeenCalledWith(
+      'game.ended',
+      expect.anything(),
+    );
   });
 
   describe('endGame winner', () => {
@@ -406,6 +427,122 @@ describe('GameService', () => {
     expect(service.getGame(roomId)).toBe(game);
     expect(service.getPlayerGame('player-1')).toBeUndefined();
     expect(service.getPlayerGame('player-2')).toBe(game);
+  });
+
+  it('keeps a running game going when enough players remain after one leaves', () => {
+    const roomId = randomUUID();
+    const map: GameMap = {
+      name: 'Test map',
+      width: 4,
+      height: 4,
+      baseTile: 'floor',
+      baseOverrides: [],
+      objects: [
+        { x: 0, y: 0, type: 'spawn' },
+        { x: 1, y: 1, type: 'spawn' },
+        { x: 3, y: 3, type: 'spawn' },
+      ],
+    };
+    service.createGame(
+      roomId,
+      [
+        { id: 'player-1', name: 'Alice' },
+        { id: 'player-2', name: 'Bob' },
+        { id: 'player-3', name: 'Carol' },
+      ],
+      map,
+    );
+    service.startGame(roomId);
+
+    const game = service.removePlayer('player-1');
+
+    expect(game).toMatchObject({
+      status: RUNNING,
+      winner: null,
+      winnerName: null,
+    });
+    expect(game?.players).toMatchObject([
+      { clientId: 'player-2', name: 'Bob' },
+      { clientId: 'player-3', name: 'Carol' },
+    ]);
+    expect(eventEmitter.emit).not.toHaveBeenCalledWith(
+      'game.ended',
+      expect.anything(),
+    );
+  });
+
+  it('does not credit a leaving player as the winner even if they had more health', () => {
+    const roomId = randomUUID();
+    const map: GameMap = {
+      name: 'Test map',
+      width: 4,
+      height: 4,
+      baseTile: 'floor',
+      baseOverrides: [],
+      objects: [
+        { x: 0, y: 0, type: 'spawn' },
+        { x: 3, y: 3, type: 'spawn' },
+      ],
+    };
+    const game = service.createGame(
+      roomId,
+      [
+        { id: 'player-1', name: 'Alice' },
+        { id: 'player-2', name: 'Bob' },
+      ],
+      map,
+    );
+    service.startGame(roomId);
+
+    game.players[1].takeDamage(
+      DEFAULT_COMBAT_STATS.maxHealth - DEFAULT_COMBAT_STATS.attackValue,
+    );
+
+    const result = service.removePlayer('player-1');
+
+    expect(result).toMatchObject({
+      status: ENDED,
+      endsAt: null,
+      winner: 'player-2',
+      winnerName: 'Bob',
+    });
+    expect(result?.players).toMatchObject([
+      { clientId: 'player-2', name: 'Bob' },
+    ]);
+    expect(eventEmitter.emit).toHaveBeenCalledWith('game.ended', game);
+  });
+
+  it('declares the remaining player the winner even if the leaving player had equal health', () => {
+    const roomId = randomUUID();
+    const map: GameMap = {
+      name: 'Test map',
+      width: 4,
+      height: 4,
+      baseTile: 'floor',
+      baseOverrides: [],
+      objects: [
+        { x: 0, y: 0, type: 'spawn' },
+        { x: 3, y: 3, type: 'spawn' },
+      ],
+    };
+    service.createGame(
+      roomId,
+      [
+        { id: 'player-1', name: 'Alice' },
+        { id: 'player-2', name: 'Bob' },
+      ],
+      map,
+    );
+    service.startGame(roomId);
+
+    const result = service.removePlayer('player-1');
+
+    expect(result).toMatchObject({
+      status: ENDED,
+      endsAt: null,
+      winner: 'player-2',
+      winnerName: 'Bob',
+    });
   });
 
   it('drops the game once its last player leaves', () => {
